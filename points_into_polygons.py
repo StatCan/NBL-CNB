@@ -41,11 +41,25 @@ def groupby_to_list(df, group_field, list_field):
     return pd.Series([list(vals_array) for vals_array in vals_arrays], index=keys_unique).copy(deep=True)
 
 def as_int(val):
-    # Step 2: Converts linkages to integer tuples, if possible
+    "Step 2: Converts linkages to integer tuples, if possible"
     try:
         return int(val)
     except ValueError:
         return val
+
+def get_nearest_linkage(pt, roadseg_indexes):
+    """Returns the roadseg index associated with the nearest roadseg geometry to the given address point."""
+    
+    # Get roadseg geometries.
+    roadseg_geometries = tuple(map(lambda index: roadseg["geometry"].iloc[index], roadseg_indexes))
+    
+    # Get roadseg distances from address point.
+    roadseg_distances = tuple(map(lambda road: pt.distance(road), roadseg_geometries))
+    
+    # Get the roadseg index associated with the smallest distance.
+    roadseg_index = roadseg_indexes[roadseg_distances.index(min(roadseg_distances))]
+    
+    return roadseg_index
 
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
@@ -54,22 +68,26 @@ def as_int(val):
 ex_idx = 264
 ex_place = "City of Yellowknife"
 
-
+# Layer inputs
+project_gpkg = "H:/point_to_polygon_PoC/data/data.gpkg"
+addresses_lyr_nme = "yk_Address_Points"
+bf_lyr_nme = "yk_buildings_sj"
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
 # Load dataframes.
-addresses = gpd.read_file("H:/point_to_polygon_PoC/data/data.gpkg", layer="yk_Address_Points")
-roadseg = gpd.read_file("H:/point_to_polygon_PoC/data/data.gpkg", layer="yk_buildings_sj") # spatial joine between the parcels and building footprints layers
+addresses = gpd.read_file(project_gpkg, layer= addresses_lyr_nme)
+roadseg = gpd.read_file(project_gpkg, layer= bf_lyr_nme) # spatial join between the parcels and building footprints layers
 
 # Clean data
 # Remove rite of way from the address data and join count > 0
 addresses = addresses[(addresses.CIVIC_ADDRESS != "RITE OF WAY")]
-# Remove null street name rows
-roadseg = roadseg[(roadseg.Join_Count > 0) & (roadseg.STREET_NAME.notnull())] 
 
-#Step 1. Load dataframes and configure attributes
+# Remove null street name rows
+roadseg = roadseg[(roadseg.Join_Count > 0) & (roadseg.STREET_NAME.notnull()) & (roadseg.STREET_NAME != ' ')] 
+
+print( "Running Step 1. Load dataframes and configure attributes")
 # Define join fields.
 join_roadseg = "STREET_NAME"
 join_addresses = "STREET_NAME"
@@ -78,7 +96,7 @@ join_addresses = "STREET_NAME"
 addresses["suffix"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
 addresses["number"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="[^\\d]", repl="", string=val, flags=re.I)).map(int)
 
-# Step 2. Configure address to roadseg linkages
+print("Running Step 2. Configure address to roadseg linkages")
 # Link addresses and roadseg on join fields.
 addresses["addresses_index"] = addresses.index
 roadseg["roadseg_index"] = roadseg.index
@@ -95,6 +113,20 @@ addresses.drop(addresses[addresses["roadseg_index"].map(itemgetter(0)).isna()].i
 # Convert linkages to integer tuples, if possible.
 
 addresses["roadseg_index"] = addresses["roadseg_index"].map(lambda vals: tuple(set(map(as_int, vals))))
+
+# Flag plural linkages.
+flag_plural = addresses["roadseg_index"].map(len) > 1
+
+# Reduce plural linkages to the road segment with the lowest (nearest) geometric distance.
+addresses.loc[flag_plural, "roadseg_index"] = addresses[flag_plural][["geometry", "roadseg_index"]].apply(
+    lambda row: get_nearest_linkage(*row), axis=1)
+
+# Unpack first tuple element for singular linkages.
+addresses.loc[~flag_plural, "roadseg_index"] = addresses[~flag_plural]["roadseg_index"].map(itemgetter(0))
+
+# Compile linked roadseg geometry for each address.
+addresses["roadseg_geometry"] = addresses.merge(
+    roadseg["geometry"], how="left", left_on="roadseg_index", right_index=True)["geometry_y"]
 
 print(addresses.head())
 
