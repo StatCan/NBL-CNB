@@ -20,8 +20,7 @@ building foorprints and match the best address point available to them in order 
 to the building fooprints.
 
 '''
-
-#-------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 # Functions
 
 def explode(ingdf):
@@ -29,6 +28,7 @@ def explode(ingdf):
     indf = ingdf
     outdf = gpd.GeoDataFrame(columns=indf.columns)
     for idx, row in indf.iterrows():
+        
         if type(row.geometry) == Polygon:
             outdf = outdf.append(row,ignore_index=True)
         if type(row.geometry) == MultiPolygon:
@@ -72,13 +72,13 @@ def as_int(val):
 
 def get_nearest_linkage(pt, roadseg_indexes):
     """Returns the roadseg index associated with the nearest roadseg geometry to the given address point."""
+    pt_geoseries = gpd.GeoSeries([pt])
     # Get roadseg geometries.
     roadseg_geometries = tuple(map(lambda index: roadseg["geometry"].loc[roadseg.index == index], roadseg_indexes))
     # Get roadseg distances from address point.
-    roadseg_distances = tuple(map(lambda road: pt.distance(Point(road.geometry.centroid.x, road.geometry.centroid.y) ), roadseg_geometries))
-    
+    roadseg_distances = pd.concat(tuple(map(lambda road: road.exterior.distance(pt), roadseg_geometries)))                                      
     # Get the roadseg index associated with the smallest distance.
-    roadseg_index = roadseg_indexes[roadseg_distances.index(min(roadseg_distances))]
+    roadseg_index = roadseg_indexes[roadseg_indexes.index == int(roadseg_distances[roadseg_distances == roadseg_distances.min()].index[0])]
     
     return roadseg_index
   
@@ -90,7 +90,7 @@ output_path = r'H:\point_to_polygon_PoC'
 # Layer inputs
 project_gpkg = "H:/point_to_polygon_PoC/data/data.gpkg"
 addresses_lyr_nme = "yk_Address_Points"
-bf_lyr_nme = "yk_buildings_sj_points"
+bf_lyr_nme = "yk_buildings_sj"
 bf_polys = "yk_buildings_sj"
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ addresses = addresses[(addresses.CIVIC_ADDRESS != "RITE OF WAY")]
 # Remove null street name rows
 roadseg = roadseg[(roadseg.Join_Count > 0) & (roadseg.STREET_NAME.notnull()) & (roadseg.STREET_NAME != ' ')] 
 
-# roadseg = explode(roadseg)
+roadseg = explode(roadseg)
 
 print( "Running Step 1. Load dataframes and configure attributes")
 # Define join fields.
@@ -156,5 +156,5 @@ print("Running Step 3. Final Merge to Polygons")
 # Import the building polygons
 building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
 out_gdf = building_polys.merge(addresses[['roadseg_index', 'number', 'suffix']], how="left", right_on="roadseg_index", left_index=True)
-out_gdf.to_file(project_gpkg, layer= 'test_from_centroids', driver= 'GPKG')
+out_gdf.to_file(os.path.join(output_path, 'test_from_centroids.shp'))
 print('DONE!')
