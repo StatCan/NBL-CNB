@@ -9,6 +9,7 @@ import sys
 from bisect import bisect
 from collections import OrderedDict
 from operator import add, index, itemgetter
+from shapely import geometry
 from shapely.geometry import Point, Polygon, MultiPolygon
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
@@ -76,10 +77,9 @@ def get_nearest_linkage(pt, roadseg_indexes):
     # Get roadseg geometries.
     roadseg_geometries = tuple(map(lambda index: roadseg["geometry"].loc[roadseg.index == index], roadseg_indexes))
     # Get roadseg distances from address point.
-    roadseg_distances = pd.concat(tuple(map(lambda road: road.exterior.distance(pt), roadseg_geometries)))                                      
+    roadseg_distances = tuple(map(lambda road: pt.distance(Point(road.centroid.x, road.centroid.y)), roadseg_geometries))                                      
     # Get the roadseg index associated with the smallest distance.
-    roadseg_index = roadseg_indexes[roadseg_indexes.index == int(roadseg_distances[roadseg_distances == roadseg_distances.min()].index[0])]
-    
+    roadseg_index = roadseg_indexes[roadseg_distances.index(min(roadseg_distances))]
     return roadseg_index
   
 # ---------------------------------------------------------------------------------------------------------------
@@ -97,8 +97,8 @@ bf_polys = "yk_buildings_sj"
 # Logic
 
 # Load dataframes.
-addresses = gpd.read_file(project_gpkg, layer= addresses_lyr_nme)
-roadseg = gpd.read_file(project_gpkg, layer= bf_lyr_nme) # spatial join between the parcels and building footprints layers
+addresses = gpd.read_file(project_gpkg, layer= addresses_lyr_nme, crs=26911)
+roadseg = gpd.read_file(project_gpkg, layer= bf_lyr_nme, crs=26911) # spatial join between the parcels and building footprints layers
 
 print('Running Step 0. Clean Data')
 # Clean data
@@ -139,7 +139,6 @@ addresses["roadseg_index"] = addresses["roadseg_index"].map(lambda vals: tuple(s
 
 # Flag plural linkages.
 flag_plural = addresses["roadseg_index"].map(len) > 1
-addresses.to_csv(os.path.join(output_path, 'test.csv'))
 # Reduce plural linkages to the road segment with the lowest (nearest) geometric distance.
 addresses.loc[flag_plural, "roadseg_index"] = addresses[flag_plural][["geometry", "roadseg_index"]].apply(
     lambda row: get_nearest_linkage(*row), axis=1)
@@ -151,10 +150,13 @@ addresses.loc[~flag_plural, "roadseg_index"] = addresses[~flag_plural]["roadseg_
 addresses["roadseg_geometry"] = addresses.merge(
     roadseg["geometry"], how="left", left_on="roadseg_index", right_index=True)["geometry_y"]
 
-print("Running Step 3. Final Merge to Polygons")
-
+print("Running Step 3. Merge Results to Polygons")
+addresses.to_csv(os.path.join(output_path, 'adressLinkageTest.csv'))
 # Import the building polygons
-building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
-out_gdf = building_polys.merge(addresses[['roadseg_index', 'number', 'suffix']], how="left", right_on="roadseg_index", left_index=True)
-out_gdf.to_file(os.path.join(output_path, 'test_from_centroids.shp'))
+#building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
+#out_gdf = building_polys.merge(addresses[['roadseg_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="roadseg_index", left_index=True)
+#out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
+out_gdf = gpd.GeoDataFrame(addresses, geometry='roadseg_geometry', crs=26911)
+out_gdf.drop(columns='geometry', inplace=True)
+out_gdf.to_file(os.path.join(output_path, 'addresses_poly.shp'), driver='ESRI Shapefile')
 print('DONE!')
