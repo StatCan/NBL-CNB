@@ -47,7 +47,8 @@ def list_bf_indexes(buffer_geom, bf_gdf):
     intersects based on the buffer geom. Returns a list of all indexes with true values.
     """
     intersects = bf_gdf.intersects(buffer_geom)
-    intersects = tuple(intersects[intersects == True])
+    intersects = intersects[intersects == True]
+    intersects = tuple(intersects.index)
     return intersects
 
 def groupby_to_list(df, group_field, list_field):
