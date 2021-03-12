@@ -71,16 +71,16 @@ def as_int(val):
     except ValueError:
         return val
 
-def get_nearest_linkage(pt, roadseg_indexes):
-    """Returns the roadseg index associated with the nearest roadseg geometry to the given address point."""
+def get_nearest_linkage(pt, footprint_indexes):
+    """Returns the footprint index associated with the nearest footprint geometry to the given address point."""
     pt_geoseries = gpd.GeoSeries([pt])
-    # Get roadseg geometries.
-    roadseg_geometries = tuple(map(lambda index: roadseg["geometry"].loc[roadseg.index == index], roadseg_indexes))
-    # Get roadseg distances from address point.
-    roadseg_distances = tuple(map(lambda road: pt.distance(Point(road.centroid.x, road.centroid.y)), roadseg_geometries))                                      
-    # Get the roadseg index associated with the smallest distance.
-    roadseg_index = roadseg_indexes[roadseg_distances.index(min(roadseg_distances))]
-    return roadseg_index
+    # Get footprint geometries.
+    footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
+    # Get footprint distances from address point.
+    footprint_distances = tuple(map(lambda building: pt.distance(Point(building.centroid.x, building.centroid.y)), footprint_geometries))                                      
+    # Get the footprint index associated with the smallest distance.
+    footprint_index = footprint_indexes[footprint_distances.index(min(footprint_distances))]
+    return footprint_index
   
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
@@ -98,7 +98,7 @@ bf_polys = "yk_buildings_sj"
 
 # Load dataframes.
 addresses = gpd.read_file(project_gpkg, layer= addresses_lyr_nme, crs=26911)
-roadseg = gpd.read_file(project_gpkg, layer= bf_lyr_nme, crs=26911) # spatial join between the parcels and building footprints layers
+footprint = gpd.read_file(project_gpkg, layer= bf_lyr_nme, crs=26911) # spatial join between the parcels and building footprints layers
 
 print('Running Step 0. Clean Data')
 # Clean data
@@ -106,57 +106,57 @@ print('Running Step 0. Clean Data')
 addresses = addresses[(addresses.CIVIC_ADDRESS != "RITE OF WAY")]
 
 # Remove null street name rows
-roadseg = roadseg[(roadseg.Join_Count > 0) & (roadseg.STREET_NAME.notnull()) & (roadseg.STREET_NAME != ' ')] 
+footprint = footprint[(footprint.Join_Count > 0) & (footprint.STREET_NAME.notnull()) & (footprint.STREET_NAME != ' ')] 
 
-roadseg = explode(roadseg)
+footprint = explode(footprint)
 
 print( "Running Step 1. Load dataframes and configure attributes")
 # Define join fields.
-join_roadseg = "STREET_NAME"
+join_footprint = "STREET_NAME"
 join_addresses = "STREET_NAME"
 
 # Configure attributes - number and suffix.
 addresses["suffix"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
 addresses["number"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="[^\\d]", repl="", string=val, flags=re.I)).map(int)
 
-print("Running Step 2. Configure address to roadseg linkages")
-# Link addresses and roadseg on join fields.
+print("Running Step 2. Configure address to footprint linkages")
+# Link addresses and footprint on join fields.
 addresses["addresses_index"] = addresses.index
-roadseg["roadseg_index"] = roadseg.index
+footprint["footprint_index"] = footprint.index
 
-merge = addresses.merge(roadseg[[join_roadseg, "roadseg_index"]], how="left", left_on=join_addresses, right_on=join_roadseg)
-addresses["roadseg_index"] = groupby_to_list(merge, "addresses_index", "roadseg_index")
+merge = addresses.merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
+addresses["footprint_index"] = groupby_to_list(merge, "addresses_index", "footprint_index")
 
 addresses.drop(columns=["addresses_index"], inplace=True)
-roadseg.drop(columns=["roadseg_index"], inplace=True)
+footprint.drop(columns=["footprint_index"], inplace=True)
 
 # Discard non-linked addresses.
-addresses.drop(addresses[addresses["roadseg_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
+addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
 # Convert linkages to integer tuples, if possible.
 
-addresses["roadseg_index"] = addresses["roadseg_index"].map(lambda vals: tuple(set(map(as_int, vals))))
+addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
 
 # Flag plural linkages.
-flag_plural = addresses["roadseg_index"].map(len) > 1
-# Reduce plural linkages to the road segment with the lowest (nearest) geometric distance.
-addresses.loc[flag_plural, "roadseg_index"] = addresses[flag_plural][["geometry", "roadseg_index"]].apply(
+flag_plural = addresses["footprint_index"].map(len) > 1
+# Reduce plural linkages to the building segment with the lowest (nearest) geometric distance.
+addresses.loc[flag_plural, "footprint_index"] = addresses[flag_plural][["geometry", "footprint_index"]].apply(
     lambda row: get_nearest_linkage(*row), axis=1)
 
 # Unpack first tuple element for singular linkages.
-addresses.loc[~flag_plural, "roadseg_index"] = addresses[~flag_plural]["roadseg_index"].map(itemgetter(0))
+addresses.loc[~flag_plural, "footprint_index"] = addresses[~flag_plural]["footprint_index"].map(itemgetter(0))
 
-# Compile linked roadseg geometry for each address.
-addresses["roadseg_geometry"] = addresses.merge(
-    roadseg["geometry"], how="left", left_on="roadseg_index", right_index=True)["geometry_y"]
+# Compile linked footprint geometry for each address.
+addresses["footprint_geometry"] = addresses.merge(
+    footprint["geometry"], how="left", left_on="footprint_index", right_index=True)["geometry_y"]
 
 print("Running Step 3. Merge Results to Polygons")
 addresses.to_csv(os.path.join(output_path, 'adressLinkageTest.csv'))
 # Import the building polygons
 #building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
-#out_gdf = building_polys.merge(addresses[['roadseg_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="roadseg_index", left_index=True)
+#out_gdf = building_polys.merge(addresses[['footprint_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="footprint_index", left_index=True)
 #out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
-out_gdf = gpd.GeoDataFrame(addresses, geometry='roadseg_geometry', crs=26911)
+out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
 out_gdf.drop(columns='geometry', inplace=True)
 out_gdf.to_file(os.path.join(output_path, 'addresses_poly.shp'), driver='ESRI Shapefile')
 print('DONE!')
