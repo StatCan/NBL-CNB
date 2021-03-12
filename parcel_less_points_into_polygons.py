@@ -44,10 +44,11 @@ def explode(ingdf):
 def list_bf_indexes(buffer_geom, bf_gdf):
     """
     For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for 
-    intersects.
+    intersects based on the buffer geom. Returns a list of all indexes with true values.
     """
-    print(buffer_geom)
-    sys.exit()
+    intersects = bf_gdf.intersects(buffer_geom)
+    intersects = tuple(intersects[intersects == True])
+    return intersects
 
 def groupby_to_list(df, group_field, list_field):
     """
@@ -135,10 +136,8 @@ footprint["footprint_index"] = footprint.index
 # merge = addresses.merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
 # addresses["footprint_index"] = groupby_to_list(merge, "addresses_index", "footprint_index")
 
-print(footprint.head())
-
 addresses['buffer_geom'] = addresses.geometry.buffer(10)
-addresses['footprint_index'] = addresses['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint['footprint_index']))
+addresses['footprint_index'] = addresses['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint))
 print(addresses.head())
 sys.exit()
 
