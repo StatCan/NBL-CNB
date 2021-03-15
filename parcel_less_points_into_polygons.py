@@ -24,7 +24,7 @@ to the building fooprints.
 # ------------------------------------------------------------------------------------------------------------
 # Functions
 
-def explode(ingdf):
+def explode(ingdf): 
     # not one of Jesse's. To solve multipolygon issue
     indf = ingdf
     outdf = gpd.GeoDataFrame(columns=indf.columns)
@@ -96,6 +96,7 @@ def get_nearest_linkage(pt, footprint_indexes):
 # Inputs
 
 output_path = r'H:\point_to_polygon_PoC'
+buffer_dist = 15 # Max distance of buffer the non linking data will have
 
 # Layer inputs
 project_gpkg = "H:/point_to_polygon_PoC/data/data.gpkg"
@@ -137,17 +138,17 @@ footprint["footprint_index"] = footprint.index
 # merge = addresses.merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
 # addresses["footprint_index"] = groupby_to_list(merge, "addresses_index", "footprint_index")
 
-addresses['buffer_geom'] = addresses.geometry.buffer(10)
+addresses['buffer_geom'] = addresses.geometry.buffer(buffer_dist)
 addresses['footprint_index'] = addresses['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint))
-print(addresses.head())
-sys.exit()
 
-addresses.drop(columns=["addresses_index"], inplace=True)
+addresses.drop(columns=["addresses_index", "buffer_geom"], inplace=True)
 footprint.drop(columns=["footprint_index"], inplace=True)
 
 # Discard non-linked addresses.
+print(len(addresses))
+addresses = addresses[addresses.astype(str)['footprint_index'] != '()']
 addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
-
+print(len(addresses))
 # Convert linkages to integer tuples, if possible.
 
 addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
@@ -173,5 +174,6 @@ addresses.to_csv(os.path.join(output_path, 'adressLinkageTest.csv'))
 #out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
 out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
 out_gdf.drop(columns='geometry', inplace=True)
-out_gdf.to_file(os.path.join(output_path, 'addresses_poly.shp'), driver='ESRI Shapefile')
+print(out_gdf.head())
+out_gdf.to_file(os.path.join(output_path, 'addresses_poly_noParcels.shp'), driver='ESRI Shapefile')
 print('DONE!')
