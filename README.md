@@ -1,8 +1,18 @@
 # points_to_polygons_PoC
-Proof of concept for points into polygons to add address data to the building footprint
 
-Based off work off JesseStewart1 original work can be found here: https://github.com/jessestewart1/nrn-rrn/blob/development/src/stage_1/segment_addresses.py 
+## Description and Sources
+Proof of concept for points into polygons to add address data to the building footprint. Yellowknife was used as a testing ground due to data availability and familiarity. 
 
-Demonstration jupyter notebook of the code con be found here: https://github.com/jessestewart1/nrn-rrn/blob/master/reports/address_segmentation.html
+The work done in this project is based off work off JesseStewart1's original work for the NRN prject can be found here: https://github.com/jessestewart1/nrn-rrn/blob/development/src/stage_1/segment_addresses.py 
 
-All data for this proof of concept dowwnloaded from the Yellowknife Open Data Portal civic addresses and building footprint Jan 10th 2021 vintage
+Demonstration jupyter notebook for Jesse's code con be found here: https://github.com/jessestewart1/nrn-rrn/blob/master/reports/address_segmentation.html
+
+All data for this project downloaded from the Yellowknife Open Data Portal civic addresses and building footprint Jan 10th 2021 vintage. The data can be found in the yellowknife open data portal at the following link:
+http://opendata.yellowknife.ca/
+
+Layers Used:
+- Civic Addresses
+- Building Footprints
+- Property Parcels
+
+This project was built in python using the following modules (list can also be found in the requirements.txt)
