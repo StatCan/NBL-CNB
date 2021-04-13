@@ -16,7 +16,7 @@ sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import helpers
 
 '''
-This script is a proof of conept building on the work of Jessie Stewart for the NRN. This script attempts to take
+This script is a proof of concept building on the work of Jessie Stewart for the NRN. This script attempts to take
 building foorprints and match the best address point available to them in order to apply pertinent address fields
 to the building fooprints.
 
@@ -86,6 +86,12 @@ def get_nearest_linkage(pt, footprint_indexes):
     pt_geoseries = gpd.GeoSeries([pt])
     # Get footprint geometries.
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
+    # Before checking distances check for intersections
+    intersects = tuple(map(lambda building: pt_geoseries.intersects(building), footprint_geometries))
+    print(intersects[intersects == 1])
+    footprint_index = footprint_indexes[intersects.index(intersects[intersects == 1])]
+    
+    sys.exit()
     # Get footprint distances from address point.
     footprint_distances = tuple(map(lambda building: pt.distance(Point(building.centroid.x, building.centroid.y)), footprint_geometries))                                      
     # Get the footprint index associated with the smallest distance.
@@ -96,32 +102,22 @@ def get_nearest_linkage(pt, footprint_indexes):
 # Inputs
 
 output_path = r'H:\point_to_polygon_PoC'
-buffer_dist = 15 # Max distance of buffer the non linking data will have
+buffer_dist = 15 # Max distance of buffer the non linking data will have in Metres 
 
 # Layer inputs
-project_gpkg = "H:/point_to_polygon_PoC/data/data.gpkg"
-addresses_lyr_nme = "yk_Address_Points"
-bf_lyr_nme = "yk_buildings_sj"
-bf_polys = "yk_buildings_sj"
+# Layer inputs cleaned versions only
+footprints_shp = r'H:\point_to_polygon_PoC\data\workingfiles\footprints_cleaned.shp'
+addresses_shp = r'H:\point_to_polygon_PoC\data\workingfiles\addresses_cleaned.shp'
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
-# Load dataframes.
-addresses = gpd.read_file(project_gpkg, layer= addresses_lyr_nme, crs=26911)
-footprint = gpd.read_file(project_gpkg, layer= bf_lyr_nme, crs=26911) # spatial join between the parcels and building footprints layers
-
-print('Running Step 0. Clean Data')
-# Clean data
-# Remove rite of way from the address data and join count > 0
-addresses = addresses[(addresses.CIVIC_ADDRESS != "RITE OF WAY")]
-
-# Remove null street name rows
-footprint = footprint[(footprint.Join_Count > 0) & (footprint.STREET_NAME.notnull()) & (footprint.STREET_NAME != ' ')] 
-
-footprint = explode(footprint)
-
 print( "Running Step 1. Load dataframes and configure attributes")
+
+# Load dataframes.
+addresses = gpd.read_file(addresses_shp, crs=26911)
+footprint = gpd.read_file(footprints_shp, crs=26911) # spatial join between the parcels and building footprints layers
+
 # Define join fields.
 join_footprint = "STREET_NAME"
 join_addresses = "STREET_NAME"
