@@ -10,9 +10,15 @@ Demonstration jupyter notebook for Jesse's code con be found here: https://githu
 All data for this project downloaded from the Yellowknife Open Data Portal civic addresses and building footprint Jan 10th 2021 vintage. The data can be found in the yellowknife open data portal at the following link:
 http://opendata.yellowknife.ca/
 
-Layers Used:
+### Layers Used:
 - Civic Addresses
 - Building Footprints
 - Property Parcels
 
-This project was built in python using the following modules (list can also be found in the requirements.txt)
+### This project was built in python using the following modules (list can also be found in the requirements.txt)
+- geopandas
+- shapely
+- pandas
+- numpy
+
+ensure that all of the above modules have been installed into python before running the scripts
