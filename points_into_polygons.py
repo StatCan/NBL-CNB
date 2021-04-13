@@ -24,23 +24,6 @@ to the building fooprints.
 # ------------------------------------------------------------------------------------------------------------
 # Functions
 
-def explode(ingdf):
-    # not one of Jesse's. To solve multipolygon issue
-    indf = ingdf
-    outdf = gpd.GeoDataFrame(columns=indf.columns)
-    for idx, row in indf.iterrows():
-        
-        if type(row.geometry) == Polygon:
-            outdf = outdf.append(row,ignore_index=True)
-        if type(row.geometry) == MultiPolygon:
-            multdf = gpd.GeoDataFrame(columns=indf.columns)
-            recs = len(row.geometry)
-            multdf = multdf.append([row]*recs,ignore_index=True)
-            for geom in range(recs):
-                multdf.loc[geom,'geometry'] = row.geometry[geom]
-            outdf = outdf.append(multdf,ignore_index=True)
-    return outdf
-
 def groupby_to_list(df, group_field, list_field):
     """
     Helper function: faster alternative to pandas groupby.apply/agg(list).
@@ -87,30 +70,18 @@ def get_nearest_linkage(pt, footprint_indexes):
 
 output_path = r'H:\point_to_polygon_PoC'
 
-# Layer inputs
-project_gpkg = "H:/point_to_polygon_PoC/data/data.gpkg"
-addresses_lyr_nme = "yk_Address_Points"
-bf_lyr_nme = "yk_buildings_sj"
-bf_polys = "yk_buildings_sj"
+# Layer inputs cleaned versions only
+footprints_shp = r'H:\point_to_polygon_PoC\data\workingfiles\footprints_cleaned.shp'
+addresses_shp = r'H:\point_to_polygon_PoC\data\workingfiles\addresses_cleaned.shp'
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
-# Load dataframes.
-addresses = gpd.read_file(project_gpkg, layer= addresses_lyr_nme, crs=26911)
-footprint = gpd.read_file(project_gpkg, layer= bf_lyr_nme, crs=26911) # spatial join between the parcels and building footprints layers
-
-print('Running Step 0. Clean Data')
-# Clean data
-# Remove rite of way from the address data and join count > 0
-addresses = addresses[(addresses.CIVIC_ADDRESS != "RITE OF WAY")]
-
-# Remove null street name rows
-footprint = footprint[(footprint.Join_Count > 0) & (footprint.STREET_NAME.notnull()) & (footprint.STREET_NAME != ' ')] 
-
-footprint = explode(footprint)
-
 print( "Running Step 1. Load dataframes and configure attributes")
+# Load dataframes.
+addresses = gpd.read_file(addresses_shp, crs=26911)
+footprint = gpd.read_file(footprints_shp, crs=26911) # spatial join between the parcels and building footprints layers
+
 # Define join fields.
 join_footprint = "STREET_NAME"
 join_addresses = "STREET_NAME"
