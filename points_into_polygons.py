@@ -71,16 +71,16 @@ def get_nearest_linkage(pt, footprint_indexes):
 output_path = r'H:\point_to_polygon_PoC'
 
 # Layer inputs cleaned versions only
-footprints_shp = r'H:\point_to_polygon_PoC\data\workingfiles\footprints_cleaned.shp'
-addresses_shp = r'H:\point_to_polygon_PoC\data\workingfiles\addresses_cleaned.shp'
+footprints_path = r'H:\point_to_polygon_PoC\data\workingfiles\footprints_cleaned.geojson'
+addresses_path = r'H:\point_to_polygon_PoC\data\workingfiles\addresses_cleaned.geojson'
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
 print( "Running Step 1. Load dataframes and configure attributes")
 # Load dataframes.
-addresses = gpd.read_file(addresses_shp, crs=26911)
-footprint = gpd.read_file(footprints_shp, crs=26911) # spatial join between the parcels and building footprints layers
+addresses = gpd.read_file(addresses_path, crs=26911)
+footprint = gpd.read_file(footprints_path, crs=26911) # spatial join between the parcels and building footprints layers
 
 # Define join fields.
 join_footprint = "STREET_NAME"
