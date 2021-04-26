@@ -116,6 +116,7 @@ intersections.set_geometry('footprint_geometry')
 intersections.drop(columns='geometry', inplace=True)
 intersections.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
 intersections.to_file(output_gpkg, layer='intersects', driver='GPKG')
+
 print("Running Step 3. Configure address to footprint linkages")
 
 # Link addresses and footprint on join fields.
@@ -153,19 +154,8 @@ addresses = addresses.append(intersections, ignore_index= True)
 addresses["footprint_geometry"] = addresses.merge(
     footprint["geometry"], how="left", left_on="footprint_index", right_index=True)["geometry_y"]
 
-
-# addresses.append(intersections)
-
 print("Running Step 4. Merge Results to Polygons")
-# Import the building polygons
-# building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
-# out_gdf = building_polys.merge(addresses[['footprint_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="footprint_index", left_index=True)
-# out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
-# out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
-# out_gdf.drop(columns='geometry', inplace=True)
-# out_gdf.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
-# out_gdf.set_geometry('geometry')
-# out_gdf.to_file(output_gpkg, layer='addresses_poly_linked',  driver='GPKG')
+
 addresses.drop(columns='geometry', inplace=True)
 addresses.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
 addresses.set_geometry('geometry')
