@@ -104,11 +104,18 @@ print('Running Step 2. Checking address linkages via intersects')
 
 # Check for intersections
 intersect_indexes = check_for_intersects_ap(addresses, footprint)
-intersections = addresses.loc[addresses.index == intersect_indexes.index.tolist(), addresses.columns.tolist()]
+intersections = addresses.iloc[intersect_indexes.index.tolist()]
 intersections['footprint_index'] = intersect_indexes
 intersections['method'] = 'intersect'
-addresses.drop(intersect_indexes.index.tolist(), axis='rows', inplace=True) # Remove intersect footprints from the footprints gdf
+intersected_bfs = footprint.iloc[list(set(intersect_indexes.tolist()))]
+footprint.drop(intersect_indexes.tolist(), axis='rows', inplace=True) # Remove intersect footprints from the footprints gdf
 
+intersections['footprint_geometry'] = intersections.merge(
+intersected_bfs["geometry"], how="left", left_on="footprint_index", right_index=True)['geometry_y']
+intersections.set_geometry('footprint_geometry')
+intersections.drop(columns='geometry', inplace=True)
+intersections.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
+intersections.to_file(output_gpkg, layer='intersects', driver='GPKG')
 print("Running Step 3. Configure address to footprint linkages")
 
 # Link addresses and footprint on join fields.
@@ -137,20 +144,34 @@ addresses.loc[flag_plural, "footprint_index"] = addresses[flag_plural][["geometr
 # Unpack first tuple element for singular linkages.
 addresses.loc[~flag_plural, "footprint_index"] = addresses[~flag_plural]["footprint_index"].map(itemgetter(0))
 addresses['method'] = 'data_linking'
-
 # Merge the intersects data back with the linking data 
-addresses = gpd.GeoDataFrame(pd.concat([addresses, intersections]))
+
+addresses = addresses.append(intersections, ignore_index= True)
+#footprint = footprint.append(intersected_bfs)
 
 # Compile linked footprint geometry for each address.
 addresses["footprint_geometry"] = addresses.merge(
     footprint["geometry"], how="left", left_on="footprint_index", right_index=True)["geometry_y"]
 
+
+# addresses.append(intersections)
+
 print("Running Step 4. Merge Results to Polygons")
 # Import the building polygons
-#building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
-#out_gdf = building_polys.merge(addresses[['footprint_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="footprint_index", left_index=True)
-#out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
-out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
-out_gdf.drop(columns='geometry', inplace=True)
-out_gdf.to_file(output_path, layer='addresses_poly',  driver='GPKG')
+# building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
+# out_gdf = building_polys.merge(addresses[['footprint_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="footprint_index", left_index=True)
+# out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
+# out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
+# out_gdf.drop(columns='geometry', inplace=True)
+# out_gdf.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
+# out_gdf.set_geometry('geometry')
+# out_gdf.to_file(output_gpkg, layer='addresses_poly_linked',  driver='GPKG')
+addresses.drop(columns='geometry', inplace=True)
+addresses.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
+addresses.set_geometry('geometry')
+addresses.to_file(output_gpkg, layer='addresses_poly_linked', driver='GPKG')
+
+outgdf = addresses.append(intersections)
+print(outgdf.head())
+outgdf.to_file(output_gpkg, layer='inter_linked_merged',  driver='GPKG')
 print('DONE!')
