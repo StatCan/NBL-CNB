@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import helpers
 
+pd.options.mode.chained_assignment = None # Gets rod pf annoying warning
+
 '''
 This script is a proof of concept building on the work of Jessie Stewart for the NRN. This script attempts to take
 building foorprints and match the best address point available to them in order to apply pertinent address fields
@@ -59,10 +61,15 @@ def get_nearest_linkage(pt, footprint_indexes):
     # Get footprint geometries.
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
     # Get footprint distances from address point.
-    footprint_distances = tuple(map(lambda building: pt.distance(Point(building.centroid.x, building.centroid.y)), footprint_geometries))                                      
+    footprint_distances = tuple(map(lambda building: building.geometry.boundary.distance(pt), footprint_geometries))                                     
     # Get the footprint index associated with the smallest distance.
-    footprint_index = footprint_indexes[footprint_distances.index(min(footprint_distances))]
-    return footprint_index
+    distances = pd.Series([f.iloc[0] for f in footprint_distances], index= [footprint.index[0] for footprint in footprint_distances]) # Cleaning because outputs are messy
+    minimum_index = distances.index[distances == distances.min()][0]
+    if minimum_index in footprint_indexes:
+        return minimum_index
+    else:
+        print(f'{minimum_index}: not in footprint_indexes. Error try again.')
+        sys.exit()
 
 def check_for_intersects_ap(address_gdf, footprint_gdf):
     ''' Check for cases of intersections between the building footprints layer and the address points layer output a spatial join of only the intersections between
@@ -71,7 +78,7 @@ def check_for_intersects_ap(address_gdf, footprint_gdf):
     inter = gpd.sjoin(inter, footprint_gdf, how='left')
     inter = inter[inter['index_right'].notna()] # Drops all non matches from the match data frame
     #inter.to_file(r'H:\point_to_polygon_PoC\data\output.gpkg',  layer='intersect_test_ap_bf',  driver='GPKG')
-    print( f'{len(inter)} intersects found between the address points and building footprints joining those matches together')
+    print( f'   {len(inter)} intersects found between the address points and building footprints joining those matches together')
     inter['index_right'] = inter['index_right'].map(int)
     inter.rename({'index_right': 'footprint_index'}, axis='columns', inplace=True)
     return inter['footprint_index'] 
@@ -93,8 +100,8 @@ addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=26911)
 #footprint = gpd.read_file(footprints_path, layer='missing_intersects' , crs=26911) # spatial join between the parcels and building footprints layers
 footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme, crs=26911)
 # Define join fields.
-join_footprint = "STREET_NAME"
-join_addresses = "STREET_NAME"
+join_footprint = 'link_field'
+join_addresses = 'link_field'
 
 # Configure attributes - number and suffix.
 addresses["suffix"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
@@ -115,7 +122,7 @@ intersected_bfs["geometry"], how="left", left_on="footprint_index", right_index=
 intersections.set_geometry('footprint_geometry')
 intersections.drop(columns='geometry', inplace=True)
 intersections.rename(columns={'footprint_geometry':'geometry'}, inplace=True)
-intersections.to_file(output_gpkg, layer='intersects', driver='GPKG')
+# intersections.to_file(output_gpkg, layer='intersects', driver='GPKG')
 
 print("Running Step 3. Configure address to footprint linkages")
 
@@ -133,7 +140,6 @@ footprint.drop(columns=["footprint_index"], inplace=True)
 addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
 # Convert linkages to integer tuples, if possible.
-
 addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
 
 # Flag plural linkages.
@@ -162,6 +168,6 @@ addresses.set_geometry('geometry')
 addresses.to_file(output_gpkg, layer='addresses_poly_linked', driver='GPKG')
 
 outgdf = addresses.append(intersections)
-print(outgdf.head())
+
 outgdf.to_file(output_gpkg, layer='inter_linked_merged',  driver='GPKG')
 print('DONE!')
