@@ -66,7 +66,6 @@ def as_int(val):
 
 def get_nearest_linkage(pt, footprint_indexes):
     """Returns the footprint index associated with the nearest footprint geometry to the given address point."""
-    pt_geoseries = gpd.GeoSeries([pt])
     # Get footprint geometries.
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
     # Get footprint distances from address point.
