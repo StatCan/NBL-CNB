@@ -185,6 +185,7 @@ print('Running Step 4. Checking address linkages via closest adp limted by linki
 # Ensure projected crs is used
 addresses.to_crs(crs= proj_crs, inplace=True)
 footprint.to_crs(crs=proj_crs, inplace=True)
+intersections.to_crs(crs=proj_crs, inplace=True)
 
 # Convert linkages to integer tuples, if possible.
 addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
