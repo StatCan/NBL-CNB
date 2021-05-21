@@ -84,28 +84,6 @@ def check_for_intersects(pt, footprint_indexes):
         t_index = inter.index(True)
         return int(footprint_geometries[t_index].index[0])
 
-def check_for_intersects_ap(address_gdf, footprint_gdf):
-    ''' Check for cases of intersections between the building footprints layer and the address points layer output a spatial join of only the intersections between
-    the two layers as a series. Building footprints are joined to the address points in this verison'''
-    
-    def get_intersect_linkage(pt, footprints):
-        print(pt[0].x)
-        pt = Point(pt[0].x, pt[0].y)
-        geometries = tuple(map(lambda building: pt.within(building), footprints))
-        print(geometries)
-        sys.exit()
-
-    inter = address_gdf
-    print(footprint_gdf.geometry)
-    inter['flag_intersect'] =  inter[["geometry"]].apply(lambda row: get_intersect_linkage(row, footprint_gdf.geometry), axis=1) #  <--- Fix this whole row and function
-    sys.exit()
-    inter = gpd.sjoin(inter, footprint_gdf, how='left', op='within')
-    inter = inter[inter['index_right'].notna()] # Drops all non matches from the match data frame
-    print( f'   {len(inter)} intersects found between the address points and building footprints joining those matches together')
-    inter['index_right'] = inter['index_right'].map(int)
-    inter.rename({'index_right': 'footprint_index'}, axis='columns', inplace=True)
-    return inter['footprint_index'] 
-
 def cut_indexes(bf_ind_list, cut_ind_lst):
     ''' Way to remove the index from the footprint index column so that things aren't looked at that have already been matched'''
 
@@ -113,9 +91,7 @@ def cut_indexes(bf_ind_list, cut_ind_lst):
         reduced_list = [i for i in bf_ind_list if i not in cut_ind_lst]
         if len(reduced_list) == 0:
             return np.nan
-        if len(reduced_list) > 1:
-            return reduced_list
-        if len(reduced_list) == 1:
+        if len(reduced_list) >= 1:
             return reduced_list
 
     if isinstance(bf_ind_list, int):
@@ -211,7 +187,7 @@ addresses.to_crs(crs= proj_crs, inplace=True)
 footprint.to_crs(crs=proj_crs, inplace=True)
 
 # Convert linkages to integer tuples, if possible.
-# addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
+addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
 
 # Flag plural linkages.
 flag_plural = addresses["footprint_index"].map(len) > 1
