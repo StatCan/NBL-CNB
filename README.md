@@ -21,4 +21,19 @@ http://opendata.yellowknife.ca/
 - pandas
 - numpy
 
-ensure that all of the above modules have been installed into python before running the scripts
+Ensure that all of the above modules amd their dependancies have been installed into python before running the scripts.
+
+### Script Overview and Descriptions
+
+#### clean_data.py
+
+Python script that cleans all input datasets and preps them for analysis. Currently adapted to test data will change significantly in the future. 
+
+#### points_into_polygons.py
+Python script that takes the cleaned datasets and analyses them for intersections and proximity after linking the address and building data together using a linking dataset (usually of surveyed parcels). Outputs a dataset of building footprints that contains the linkages.
+
+#### parcel_less_points_into_polygons.py
+
+Experimental script that tests a workflow for dealing with situations where linking data is not available. This methodology uses a incrimentally increasing series of buffers to determine the closest address point to a building footprint. Accuracy yet to be determined.
+
+
