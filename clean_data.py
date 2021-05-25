@@ -37,6 +37,9 @@ def reproject(ingdf, output_crs):
     elif ingdf.crs != f'epsg:{output_crs}':
         ingdf.to_crs(epsg=output_crs, inplace=True)
     return ingdf
+
+def getXY(pt):
+    return (pt.x, pt.y)
 # ------------------------------------------------------------------------------------------------
 # Inputs
 load_dotenv(os.path.join(os.getcwd(), 'environments.env'))
@@ -105,9 +108,19 @@ print('Cleaning building footprints')
 # footprint = explode(footprint) # Remove multipart polygons convert to single polygons
 footprint['area'] = footprint['geometry'].area
 footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
+footprint = footprint.reset_index()
+footprint.rename(columns={'index':'bf_index'}, inplace=True)
+footprint.set_index(footprint['bf_index'])
 footprint = reproject(footprint, proj_crs)
+
+footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
+footprint = footprint.set_geometry('centroid_geo')
+
 footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
 footprint.drop(columns=linking_cols_drop, inplace=True)
+
+footprint = footprint.set_geometry('geometry')
+footprint.drop(columns=['centroid_geo'], inplace=True)
 
 for f in ['index_right', 'index_left']:
     if f in footprint.columns.tolist():
