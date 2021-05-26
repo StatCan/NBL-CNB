@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import helpers
 
-pd.options.mode.chained_assignment = None # Gets rod pf annoying warning
+pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
 '''
 
@@ -71,7 +71,7 @@ def get_nearest_linkage(pt, footprint_indexes):
     distance_values = [f[f.index == f.index[0]].values[0] for f in footprint_distances if len(f.index) != 0]
     distance_indexes = [f.index[0] for f in footprint_distances if len(f.index) != 0]
     if len(distance_indexes) == 0: # If empty then return drop val
-        return -99
+        return np.nan
     footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
     return footprint_index
     
@@ -107,6 +107,7 @@ def cut_indexes(bf_ind_list, cut_ind_lst):
         print(f'Unaccounted for list of type {type(bf_ind_list)} in index cutting function. Account for this.')
         print(bf_ind_list)
         sys.exit()
+
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
 load_dotenv(os.path.join(os.getcwd(), 'environments.env'))
@@ -121,6 +122,7 @@ addresses_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
 proj_crs = int(os.getenv('NT_PROJ_CRS'))
 
 add_num_fld_nme =  os.getenv('AP_CIVIC_ADDRESS_FIELD_NAME')
+unlinked_bf_lyr_nme = os.getenv('UNLINKED_BF_LYR_NME')
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
@@ -196,7 +198,7 @@ flag_plural = addresses["footprint_index"].map(len) > 1
 addresses.loc[flag_plural, "footprint_index"] = addresses[flag_plural][["geometry", "footprint_index"]].apply(
     lambda row: get_nearest_linkage(*row), axis=1) 
 
-addresses = addresses[addresses['footprint_index'] != -99]
+addresses = addresses[addresses['footprint_index'] != np.nan]
 # Unpack first tuple element for singular linkages.
 addresses.loc[~flag_plural, "footprint_index"] = addresses[~flag_plural]["footprint_index"].map(itemgetter(0))
 addresses['method'] = 'data_linking'
@@ -208,5 +210,10 @@ addresses = addresses.merge(
 
 print("Running Step 5. Merge Results to Polygons")
 outgdf = addresses.append(intersections)
+
+unlinked_footprints = footprint.index.isin(list(set(outgdf.footprint_index.tolist())))
+unlinked_footprints = footprint[~unlinked_footprints]
+
+unlinked_footprints.to_file(project_gpkg, layer=unlinked_bf_lyr_nme, driver='GPKG')
 outgdf.to_file(output_gpkg, layer='inter_linked_merged',  driver='GPKG')
 print('DONE!')
