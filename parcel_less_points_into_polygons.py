@@ -11,28 +11,21 @@ from collections import OrderedDict
 from operator import add, index, itemgetter
 from shapely import geometry
 from shapely.geometry import Point, Polygon, MultiPolygon
-
+from dotenv import load_dotenv
+from pathlib import Path
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import helpers
 
-'''
-This script is a proof of concept building on the work of Jessie Stewart for the NRN. This script attempts to take
-building foorprints and match the best address point available to them in order to apply pertinent address fields
-to the building fooprints.
+pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
 '''
+
+Experimental version of the script testing ground for the cases with no linking methodology
+
+'''
+
 # ------------------------------------------------------------------------------------------------------------
 # Functions
-
-def list_bf_indexes(buffer_geom, bf_gdf):
-    """
-    For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for 
-    intersects based on the buffer geom. Returns a list of all indexes with true values.
-    """
-    intersects = bf_gdf.intersects(buffer_geom)
-    intersects = intersects[intersects == True]
-    intersects = tuple(intersects.index)
-    return intersects
 
 def groupby_to_list(df, group_field, list_field):
     """
@@ -64,26 +57,66 @@ def as_int(val):
     except ValueError:
         return val
 
+def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
+    'Returns indexes for the bf based on the increasing buffer size'
+    
+    def list_bf_indexes(buffer_geom, bf_gdf):
+        """
+        For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for 
+        intersects based on the buffer geom. Returns a list of all indexes with true values.
+        """
+        intersects = bf_gdf.intersects(buffer_geom)
+        intersects = intersects[intersects == True]
+        intersects = tuple(intersects.index)
+        if len(intersects) > 0:
+            return intersects
+        else: 
+            return np.nan
+    addresses['method'] = np.nan
+    linked_dfs = []
+    for dist in buffer_distances:
+        addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(dist)
+        addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
+        linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
+        linked_df['method'] = f'{dist}m buffer'
+        linked_df.drop(columns=["buffer_geom"], inplace=True)
+        linked_dfs.append(linked_df)
+        addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
+        addresses_gdf.drop(columns=["buffer_geom"], inplace=True)
+    master_gdf = pd.concat(linked_dfs)
+    
+    addresses_gdf.to_file(output_gpkg, layer='non_geolinked',  driver='GPKG') # export the rejects as a layer
+    return master_gdf
+
 def get_nearest_linkage(pt, footprint_indexes):
-    """Returns the footprint index associated with the nearest footprint geometry to the given address point."""
+    """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
     # Get footprint geometries.
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
     # Get footprint distances from address point.
-    footprint_distances = tuple(map(lambda building: pt.distance(Point(building.centroid.x, building.centroid.y)), footprint_geometries))                                      
-    # Get the footprint index associated with the smallest distance.
-    footprint_index = footprint_indexes[footprint_distances.index(min(footprint_distances))]
+    footprint_distances = tuple(map(lambda building: building.boundary.distance(pt), footprint_geometries))                                     
+    distance_values = [f[f.index == f.index[0]].values[0] for f in footprint_distances if len(f.index) != 0]
+    distance_indexes = [f.index[0] for f in footprint_distances if len(f.index) != 0]
+    if len(distance_indexes) == 0: # If empty then return drop val
+        return np.nan
+    footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
     return footprint_index
   
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
+load_dotenv(os.path.join(os.getcwd(), 'environments.env'))
 
-output_path = r'H:\point_to_polygon_PoC'
-buffer_dist = 15 # Max distance of buffer the non linking data will have in Metres 
+output_path = os.getcwd()
+output_gpkg = Path(os.getenv('NT_FINAL_OUTPUT'))
+buffer_dists = [5, 10, 20] # Max distance of buffer the non linking data will have in Metres 
 
 # Layer inputs
-# Layer inputs cleaned versions only
-footprints_path = r'H:\point_to_polygon_PoC\data\workingfiles\footprints_cleaned.geojson'
-addresses_path = r'H:\point_to_polygon_PoC\data\workingfiles\addresses_cleaned.geojson'
+project_gpkg = os.getenv('NT_GPKG')
+footprints_lyr_nme = os.getenv('UNLINKED_BF_LYR_NME')
+addresses_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
+
+# Other inputs
+proj_crs = int(os.getenv('NT_PROJ_CRS'))
+geo_crs = int(os.getenv('NT_CRS'))
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
@@ -91,36 +124,21 @@ addresses_path = r'H:\point_to_polygon_PoC\data\workingfiles\addresses_cleaned.g
 print( "Running Step 1. Load dataframes and configure attributes")
 
 # Load dataframes.
-addresses = gpd.read_file(addresses_path, crs=26911)
-footprint = gpd.read_file(footprints_path, crs=26911) # spatial join between the parcels and building footprints layers
+addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme)
+footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme)
 
-# Define join fields.
-join_footprint = "STREET_NAME"
-join_addresses = "STREET_NAME"
-
-# Configure attributes - number and suffix.
-addresses["suffix"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
-addresses["number"] = addresses["CIVIC_ADDRESS"].map(lambda val: re.sub(pattern="[^\\d]", repl="", string=val, flags=re.I)).map(int)
+addresses.to_crs(proj_crs, inplace=True)
+footprint.to_crs(proj_crs, inplace=True)
 
 print("Running Step 2. Configure address to footprint linkages")
 # Link addresses and footprint on join fields.
 addresses["addresses_index"] = addresses.index
 footprint["footprint_index"] = footprint.index
 
-# merge = addresses.merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
-# addresses["footprint_index"] = groupby_to_list(merge, "addresses_index", "footprint_index")
+addresses = get_unlinked_geometry(addresses, footprint, buffer_dists)
 
-addresses['buffer_geom'] = addresses.geometry.buffer(buffer_dist)
-addresses['footprint_index'] = addresses['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint))
-
-addresses.drop(columns=["addresses_index", "buffer_geom"], inplace=True)
 footprint.drop(columns=["footprint_index"], inplace=True)
 
-# Discard non-linked addresses.
-print(len(addresses))
-addresses = addresses[addresses.astype(str)['footprint_index'] != '()']
-addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
-print(len(addresses))
 # Convert linkages to integer tuples, if possible.
 
 addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
@@ -139,7 +157,6 @@ addresses["footprint_geometry"] = addresses.merge(
     footprint["geometry"], how="left", left_on="footprint_index", right_index=True)["geometry_y"]
 
 print("Running Step 3. Merge Results to Polygons")
-addresses.to_csv(os.path.join(output_path, 'adressLinkageTest.csv'))
 # Import the building polygons
 #building_polys = gpd.read_file(project_gpkg, layer= bf_polys)
 #out_gdf = building_polys.merge(addresses[['footprint_index', 'number', 'suffix', 'CIVIC_ADDRESS', 'STREET_NAME']], how="left", right_on="footprint_index", left_index=True)
@@ -147,5 +164,5 @@ addresses.to_csv(os.path.join(output_path, 'adressLinkageTest.csv'))
 out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
 out_gdf.drop(columns='geometry', inplace=True)
 print(out_gdf.head())
-out_gdf.to_file(os.path.join(output_path, 'addresses_poly_noParcels.shp'), driver='ESRI Shapefile')
+out_gdf.to_file(project_gpkg, layer='', driver='GPKG')
 print('DONE!')
