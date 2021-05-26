@@ -3,14 +3,9 @@ import logging
 import numpy as np
 import os
 import pandas as pd
-import re
-import shapely
+import re 
 import sys
-from bisect import bisect
-from collections import OrderedDict
 from operator import add, index, itemgetter
-from shapely import geometry
-from shapely.geometry import Point, Polygon, MultiPolygon
 from dotenv import load_dotenv
 from pathlib import Path
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
@@ -95,7 +90,7 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
 
     master_gdf = pd.concat(linked_dfs)
     
-    addresses_gdf.to_file(output_gpkg, layer='non_geolinked',  driver='GPKG') # export the rejects as a layer
+    addresses_gdf.to_file(output_gpkg, layer=unlinked_lyr_nme,  driver='GPKG') # export the rejects as a layer
     return master_gdf
 
 def get_nearest_linkage(pt, footprint_indexes):
@@ -127,6 +122,9 @@ addresses_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
 # Other inputs
 proj_crs = int(os.getenv('NT_PROJ_CRS'))
 geo_crs = int(os.getenv('NT_CRS'))
+
+unlinked_lyr_nme = os.getenv('NT_UNLINKED_NME')
+buffer_linked_lyr_nme = os.getenv('NT_LINKED_BY_BUFFER_NME')
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
@@ -173,5 +171,5 @@ print("Running Step 3. Merge Results to Polygons")
 #out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
 out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
 out_gdf.drop(columns='geometry', inplace=True)
-out_gdf.to_file(project_gpkg, layer='via_buffer_linkage', driver='GPKG')
+out_gdf.to_file(output_gpkg, layer=buffer_linked_lyr_nme, driver='GPKG')
 print('DONE!')

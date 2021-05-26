@@ -123,6 +123,9 @@ proj_crs = int(os.getenv('NT_PROJ_CRS'))
 
 add_num_fld_nme =  os.getenv('AP_CIVIC_ADDRESS_FIELD_NAME')
 unlinked_bf_lyr_nme = os.getenv('UNLINKED_BF_LYR_NME')
+
+out_lyr_nme = os.getenv('NT_LINKED_BY_DATA_NME')
+
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
@@ -215,5 +218,5 @@ unlinked_footprints = footprint.index.isin(list(set(outgdf.footprint_index.tolis
 unlinked_footprints = footprint[~unlinked_footprints]
 
 unlinked_footprints.to_file(project_gpkg, layer=unlinked_bf_lyr_nme, driver='GPKG')
-outgdf.to_file(output_gpkg, layer='inter_linked_merged',  driver='GPKG')
+outgdf.to_file(output_gpkg, layer=out_lyr_nme,  driver='GPKG')
 print('DONE!')
