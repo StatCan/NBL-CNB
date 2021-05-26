@@ -72,17 +72,27 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
             return intersects
         else: 
             return np.nan
+    
+    
     addresses['method'] = np.nan
     linked_dfs = []
+    
     for dist in buffer_distances:
+        
         addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(dist)
         addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
+        
         linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
         linked_df['method'] = f'{dist}m buffer'
         linked_df.drop(columns=["buffer_geom"], inplace=True)
         linked_dfs.append(linked_df)
+        
         addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
         addresses_gdf.drop(columns=["buffer_geom"], inplace=True)
+        
+        if len(addresses_gdf) == 0:
+            break
+
     master_gdf = pd.concat(linked_dfs)
     
     addresses_gdf.to_file(output_gpkg, layer='non_geolinked',  driver='GPKG') # export the rejects as a layer
@@ -163,6 +173,5 @@ print("Running Step 3. Merge Results to Polygons")
 #out_gdf.to_file(os.path.join(output_path, 'test_to_polygon edge.shp'))
 out_gdf = gpd.GeoDataFrame(addresses, geometry='footprint_geometry', crs=26911)
 out_gdf.drop(columns='geometry', inplace=True)
-print(out_gdf.head())
-out_gdf.to_file(project_gpkg, layer='', driver='GPKG')
+out_gdf.to_file(project_gpkg, layer='via_buffer_linkage', driver='GPKG')
 print('DONE!')
