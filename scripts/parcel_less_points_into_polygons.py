@@ -89,8 +89,6 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
             break
 
     master_gdf = pd.concat(linked_dfs)
-    
-    addresses_gdf.to_file(output_gpkg, layer=unlinked_lyr_nme,  driver='GPKG') # export the rejects as a layer
     return master_gdf
 
 def get_nearest_linkage(pt, footprint_indexes):
@@ -163,6 +161,9 @@ addresses.loc[~flag_plural, "footprint_index"] = addresses[~flag_plural]["footpr
 # Compile linked footprint geometry for each address.
 addresses["footprint_geometry"] = addresses.merge(
     footprint["geometry"], how="left", left_on="footprint_index", right_index=True)["geometry_y"]
+
+reject_gdf = footprint[footprint.index.isin(list(set(addresses.footprint_index.tolist())))]
+reject_gdf.to_file(output_gpkg, layer=unlinked_lyr_nme,  driver='GPKG') # export the rejects as a layer
 
 print("Running Step 3. Merge Results to Polygons")
 # Import the building polygons
