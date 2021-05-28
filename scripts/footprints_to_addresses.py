@@ -87,12 +87,12 @@ def check_for_intersects(poly, address_indexes):
 
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
-load_dotenv(os.path.join(os.getcwd(), 'environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'environments.env'))
 
 output_path = os.getcwd()
 output_gpkg = Path(os.getenv('NT_FINAL_OUTPUT'))
 # Layer inputs cleaned versions only
-project_gpkg = os.getenv('NT_GPKG')
+project_gpkg = Path(os.getenv('NT_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
 addresses_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
 
@@ -126,6 +126,14 @@ footprint['addresses_index'] = groupby_to_list(merge, "footprint_index", "addres
 addresses.drop(columns=["addresses_index"], inplace=True)
 footprint.drop(columns=["footprint_index"], inplace=True)
 
+# Extract non-linked addresses if any.
+unlinked_bfs = footprint[footprint["addresses_index"].map(itemgetter(0)).isna()] # Seperate out for the buffer phase
+if len(unlinked_bfs) > 0:
+    unlinked_bfs.drop(columns=['addresses_index'], inplace=True)
+    unlinked_bfs.to_file(filename=project_gpkg, layer=unlinked_bf_lyr_nme, driver='GPKG')
+
+del unlinked_bfs
+
 # Discard non-linked addresses.
 footprint.drop(footprint[footprint["addresses_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
@@ -140,8 +148,6 @@ footprint.drop(columns=['intersect_index'], inplace=True) # Now drop the now use
 
 intersect_indexes = list(intersections.index.tolist())
 intersect_footprints = list(set(intersections.intersect_index.tolist()))
-
-footprint = footprint[~footprint.index.isin(intersections)]
 
 footprint.dropna(axis=0, subset=['addresses_index'], inplace=True)
 
@@ -177,11 +183,8 @@ footprint.loc[~flag_plural, "addresses_index"] = footprint[~flag_plural]["addres
 footprint['method'] = 'data_linking'
 
 print("Running Step 5. Merge Results to Polygons")
+
 outgdf = footprint.append(intersections)
-
-# unlinked_footprints = footprint.isna()
-# unlinked_footprints = footprint[~unlinked_footprints]
-# unlinked_footprints.to_file(project_gpkg, layer=unlinked_bf_lyr_nme, driver='GPKG')
-
 outgdf.to_file(output_gpkg, layer='footprint_linkages',  driver='GPKG')
+
 print('DONE!')
