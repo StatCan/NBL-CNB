@@ -7,6 +7,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
+from pyproj import crs
 from shapely import geometry
 from shapely.geometry import MultiPolygon, Point, Polygon
 
@@ -76,6 +77,7 @@ aoi_mask = os.getenv('NT_ODB_MASK')
 
 # output gpkg
 project_gpkg = Path(os.getenv('NT_GPKG'))
+rd_crs = os.getenv('NT_RD_CRS')
 
 # ------------------------------------------------------------------------------------------------
 # Logic
@@ -86,7 +88,7 @@ project_gpkg = Path(os.getenv('NT_GPKG'))
 
 # aoi_gdf = aoi_gdf.loc[aoi_gdf['CSD_UID'] == '5915022']
 
-print('loading in linking data')
+print('Loading in linking data')
 linking_data = gpd.read_file(linking_data_path, linking_ignore_columns=linking_ignore_columns) # mask=aoi_gdf)
 linking_cols_drop = linking_data.columns.tolist()
 linking_data['link_field'] = range(1, len(linking_data.index)+1)
@@ -111,17 +113,22 @@ for f in ['index_right', 'index_left']:
     if f in addresses.columns.tolist():
         addresses.drop(columns=f, inplace=True)
 
+addresses = addresses[addresses["street_no"] != 'RITE OF WAY']
+addresses["suffix"] = addresses["street_no"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
+addresses["number"] = addresses["street_no"].map(lambda val: re.sub(pattern="[^\\d]", repl="", string=val, flags=re.I)).map(int)
+
 print('Exporting cleaned dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 del addresses
 
 print('Loading in road data')
 roads = gpd.GeoDataFrame.from_features(records(rd_gpkg, rd_use_flds, layer=rd_lyr_nme, driver='GPKG')) # Load in only needed fields
+roads.set_crs(epsg=rd_crs, inplace=True)
 
 print('Cleaning and prepping road data')
 roads['l_nme_cln'] = roads.L_STNAME_C.str.replace('[^\w\s-]', '')
 roads['r_nme_cln'] = roads.R_STNAME_C.str.replace('[^\w\s-]', '')
-
+roads.drop(columns=['L_STNAME_C', 'R_STNAME_C'],  inplace=True)
 print('Exporting cleaned dataset')
 roads.to_file(project_gpkg, layer='roads_cleaned', driver='GPKG')
 del roads
