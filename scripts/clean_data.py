@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from pathlib import Path
-
+import fiona
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -40,9 +40,20 @@ def reproject(ingdf, output_crs):
 
 def getXY(pt):
     return (pt.x, pt.y)
+
+
+def records(filename, usecols, **kwargs):
+    ''' Allows for importation of file with only the desired fields must use from_features for importing output into geodataframe'''
+    with fiona.open(filename, **kwargs) as source:
+        for feature in source:
+            f = {k: feature[k] for k in ['id', 'geometry']}
+            f['properties'] = {k: feature['properties'][k] for k in usecols}
+            yield f
+
+
 # ------------------------------------------------------------------------------------------------
 # Inputs
-load_dotenv(os.path.join(os.getcwd(), 'environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'environments.env'))
 
 # Layer inputs
 proj_crs = os.getenv('NT_CRS')
@@ -57,6 +68,9 @@ linking_data_path = Path(os.getenv('NT_LINKING_PATH'))
 # linking_lyr_nme = os.getenv('BC_LINKING_LYR_NME')
 linking_ignore_columns = os.getenv('NT_LINKING_IGNORE_COLS') 
 
+rd_gpkg = Path(os.getenv('NT_RD_GPKG'))
+rd_lyr_nme = os.getenv('NT_RD_LYR_NME')
+rd_use_flds = ['L_HNUMF', 'R_HNUMF', 'L_HNUML', 'R_HNUML', 'L_STNAME_C', 'R_STNAME_C']
 # AOI mask if necessary
 aoi_mask = os.getenv('NT_ODB_MASK')
 
@@ -87,7 +101,7 @@ if os.path.split(ap_path)[-1].endswith('.csv'):
 else:
     addresses = gpd.read_file(ap_path) #, mask=aoi_gdf)
 
-print('Cleaning address points')
+print('Cleaning and prepping address points')
 
 addresses = addresses[ap_add_fields]
 addresses = reproject(addresses, proj_crs)
@@ -101,10 +115,21 @@ print('Exporting cleaned dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 del addresses
 
+print('Loading in road data')
+roads = gpd.GeoDataFrame.from_features(records(rd_gpkg, rd_use_flds, layer=rd_lyr_nme, driver='GPKG')) # Load in only needed fields
+
+print('Cleaning and prepping road data')
+roads['l_nme_cln'] = roads.L_STNAME_C.str.replace('[^\w\s-]', '')
+roads['r_nme_cln'] = roads.R_STNAME_C.str.replace('[^\w\s-]', '')
+
+print('Exporting cleaned dataset')
+roads.to_file(project_gpkg, layer='roads_cleaned', driver='GPKG')
+del roads
+
 print('Loading in footprint data')
 footprint = gpd.read_file(footprint_lyr)# , mask=aoi_gdf)
 
-print('Cleaning building footprints')
+print('Cleaning and prepping footprint data')
 # footprint = explode(footprint) # Remove multipart polygons convert to single polygons
 footprint['area'] = footprint['geometry'].area
 footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
