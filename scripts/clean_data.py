@@ -79,32 +79,94 @@ def str_type_cln(street_name, correction_dict):
     
     return cleaned_name
     
+
+def road_partitioner(address):
+    '''Takes a road string which possibly containes name, type and direction and converts it into a list of parts based off of master lists of road types'''
+    
+    def determiner(in_string, check_list):
+        ''' Determines if string is in input list. If it is then returns the value as a string else it will return np.nan'''
+        output = [i for i in check_list if in_string == i]
+        
+        if len(output) == 0:
+            return np.nan
+        
+        return output[0]
+
+    type_abbrev = ['ABBEY', 'ACRES', 'ALLÉE', 'ALLEY', 'AUT', 'AVE', 'AV', 'BAY', 'BEACH', 'BEND', 'BLVD', 'BOUL', 'BYPASS', 'BYWAY', 'CAMPUS', 'CAPE', 'CAR', 
+            'CARREF', 'CTR', 'C', 'CERCLE', 'CHASE', 'CH', 'CIR', 'CIRCT', 'CLOSE', 'COMMON', 'CONC', 'CRNRS', 'CÔTE', 'COUR', 'COURS', 'CRT', 'COVE', 'CRES', 
+            'CROIS', 'CROSS', 'CDS', 'DALE', 'DELL', 'DIVERS', 'DOWNS', 'DR', 'ÉCH', 'END', 'ESPL', 'ESTATE', 'EXPY', 'EXTEN', 'HWY', 'PINES','PL', 'PLACE', 'PLAT', 
+            'PLAZA', 'PT', 'POINTE', 'PORT', 'PVT', 'PROM', 'QUAI', 'QUAY', 'RAMP', 'RANG', 'RG', 'RIDGE', 'RISE', 'RD', 'RDPT', 'RTE', 'ROW', 'RUE', 'RLE', 
+            'RUN', 'SENT', 'SQ', 'ST', 'SUBDIV', 'TERR', 'TSSE', 'THICK', 'TOWERS', 'TLINE', 'TRAIL', 'TRNABT', 'VALE', 'VIA', 'VIEW', 'VILLGE', 'VILLAS', 
+            'VISTA', 'VOIE', 'WALK', 'WAY', 'WHARF', 'WOOD', 'WYND']
+    directions = [' N ', ' S ', ' E ', ' W ', ' NE ', ' SE ', ' NW ', ' SW ', ' O ', ' NO ', ' SO ']
+
+    # If available find the roads alt name in the adress and assign it to the correct vars. Slice out the address after
+    alt_name = np.nan
+    alt_type = np.nan
+    alt_name_full = np.nan
+
+    if address.find('(') != -1:
+        s_index = address.index('(')+1
+        c_index = address.index(')')
+        alt_full = address[s_index : c_index].split(' ')
+        alt_name_full = address[s_index : c_index]
+        alt_type =  determiner(alt_full[-1], type_abbrev)
+        if type(alt_type) == str: del alt_full[-1]
+
+        alt_name = ' '.join(alt_full)
+
+        # Slice out the alt string from the address
+        address = address[0 : address.index('(') : ] + address[address.index(')') + 1 : :].rstrip() 
+    
+    # Split into component parts and filter out 0 len strings
+    add_parts = address.split(' ')
+    add_parts = list(filter(len, add_parts))
+
+    # Grab the directio from the end of the road
+    direction = determiner(add_parts[-1], directions)
+    if type(direction) == str: del add_parts[-1]
+    
+    # Grab the road type
+    rtype = determiner(add_parts[-1], type_abbrev)
+    if type(rtype) == str: del add_parts[-1]    
+
+    # Compile the full road name
+    str_nme = ' '.join(add_parts)
+    str_nme_full = []
+    for f in [str_nme, rtype, direction]:
+        if type(f) == str:
+            str_nme_full += f
+    str_nme_full = ' '.join(str_nme_full)
+
+    return [str_nme, rtype, direction, alt_name, alt_type, alt_name_full, str_nme_full]    
 # ------------------------------------------------------------------------------------------------
 # Inputs
 load_dotenv(os.path.join(os.path.dirname(__file__), 'environments.env'))
 
 # Layer inputs
-proj_crs = os.getenv('NT_CRS')
+working_prov = 'NT'
 
-footprint_lyr = Path(os.getenv('NT_BF_PATH'))
+proj_crs = os.getenv(f'{working_prov}_CRS')
 
-ap_path = Path(os.getenv('NT_ADDRESS_PATH'))
+footprint_lyr = Path(os.getenv(f'{working_prov}_BF_PATH'))
+
+ap_path = Path(os.getenv(f'{working_prov}_ADDRESS_PATH'))
 # ap_lyr_nme = os.getenv('BC_ADDRESS_LYR_NME')
 ap_add_fields = ['street_no', 'street', 'geometry']
 
-linking_data_path = Path(os.getenv('NT_LINKING_PATH'))
+linking_data_path = Path(os.getenv(f'{working_prov}_LINKING_PATH'))
 # linking_lyr_nme = os.getenv('BC_LINKING_LYR_NME')
-linking_ignore_columns = os.getenv('NT_LINKING_IGNORE_COLS') 
+linking_ignore_columns = os.getenv(f'{working_prov}_LINKING_IGNORE_COLS') 
 
-rd_gpkg = Path(os.getenv('NT_RD_GPKG'))
-rd_lyr_nme = os.getenv('NT_RD_LYR_NME')
+rd_gpkg = Path(os.getenv(f'{working_prov}_RD_GPKG'))
+rd_lyr_nme = os.getenv(f'{working_prov}_RD_LYR_NME')
 rd_use_flds = ['L_HNUMF', 'R_HNUMF', 'L_HNUML', 'R_HNUML', 'L_STNAME_C', 'R_STNAME_C', 'ROADCLASS']
 # AOI mask if necessary
-aoi_mask = os.getenv('NT_ODB_MASK')
+aoi_mask = os.getenv(f'{working_prov}_ODB_MASK')
 
 # output gpkg
-project_gpkg = Path(os.getenv('NT_GPKG'))
-rd_crs = os.getenv('NT_RD_CRS')
+project_gpkg = Path(os.getenv(f'{working_prov}_GPKG'))
+rd_crs = os.getenv(f'{working_prov}_RD_CRS')
 
 # Road name correction dictionary
 type_corr_dict = {
@@ -179,6 +241,7 @@ addresses = addresses[addresses["street_no"] != 'RITE OF WAY']
 addresses["suffix"] = addresses["street_no"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
 addresses["number"] = addresses["street_no"].map(lambda val: re.sub(pattern="[^\\d]", repl="", string=val, flags=re.I)).map(int)
 addresses['street'] = addresses['street'].str.upper()
+
 print('Exporting cleaned dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 del addresses
@@ -187,22 +250,37 @@ print('Loading in road data')
 roads = gpd.GeoDataFrame.from_features(records(rd_gpkg, rd_use_flds, layer=rd_lyr_nme, driver='GPKG')) # Load in only needed fields
 roads.set_crs(epsg=rd_crs, inplace=True)
 
-print('Cleaning and prepping road data')
-# Clean Roads to match the address format
-# Remove all the unknown named roads
+roads['uid'] = range(1, len(roads.index)+1)
+
 roads = roads[(roads['L_STNAME_C'] != 'Unknown') | (roads['R_STNAME_C'] != 'Unknown')]
 # Remove all the winder roads
 roads = roads[(roads['ROADCLASS'] != 'Winter')]
 
 # Remove additional punctuation that is no longer needed
-roads['l_nme_cln'] = roads.L_STNAME_C.str.replace('[^\w\s-]', '')
-roads['r_nme_cln'] = roads.R_STNAME_C.str.replace('[^\w\s-]', '')
+for punc in [',', '.']:
+    roads['L_STNAME_C'] = roads.L_STNAME_C.str.replace(punc, '')
+    roads['R_STNAME_C'] = roads.R_STNAME_C.str.replace(punc, '')
+
+roads['l_nme_cln'] = roads['L_STNAME_C']
+roads['R_nme_cln'] = roads['R_STNAME_C']
 
 # Correct road type abbreviations
+# print(roads[roads.uid == 4613])
+# roads = roads[roads.uid == 4613]
+
 roads['l_nme_cln'] = roads['l_nme_cln'].apply(lambda row: str_type_cln(row, type_corr_dict))
 
+roads['road_parts'] = roads['l_nme_cln'].apply(lambda s_name: road_partitioner(s_name))
+roads['STREET_NAME_FULL'] = roads['road_parts'].apply(lambda x: x[6])
+roads['STREET_NAME'] = roads['road_parts'].apply(lambda x: x[0])
+roads['STREET_TYPE'] = roads['road_parts'].apply(lambda x: x[1])
+roads['STREET_DIRECTION'] = roads['road_parts'].apply(lambda x: x[2])
+roads['ALT_NAME_FULL'] = roads['road_parts'].apply(lambda x: x[5])
+roads['ALT_NAME'] =  roads['road_parts'].apply(lambda x: x[3])
+roads['ALT_TYPE'] =  roads['road_parts'].apply(lambda x: x[4])
+
 # Drop unecessary columns
-roads.drop(columns=['L_STNAME_C', 'R_STNAME_C'],  inplace=True)
+roads.drop(columns=['L_STNAME_C', 'R_STNAME_C', 'road_parts'],  inplace=True)
 
 print('Exporting cleaned dataset')
 roads.to_file(project_gpkg, layer='roads_cleaned', driver='GPKG')
@@ -237,7 +315,3 @@ print('Exporting cleaned dataset')
 footprint.to_file(project_gpkg, layer='footprints_cleaned', driver='GPKG')
 
 print('DONE!')
-[
-    'ABBEY', 'ACRES', 'ALLÉE', 'ALLEY', 'AUT', 'AVE', 'AV', 'BAY', 'BEACH', 'BEND', 'BLVD', 'BOUL', 'BYPASS', 'BYWAY', 'CAMPUS', 'CAPE', 'CAR', 'CARREF', 'CTR', 'C', 'CERCLE', 'CHASE', 'CH', 'CIR', 'CIRCT', 'CLOSE', 'COMMON', 'CONC', 'CRNRS', 'CÔTE', 'COUR', 'COURS', 'CRT', 'COVE', 'CRES', 'CROIS', 'CROSS', 'CDS', 'DALE', 'DELL', 'DIVERS', 'DOWNS', 'DR', 'ÉCH', 'END', 'ESPL', 'ESTATE', 'EXPY', 'EXTEN',
-    'PINES','PL', 'PLACE', 'PLAT', 'PLAZA', 'PT', 'POINTE', 'PORT', 'PVT', 'PROM', 'QUAI', 'QUAY', 'RAMP', 'RANG', 'RG', 'RIDGE', 'RISE', 'RD', 'RDPT', 'RTE', 'ROW', 'RUE', 'RLE', 'RUN', 'SENT', 'SQ', 'ST', 'SUBDIV', 'TERR', 'TSSE', 'THICK', 'TOWERS', 'TLINE', 'TRAIL', 'TRNABT', 'VALE', 'VIA', 'VIEW', 'VILLGE', 'VILLAS', 'VISTA', 'VOIE', 'WALK', 'WAY', 'WHARF', 'WOOD', 'WYND'
-]
