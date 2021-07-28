@@ -135,7 +135,7 @@ def road_partitioner(address):
     str_nme_full = []
     for f in [str_nme, rtype, direction]:
         if type(f) == str:
-            str_nme_full += f
+            str_nme_full.append(f)
     str_nme_full = ' '.join(str_nme_full)
 
     return [str_nme, rtype, direction, alt_name, alt_type, alt_name_full, str_nme_full]    
