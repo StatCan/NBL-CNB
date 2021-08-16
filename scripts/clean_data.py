@@ -243,6 +243,7 @@ addresses["number"] = addresses["street_no"].map(lambda val: re.sub(pattern="[^\
 addresses['street'] = addresses['street'].str.upper()
 
 print('Exporting cleaned dataset')
+addresses['aid'] = addresses.index
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 del addresses
 
