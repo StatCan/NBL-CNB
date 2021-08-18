@@ -168,7 +168,7 @@ footprint["footprint_index"] = footprint.index
 merge = footprint.merge(addresses[[join_addresses, "addresses_index"]], how="left", left_on=join_footprint, right_on=join_addresses)
 footprint['addresses_index'] = groupby_to_list(merge, "footprint_index", "addresses_index")
 
-addresses.drop(columns=["addresses_index"], inplace=True)
+#addresses.drop(columns=["addresses_index"], inplace=True)
 footprint.drop(columns=["footprint_index"], inplace=True)
 
 # Extract non-linked addresses if any.
@@ -207,6 +207,8 @@ intersections['addresses_index'] = intersections['intersect_index']
 intersections.drop(columns='intersect_index', inplace=True)
 intersections['method'] = 'intersect'
 
+addresses = addresses[~addresses.index.isin(list(set(intersections.addresses_index.tolist())))] # remove all addresses that were matched in the intersection stage
+
 print('Running Step 4. Checking address linkages via closest adp limted by linking data')
 
 # Ensure projected crs is used
@@ -233,6 +235,8 @@ footprint.method.fillna('data_linking', inplace=True)
 print("Running Step 5. Merge Results to Polygons")
 
 outgdf = footprint.append(intersections)
+# outgdf = outgdf.merge(addresses, how='Left', left_on='addresses_index', right_index=True )
+addresses.to_file(output_gpkg, layer='addresses_post_matching', driver='GPKG')
 outgdf.to_file(output_gpkg, layer='footprint_linkages',  driver='GPKG')
 
 print('DONE!')
