@@ -13,7 +13,6 @@ from collections import OrderedDict
 from operator import add, index, itemgetter
 from shapely import geometry
 from shapely.geometry import Point, Polygon, MultiPolygon
-from dotenv import load_dotenv
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import helpers
 
