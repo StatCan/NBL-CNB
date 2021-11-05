@@ -1,0 +1,31 @@
+Step 1. Input Data Quality Assessment
+
+
+Step 2. Clean / Standardize Data  (clean_data.py)
+
+Import required python modules
+
+Set working_prov variable to work area
+
+Set proj_crs variable to to the 'working prov'_CRS variable in the environments file
+
+Load in path to address points layer and assign to the variable ap_path
+
+Create a list of fields in the address points layer that contain the address information
+and assign to the ap_add_fields variable
+
+Load in the path to the linking data path from the environments file and assign it to the 
+linking_data_path variable
+
+Load in the list of linking columns to ignore
+
+
+Step 3. Match Data (matching_master.py)
+
+Import required python modules
+
+
+Step 4. Assess Match Quality (buisness_rules.py)
+
+Import required python modules
+
