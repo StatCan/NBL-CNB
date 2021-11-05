@@ -6,10 +6,10 @@ import fiona
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from dotenv import load_dotenv
 from pyproj import crs
 from shapely import geometry
 from shapely.geometry import MultiPolygon, Point, Polygon
+from dotenv import load_dotenv
 
 # ------------------------------------------------------------------------------------------------
 # Functions
@@ -31,6 +31,7 @@ def explode(ingdf):
             outdf = outdf.append(multdf,ignore_index=True)
     return outdf
 
+
 def reproject(ingdf, output_crs):
     ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
     if ingdf.crs == None:
@@ -38,6 +39,7 @@ def reproject(ingdf, output_crs):
     elif ingdf.crs != f'epsg:{output_crs}':
         ingdf.to_crs(epsg=output_crs, inplace=True)
     return ingdf
+
 
 def getXY(pt):
     return (pt.x, pt.y)
@@ -219,6 +221,8 @@ linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data = reproject(linking_data, proj_crs)
 linking_cols_drop.remove('geometry')
 linking_cols_drop += ['index_right']
+
+linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
 print('Loading in address data')
 if os.path.split(ap_path)[-1].endswith('.csv'):
