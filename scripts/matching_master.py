@@ -192,7 +192,6 @@ intersections = footprint.dropna(axis=0, subset=['intersect_index'])
 footprint = footprint[footprint.intersect_index.isna()] # Keep only footprints that were not intersects
 footprint.drop(columns=['intersect_index'], inplace=True) # Now drop the now useless intersects_index column
 
-intersect_indexes = list(intersections.index.tolist())
 intersect_footprints = list(set(intersections.intersect_index.tolist()))
 
 footprint.dropna(axis=0, subset=['addresses_index'], inplace=True)
