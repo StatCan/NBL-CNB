@@ -1,5 +1,8 @@
 Step 1. Input Data Quality Assessment
 
+Import required python modules
+
+------------------------------------------------------------------------------------------------------------------------------------------------
 
 Step 2. Clean / Standardize Data  (clean_data.py)
 
@@ -17,15 +20,104 @@ and assign to the ap_add_fields variable
 Load in the path to the linking data path from the environments file and assign it to the 
 linking_data_path variable
 
-Load in the list of linking columns to ignore
+Load in the list of linking fields to ignore
 
+---------------------------------------------------------------------------------------------------------------------------------------------
 
 Step 3. Match Data (matching_master.py)
 
 Import required python modules
 
+# INITIAL VARIABLE LOADS
+
+Load in project geopackage path and assign it to the variable project_gpkg
+
+Load in the cleaned footprints layer name from the environments and assign it to the variable footprints_lyr_nme
+
+Load in the cleaned address points layer name from the environments and assign it to the variable footprints_lyr_nme
+
+Set proj_crs variable to to the 'working prov'_CRS variable in the environments file
+
+Load in the name of the field that contains the address number info in the address layer from the environment file and assign it to the 
+add_num_fld_nme variable
+
+Load the name of the unlinked building footprint layer from the environments file and assign it to the variable 
+unlinked_bf_lyr_nme
+
+# STEP 1
+
+Load the address point data into a geodataframe and assign to the variable addresses
+Load the building footprint data into a geodataframe and assign to the variable foorprint
+
+Set the crs of the address variable to the proj_crs variable
+Set the crs of the footprint variable to the proj_crs variable
+
+Define the join fields for the footprint and addresses datasets and assign to the variables join_footprint and join_addresses
+
+# STEP 2
+
+Create a new field in the addresses geodataframe called 'addresses_index' and assign it the values from the existing index field
+Create a new field in the footprint geodataframe called 'footprint_index' and assign it the values from the existing index field
+
+Merge the link_addresses field and the addresses_index field from the address geodatabase to the footprint geodataframe and assign to the variable merge
+
+In the merge geodataframe group all new linkages from the link_addresses field into a list and add them to the footprints geodataframe in the addresses_index field
+
+Drop the footprint_index field from the footprint geodataframe
+
+Extract all building footprints that do not have a linkage and assign as a new geodataframe to the variable unlinked_bfs
+
+Drop all records from the footprints geodataframe that do not have a linkage
+
+if there are any records in unlinked_bfs:
+    Drop the addresses_index field from unlinked_bfs
+    Convert unlinked_bfs so the crs matches proj_crs
+    For each footprint in unlinked_bfs:
+        Iterate over the buffer_distances variable in increasing distance:
+            Create buffer geometry around the builkding footprint at the given distance
+            Check for address points that intersect the buffer geometry
+            If a match is found break loop and add the indexes to the address_index field in the unlinked_bfs geodataframe 
+            Else continue to the next distance in buffer_distances until a match is found or the maximum buffer distance is reached
+    
+    Append the unlinked_bfs geodataframe to the footprint geodataframe
+
+
+# STEP 3 
+
+Add a new field to the footprint dataframe called intersect_index and assign it a value under the following conditions
+    For each footprint in the footprints geodataframe:
+        Filter the addresses geodataframe by the address_index field in the footprints geodataframe
+        Check to see if any of the address points intersect the building foorprint
+        If True then return the address_index value and assign to the intersect_index field
+
+Create a new geodataframe for all records in footprints where 'intersect_index' is not null and assign it to a variable called intersections
+
+In the footprints geodataframe filter out all records where 'intersect_index' is not null
+
+Drop the 'intersect_index field' in the footprints geodataframe
+
+Create a list of all intersect indexes from the intersections geodatabase and assign it to the variable intersect_indexes
+
+Create a list of footprints that have points intersecting them and assign to the variable intersect_footprints
+
+Drop all rows without a value in the 'addresses_index' field in the  footprint geodataframe
+
+Ensure that the 'intersect_index' field is typed as integers
+
+Create the 'addresses_index' field in the indersections geodataframe and assign it the values in the 'intersect_index' field
+Drop the 'intersect_index' field in the intersections geodataframe
+Create the 'method' field in the intersections geodataframe and assign it the value 'intersect'
+
+# STEP 4
+
+
+
+# STEP 5
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Step 4. Assess Match Quality (buisness_rules.py)
 
 Import required python modules
 
+...
