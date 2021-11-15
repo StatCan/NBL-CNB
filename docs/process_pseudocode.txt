@@ -6,6 +6,8 @@ Import required python modules
 
 Step 2. Clean / Standardize Data  (clean_data.py)
 
+* WILL DIFFER BASED ON SOURCE DATA STRUCTURE WILL NOT BE CONSISTENT PROVINCE BY PROVINCE *
+
 Import required python modules
 
 Set working_prov variable to work area
@@ -21,6 +23,58 @@ Load in the path to the linking data path from the environments file and assign 
 linking_data_path variable
 
 Load in the list of linking fields to ignore
+
+Load in roads data assign to rd_gpkg and rd_lyr_nme variables
+Load the list of fields from the road layer to use in the analysis and assign to the variable rd_use_flds
+
+If needed load in the area of interest polygon and assign to the variable aoi_mask
+
+Load in the gpkg for outputs datasets and assign to the variable project_pgkg
+
+Create a dictionary of road name corrections specific to the road dataset and assign to the vaiable type_corr_dict
+
+Create a list of all possible road types and assign to the variable master_types
+
+Load the linking data into a geodataframe filtering out all unneeded columns and assihn to the variable linking_data
+In linking_data create a new interger field called 'link_field' with each record containing a unique value 
+Project linking_data into the project CRS
+
+Export linking_data to the project_gpkg with the layer name 'parcels_cleaned'
+
+Read the adress data into a geodataframe and assign to the variable addresses
+Project addresses into the project CRS
+
+Perform a spatial join between addresses and linking_data to add 'link_field' to addresses
+
+Clean and standardize the address component fields in addresses and assign to the fields 'suffix', 'number', 'street'
+
+Export addresses as a layer in the project_gpkg with the layer name 'addresses_cleaned'
+
+Load the raod data into geodataframe and assign to the variable roads
+Set the crs for roads to match the project dataframe
+
+Filter out certain types of roads that are not needed such as Winter, Unknown, etc
+
+Clean and standardize the street name components and assign to the appropriate variables
+
+Drop uneeded coulmns from roads
+
+Export roads to the project_gpkg with the layer name 'roads_cleaned'
+
+Load the footprints data into a geodataframe and assign to the variable footprint apply aoi_mask if needed
+
+Calculate the area of each footprint and assign to the field 'area'
+Drop all buildings with an area of less than 20 meters squared
+Ensure that the crs of footprints matches the proj_crs
+
+Get the centroid geometry of each footprint and assign to the field 'centroid_geo'in footprint geodataframe
+Set the geometry of the geodataframe to the field 'centroid_geo'
+
+Perform a spatial join between the footprint geodataframe and linking data to add the 'link_field' to the footprint data
+
+Reset the geometry to the golygon geometry and delete the 'centroid_geo' field from the the footprints geodataframe
+
+Export export the footprint geodataframe to the project_gpkg with the layer name 'footprints_cleaned'
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -38,8 +92,7 @@ Load in the cleaned address points layer name from the environments and assign i
 
 Set proj_crs variable to to the 'working prov'_CRS variable in the environments file
 
-Load in the name of the field that contains the address number info in the address layer from the environment file and assign it to the 
-add_num_fld_nme variable
+Load in the name of the field that contains the address number info in the address layer from the environment file and assign it to the add_num_fld_nme variable
 
 Load the name of the unlinked building footprint layer from the environments file and assign it to the variable 
 unlinked_bf_lyr_nme
@@ -77,6 +130,7 @@ if there are any records in unlinked_bfs:
             Create buffer geometry around the builkding footprint at the given distance
             Check for address points that intersect the buffer geometry
             If a match is found break loop and add the indexes to the address_index field in the unlinked_bfs geodataframe 
+            Assign the 'method' field for that footprint to equal the buffer distance in meters
             Else continue to the next distance in buffer_distances until a match is found or the maximum buffer distance is reached
     
     Append the unlinked_bfs geodataframe to the footprint geodataframe
@@ -102,7 +156,7 @@ Create a list of footprints that have points intersecting them and assign to the
 
 Drop all rows without a value in the 'addresses_index' field in the  footprint geodataframe
 
-Ensure that the 'intersect_index' field is typed as integers
+Ensure that the 'intersect_index' field is typed as integer
 
 Create the 'addresses_index' field in the indersections geodataframe and assign it the values in the 'intersect_index' field
 Drop the 'intersect_index' field in the intersections geodataframe
