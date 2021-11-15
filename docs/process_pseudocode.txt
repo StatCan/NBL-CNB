@@ -110,9 +110,29 @@ Create the 'method' field in the intersections geodataframe and assign it the va
 
 # STEP 4
 
+Ensure that the CRS for the intersections, addresses and fotprint geodataframes all match proj_crs
 
+Convert 'addresses_index' in the footprints geodataframe from integer(s) to a tuple if possible
+
+Create a subset of the 'addresses_index' field in the footprints geodataframe where the length of thie field is greater than 1 assign this subset to the variable flag_plural
+
+For each footprint in the footprint geodataframe with an index in flag_plural: 
+    Determine the point that is closest to the footprint and create a match:
+    Extract the geometry of all points whose index is contained in the footprints 'addresses_index' field
+    Determine the distance from the point to the footprint for each point and assign to distance_values
+    If the length of distance_values is 0:
+        Assign a NULL value to the address_index
+    Determine the minimum value in distance_values and assign the index for that value to the 'addresses_index' for the footprint
+
+Drop buildings with a NULL 'address_index' value from the footprint geodataframe
+Ensure all values in the 'addresses_index' are integers
+Fill the 'method' field for all records matched through data linking with the value data_linking
 
 # STEP 5
+
+Append thr intersections geodataframe to the footprint geodataframe and assign this to a variable named outgdf
+
+Export outgdf as a layer called 'footprint_linkages' in the output_gpkg
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
