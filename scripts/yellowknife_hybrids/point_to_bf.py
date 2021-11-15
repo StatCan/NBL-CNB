@@ -67,13 +67,12 @@ bf_gdf.rename(columns={'sp_index':'joined_index'}, inplace=True)
 
 print('Finding Matches')
 
-sp_gdf['bf_centroid'] = sp_gdf['sp_index'].apply(lambda row: find_largest_match(row, bf_gdf[['joined_index', 'area', 'centroid_geo']]))
-
-sp_gdf.dropna(axis=0, subset=['bf_centroid'])
+sp_gdf['new_geometry'] = sp_gdf['sp_index'].apply(lambda row: find_largest_match(row, bf_gdf[['joined_index', 'area', 'centroid_geo']]))
+sp_gdf.new_geometry.fillna(sp_gdf['geometry'], inplace=True)
 # Post move column corrections
-sp_gdf = sp_gdf.set_geometry('bf_centroid')
+sp_gdf = sp_gdf.set_geometry('new_geometry')
 sp_gdf.drop(columns='geometry', inplace=True)
-sp_gdf.rename(columns={'bf_centroid':'geometry'}, inplace=True)
+sp_gdf.rename(columns={'new_geometry':'geometry'}, inplace=True)
 sp_gdf = sp_gdf.set_geometry('geometry')
 
 sp_gdf.to_file(r'H:\point_to_polygon_PoC\data\nt_hybrid\output_data.gpkg', layer='moved_points', driver='GPKG')
