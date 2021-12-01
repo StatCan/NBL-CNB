@@ -8,7 +8,7 @@ from pathlib import Path
 '''
 The purpose of this script is to highlight potentially problematic building footprints as they relate to associated parcel fabrics and building points.
 
-Examples of potentially problematic situations include:
+Examples of potentially problematic situations include:0
 
 -Footprint intersects with multiple parcels
 -Footprint contains many points with many unique addresses
@@ -38,28 +38,36 @@ def intersect_count_flag(intersect_count):
 # -------------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'environments.env'))
-bf_gpkg = Path(os.getenv('NT_FINAL_OUTPUT'))
-bf_lyr_nme = 'footprint_linkages'
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
+bf_path = Path(os.getenv('BF_PATH'))
+# bf_lyr_nme = 'footprint_linkages'
 
-pr_gpkg =  Path(os.getenv('NT_GPKG'))
-ad_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
-parcel_lyr_nme = os.getenv('CLEANED_SP_LYR_NAME')
+ap_path = Path(os.getenv('ADDRESS_PATH'))
 
-proj_crs = int(os.getenv('NT_PROJ_CRS'))
+linking_data_path = Path(os.getenv('LINKING_PATH'))
+linking_lyr_nme = os.getenv('LINKING_LYR_NME')
+
+proj_crs = int(os.getenv('PROJ_CRS'))
+
+aoi_mask = Path(os.getenv('AOI_MASK'))
 
 # -------------------------------------------------------
 # Logic
 
 print('Loading in layers')
 
-addresses = gpd.read_file(pr_gpkg, layer=ad_lyr_nme, driver='GPKG')
-footprints = gpd.read_file(bf_gpkg, layer=bf_lyr_nme, driver='GPKG')
-parcels = gpd.read_file(pr_gpkg, layer=parcel_lyr_nme,  driver='GPKG')
+if type(aoi_mask) != None:
+    aoi_gdf = gpd.read_file(aoi_mask)
+
+# addresses = pd.read_csv(ap_path)
+# addresses = gpd.GeoDataFrame(addresses, geometry=gpd.points_from_xy(addresses.longitude, addresses.latitude))
+
+footprints = gpd.read_file(bf_path, mask=aoi_gdf)
+parcels = gpd.read_file(linking_data_path, layer=linking_lyr_nme, mask=aoi_gdf)
 
 footprints.to_crs(crs=proj_crs, inplace=True)
 parcels.to_crs(crs=proj_crs, inplace=True)
-addresses.to_crs(crs=proj_crs, inplace=True)
+# addresses.to_crs(crs=proj_crs, inplace=True)
 
 print('Running check on intersect counts')
 
