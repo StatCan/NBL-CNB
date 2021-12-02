@@ -47,6 +47,8 @@ ap_path = Path(os.getenv('ADDRESS_PATH'))
 linking_data_path = Path(os.getenv('LINKING_PATH'))
 linking_lyr_nme = os.getenv('LINKING_LYR_NME')
 
+output_gpkg = Path(os.getenv('OUTPUT_GPKG'))
+
 proj_crs = int(os.getenv('PROJ_CRS'))
 
 aoi_mask = Path(os.getenv('AOI_MASK'))
@@ -70,9 +72,11 @@ parcels.to_crs(crs=proj_crs, inplace=True)
 # addresses.to_crs(crs=proj_crs, inplace=True)
 
 print('Running check on intersect counts')
-
 footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
+
+print('Counting Flags')
 footprints['multi_intersect_flag'] = footprints['intersect_count'] .apply(lambda row: intersect_type_check(*row))
 
 print(footprints.head())
+footprints.to_file(output_gpkg, layer='record_flagging')
 print('DONE!')
