@@ -41,7 +41,7 @@ def find_largest_match(sp_index, polygon_data, join_key):
     top_area = polygon_data['area'].sort_values(ascending=False, ignore_index=True).tolist()[0]
     return polygon_data[polygon_data['area'] == top_area]['centroid_geo'].tolist()[0]
     
-def condo_find_largest_match(cu_index, polygon_data, join_key, cu_polys):
+def condo_find_largest_match(cu_index, cu_centroid, cu_poly, polygon_data, join_key):
     '''Moves point to polygon with the largest area within the search parameters. Special case to deal with condo's and multi unit buildings where a unit level cadastral fabric is available'''
     
     def centroid_in_polygon(building_centroid, condo_polygons):
@@ -49,14 +49,17 @@ def condo_find_largest_match(cu_index, polygon_data, join_key, cu_polys):
         
         return condo_polygons.intersects(building_centroid)
     
-    print(cu_index)
+    
     polygon_data = polygon_data[polygon_data[join_key] == cu_index] # Filter in only those that match the condo index  
-    condo_poly = cu_polys[cu_polys['cu_index'] == cu_index]['geometry']
-    condo_centroid = cu_polys[cu_polys['cu_index'] == cu_index]['cu_centroid']
-    if len(polygon_data) == 0: # No match return NaN to be filtered out
+    
+
+    condo_poly = cu_poly
+    condo_centroid = cu_centroid
+    
+    if len(polygon_data) == 0:
+        
         return condo_centroid
     
-    condo_poly = cu_polys[cu_polys['cu_index'] == cu_index]['geometry']
     polygon_data.set_geometry('centroid_geo', inplace=True)
     polygon_data['centroid_intersect'] = polygon_data['centroid_geo'].apply(lambda bldg: centroid_in_polygon(bldg, condo_poly))
     true_polygons = polygon_data[polygon_data['centroid_intersect'] == True]
@@ -113,7 +116,7 @@ cu_gdf.to_crs(crs=unproj_crs, inplace=True)
 
 cu_gdf['cu_centroid'] = cu_gdf['geometry'].apply(lambda pt: pt.centroid) # get centroid geometry
 
-cu_gdf['cu_new_geometry'] = cu_gdf['cu_index'].apply(lambda row: condo_find_largest_match(cu_index=row, polygon_data=bf_gdf[['sp_joined_index','cu_joined_index', 'area', 'centroid_geo', 'geometry']], join_key='cu_joined_index', cu_polys= cu_gdf[['cu_index','cu_centroid','geometry']]))
+cu_gdf['cu_new_geometry'] = cu_gdf[['cu_index','cu_centroid','geometry']].apply(lambda row: condo_find_largest_match(*row, polygon_data=bf_gdf[['sp_joined_index','cu_joined_index', 'area', 'centroid_geo', 'geometry']], join_key='cu_joined_index'), axis=1)
 
 cu_gdf.dropna(subset=['cu_new_geometry'], inplace=True)
 
@@ -123,6 +126,11 @@ print(f'Moved Point Length: {len(cu_gdf)}')
 cu_gdf = cu_gdf.set_geometry('cu_new_geometry')
 cu_gdf.drop(columns=['geometry', 'cu_centroid'], inplace=True)
 cu_gdf.to_file(r'H:\point_to_polygon_PoC\data\nt_hybrid\output_data.gpkg', layer='cu_moved_points', driver='GPKG')
+print(cu_gdf.head())
+sys.exit()
+sp_gdf = gpd.sjoin(sp_gdf, cu_gdf['cu_index', 'cu_new_geometry'], how='left', op='within')
+sp_gdf = sp_gdf[sp_gdf['c']]
+print(sp_gdf.head())
 sys.exit()
 
 print('Finding Matches')
