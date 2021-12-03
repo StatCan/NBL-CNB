@@ -75,7 +75,7 @@ print('Running check on intersect counts')
 footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
 
 print('Counting Flags')
-footprints['multi_intersect_flag'] = footprints['intersect_count'] .apply(lambda row: intersect_type_check(*row))
+footprints['multi_intersect_flag'] = footprints['intersect_count'] .apply(lambda row: intersect_type_check(row))
 
 print(footprints.head())
 footprints.to_file(output_gpkg, layer='record_flagging')
