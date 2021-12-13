@@ -125,21 +125,21 @@ def check_for_intersects(poly, address_indexes):
 
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
-load_dotenv(os.path.join(os.path.dirname(__file__), 'environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
-output_gpkg = Path(os.getenv('NT_FINAL_OUTPUT'))
+output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
 # Layer inputs cleaned versions only
-project_gpkg = Path(os.getenv('NT_GPKG'))
+project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
 addresses_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
 
-proj_crs = int(os.getenv('NT_PROJ_CRS'))
+proj_crs = int(os.getenv('PROJ_CRS'))
 
 add_num_fld_nme =  os.getenv('AP_CIVIC_ADDRESS_FIELD_NAME')
 unlinked_bf_lyr_nme = os.getenv('UNLINKED_BF_LYR_NME')
 
-out_lyr_nme = os.getenv('NT_LINKED_BY_DATA_NME')
+out_lyr_nme = os.getenv('LINKED_BY_DATA_NME')
 
 buffer_distances = [5,10,20] # distance for the buffers
 
