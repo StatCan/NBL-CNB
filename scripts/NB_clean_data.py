@@ -251,7 +251,7 @@ for f in ['index_right', 'index_left']:
 addresses['ST_TYPE'] = addresses['ST_TYPE_CD'].apply(lambda code: ap_t_cds_df[ap_t_cds_df['CD'] == code]['NAME'].tolist()[0] )
 addresses.drop(columns=['ST_TYPE_CD'], inplace=True)
 del ap_t_cds_df
-
+addresses.dropna(subset=[ap_add_fields[0]], inplace=True)
 addresses["number"] = addresses[ap_add_fields[0]].map(int)
 addresses['street'] = addresses[ap_add_fields[1]].str.upper()
 
