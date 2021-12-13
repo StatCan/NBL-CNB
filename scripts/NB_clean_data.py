@@ -1,10 +1,12 @@
 import os
 import re
 import sys
+import codecs
 from pathlib import Path
 import fiona
 import geopandas as gpd
 import numpy as np
+from numpy.core.numeric import True_
 import pandas as pd
 from pyproj import crs
 from shapely import geometry
@@ -151,8 +153,10 @@ proj_crs = os.getenv('PROJ_CRS')
 footprint_lyr = Path(os.getenv('BF_PATH'))
 
 ap_path = Path(os.getenv('ADDRESS_PATH'))
+ap_lyr_nme = os.getenv('ADDRESS_LAYER')
 
-ap_add_fields = ['street_no', 'street', 'geometry']
+ap_add_fields = ['CIVIC_NUM', 'STREET_NAME', 'ST_TYPE_CD', 'ST_NAME_COMPLETE', 'geometry']
+ap_type_cds = Path(os.getenv('ADDRESS_TYPE_CODES'))
 
 linking_data_path = Path(os.getenv('LINKING_PATH'))
 linking_lyr_nme = os.getenv('LINKING_LYR_NME')
@@ -217,36 +221,44 @@ linking_cols_drop = linking_data.columns.tolist()
 linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data = reproject(linking_data, proj_crs)
 linking_cols_drop.remove('geometry')
-linking_cols_drop += ['index_right']
+# linking_cols_drop += ['index_right']
+linking_data.drop(columns=linking_cols_drop, inplace=True)
 
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
-# print('Loading in address data')
-# if os.path.split(ap_path)[-1].endswith('.csv'):
-#     addresses = pd.read_csv(ap_path)
-#     addresses = gpd.GeoDataFrame(addresses, geometry=gpd.points_from_xy(addresses.longitude, addresses.latitude))
-# else:
-#     addresses = gpd.read_file(ap_path, mask=aoi_gdf)
+print('Loading in address data')
+if os.path.split(ap_path)[-1].endswith('.csv'):
+    addresses = pd.read_csv(ap_path)
+    addresses = gpd.GeoDataFrame(addresses, geometry=gpd.points_from_xy(addresses.longitude, addresses.latitude))
+else:
+    addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_gdf)
 
-# print('Cleaning and prepping address points')
+print('Cleaning and prepping address points')
 
-# addresses = addresses[ap_add_fields]
-# addresses = reproject(addresses, proj_crs)
-# addresses = gpd.sjoin(addresses, linking_data, op='within')
-# addresses.drop(columns=linking_cols_drop, inplace=True)
-# for f in ['index_right', 'index_left']:
-#     if f in addresses.columns.tolist():
-#         addresses.drop(columns=f, inplace=True)
+addresses = addresses[ap_add_fields]
+addresses = reproject(addresses, proj_crs)
+addresses = gpd.sjoin(addresses, linking_data, op='within')
 
-# addresses = addresses[addresses["street_no"] != 'RITE OF WAY']
-# addresses["suffix"] = addresses["street_no"].map(lambda val: re.sub(pattern="\\d+", repl="", string=val, flags=re.I))
-# addresses["number"] = addresses["street_no"].map(lambda val: re.sub(pattern="[^\\d]", repl="", string=val, flags=re.I)).map(int)
-# addresses['street'] = addresses['street'].str.upper()
+ap_cds_doc = codecs.open(ap_type_cds, 'rU', 'ANSI')
+ap_t_cds_df = pd.read_csv(ap_cds_doc, sep='\t')
 
-# print('Exporting cleaned dataset')
-# addresses['aid'] = addresses.index
-# addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
-# del addresses
+addresses.drop(columns= ['index_right'], inplace=True)
+
+for f in ['index_right', 'index_left']:
+    if f in addresses.columns.tolist():
+        addresses.drop(columns=f, inplace=True)
+
+addresses['ST_TYPE'] = addresses['ST_TYPE_CD'].apply(lambda code: ap_t_cds_df[ap_t_cds_df['CD'] == code]['NAME'].tolist()[0] )
+addresses.drop(columns=['ST_TYPE_CD'], inplace=True)
+del ap_t_cds_df
+
+addresses["number"] = addresses[ap_add_fields[0]].map(int)
+addresses['street'] = addresses[ap_add_fields[1]].str.upper()
+
+print('Exporting cleaned dataset')
+addresses['aid'] = addresses.index
+addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
+del addresses
 
 # print('Loading in road data')
 # roads = gpd.GeoDataFrame.from_features(records(rd_gpkg, rd_use_flds, layer=rd_lyr_nme, driver='GPKG'), mask=aoi_gdf) # Load in only needed fields
@@ -306,7 +318,6 @@ footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
 
 footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
-footprint.drop(columns=linking_cols_drop, inplace=True)
 
 footprint = footprint.set_geometry('geometry')
 footprint.drop(columns=['centroid_geo'], inplace=True)
