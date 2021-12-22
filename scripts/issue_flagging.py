@@ -4,6 +4,10 @@ import numpy as np
 import geopandas as gpd
 from dotenv import load_dotenv
 from pathlib import Path
+import shapely.speedups
+import datetime
+
+shapely.speedups.enable()
 
 '''
 The purpose of this script is to highlight potentially problematic building footprints as they relate to associated parcel fabrics and building points.
@@ -31,7 +35,7 @@ def intersect_type_check(bf, parcel_gdf):
 def intersect_count_flag(intersect_count):
     '''Returns a flag when more than 1 intersect is detected'''
     if intersect_count <= 1:
-        return np.Nan
+        return np.nan
     if intersect_count > 1:
         return 1
 
@@ -43,6 +47,7 @@ bf_path = Path(os.getenv('BF_PATH'))
 # bf_lyr_nme = 'footprint_linkages'
 
 ap_path = Path(os.getenv('ADDRESS_PATH'))
+ap_lyr_nme = os.getenv('ADDRESS_LAYER')
 
 linking_data_path = Path(os.getenv('LINKING_PATH'))
 linking_lyr_nme = os.getenv('LINKING_LYR_NME')
@@ -57,6 +62,8 @@ aoi_mask = Path(os.getenv('AOI_MASK'))
 # Logic
 
 print('Loading in layers')
+
+starttime = datetime.datetime.now()
 
 if type(aoi_mask) != None:
     aoi_gdf = gpd.read_file(aoi_mask)
@@ -75,8 +82,11 @@ print('Running check on intersect counts')
 footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
 
 print('Counting Flags')
-footprints['multi_intersect_flag'] = footprints['intersect_count'] .apply(lambda row: intersect_type_check(row))
+footprints['multi_intersect_flag'] = footprints['intersect_count'] .apply(lambda row: intersect_count_flag(row))
 
-print(footprints.head())
-footprints.to_file(output_gpkg, layer='record_flagging')
+footprints.to_file(output_gpkg, layer='record_flagging', driver='GPKG')
+
+# hour : minute : second : microsecond
+print(f'Total Runtime: {datetime.datetime.now() - starttime}')
+
 print('DONE!')
