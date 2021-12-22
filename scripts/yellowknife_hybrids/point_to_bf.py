@@ -1,6 +1,7 @@
 import geopandas as gpd
 import numpy as np
 import os
+from numpy.core.numeric import NaN
 import pandas as pd
 import sys
 from shapely.geometry import Point, Polygon, MultiPolygon
@@ -57,7 +58,6 @@ def condo_find_largest_match(cu_index, cu_centroid, cu_poly, polygon_data, join_
     condo_centroid = cu_centroid
     
     if len(polygon_data) == 0:
-        
         return condo_centroid
     
     polygon_data.set_geometry('centroid_geo', inplace=True)
@@ -83,7 +83,6 @@ cu_gdf.to_crs(crs= proj_crs, inplace=True)
 
 sp_gdf['sp_index'] = sp_gdf.index
 cu_gdf['cu_index'] = cu_gdf.index
-
 print('Prep data')
 
 bf_gdf['area'] = bf_gdf['geometry'].area
@@ -124,18 +123,18 @@ print(f'Moved Point Length: {len(cu_gdf)}')
 
 # Test output delete when done
 cu_gdf = cu_gdf.set_geometry('cu_new_geometry')
+cu_gdf.dropna(subset=['cu_new_geometry'],  inplace=True)
 cu_gdf.drop(columns=['geometry', 'cu_centroid'], inplace=True)
 cu_gdf.to_file(r'H:\point_to_polygon_PoC\data\nt_hybrid\output_data.gpkg', layer='cu_moved_points', driver='GPKG')
-print(cu_gdf.head())
-sys.exit()
-sp_gdf = gpd.sjoin(sp_gdf, cu_gdf['cu_index', 'cu_new_geometry'], how='left', op='within')
-sp_gdf = sp_gdf[sp_gdf['c']]
-print(sp_gdf.head())
-sys.exit()
 
-print('Finding Matches')
+cu_indexes = cu_gdf.cu_index.values.tolist()
+matched_bfs = bf_gdf.loc[bf_gdf['cu_joined_index'].isin(cu_indexes)]['bf_index'].values.tolist()
 
-sp_gdf['new_geometry'] = sp_gdf['sp_index'].apply(lambda row: find_largest_match(row, bf_gdf[['sp_joined_index', 'area', 'centroid_geo']]))
+bf_gdf = bf_gdf[~bf_gdf['bf_index'].isin(matched_bfs)] 
+
+print('Finding Parcel Matches')
+
+sp_gdf['new_geometry'] = sp_gdf['sp_index'].apply(lambda row: find_largest_match(row, bf_gdf[['sp_joined_index', 'area', 'centroid_geo']], 'sp_joined_index'))
 sp_gdf.new_geometry.fillna(sp_gdf['geometry'], inplace=True)
 # Post move column corrections
 sp_gdf = sp_gdf.set_geometry('new_geometry')
