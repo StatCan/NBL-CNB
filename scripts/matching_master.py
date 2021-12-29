@@ -103,21 +103,6 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
     master_gdf = pd.concat(linked_dfs)
     return master_gdf
 
-def get_nearest_linkage(ap, footprint_indexes):
-    """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
-    # Get footprint geometries.
-    footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
-    # Get footprint distances from address point.
-    footprint_distances = tuple(map(lambda footprint: footprint.distance(ap), footprint_geometries))                                     
-    distance_values = [a[a.index == a.index[0]].values[0] for a in footprint_distances if len(a.index) != 0]
-    distance_indexes = [a.index[0] for a in footprint_distances if len(a.index) != 0]
-    
-    if len(distance_indexes) == 0: # If empty then return drop val
-        return np.nan
-    
-    footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
-    return footprint_index
-    
 def check_for_intersects(address_pt, footprint_indexes):
     '''Similar to the get nearest linkage function except this looks for intersects (uses within because its much faster) and spits out the index of any intersect'''
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
@@ -125,6 +110,11 @@ def check_for_intersects(address_pt, footprint_indexes):
     if True in inter:
         t_index = inter.index(True)
         return int(footprint_geometries[t_index].index[0])
+
+def create_centroid_match(footprint_index, bf_centroids):
+    '''Returns the centroid geometry for a given point'''
+    new_geom = bf_centroids.iloc[int(footprint_index)]
+    return new_geom
 
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
@@ -170,27 +160,27 @@ print("Running Step 2. Configure address to footprint linkages")
 addresses["addresses_index"] = addresses.index
 footprint["footprint_index"] = footprint.index
 
-print(' creating and grouping linkages')
+print('     creating and grouping linkages')
 merge = addresses.merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
 addresses['footprint_index'] = groupby_to_list(merge, "addresses_index", "footprint_index")
 
 addresses.drop(columns=["addresses_index"], inplace=True)
 
 # Extract non-linked addresses if any.
-print(' extracting unlinked addresses')
+print('     extracting unlinked addresses')
 unlinked_aps = addresses[addresses["footprint_index"].map(itemgetter(0)).isna()] # Seperate out for the buffer phase
 # Discard non-linked addresses.
 addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
 # Get linkages via buffer if any unlinked data ia present
-print(' get linkages via buffer')
+print('     get linkages via buffer')
 if len(unlinked_aps) > 0:
     unlinked_aps.drop(columns=['footprint_index'], inplace=True)
     unlinked_aps.to_crs(proj_crs, inplace=True)
-    print(' processing unlinked geometry')
+    print('     processing unlinked geometry')
     # run the next line using only the footprints that are not already linked to an address point
     unlinked_aps = get_unlinked_geometry(unlinked_aps, footprint[~footprint['footprint_index'].isin(addresses.footprint_index.explode().unique().tolist())], buffer_distances)
-    print(' appending unlinked geometry to address data')
+    print('     appending unlinked geometry to address data')
     addresses = addresses.append(unlinked_aps)
     
 print('Running Step 3. Checking address linkages via intersects')
@@ -214,7 +204,7 @@ intersections['footprint_index'] = intersections['intersect_index']
 intersections.drop(columns='intersect_index', inplace=True)
 intersections['method'] = 'intersect'
 
-footprint = footprint[~footprint.index.isin(list(set(intersections.footprint_index.tolist())))] # remove all footprints that were matched in the intersection stage
+# footprint = footprint[~footprint.index.isin(list(set(intersections.footprint_index.tolist())))] # remove all footprints that were matched in the intersection stage
 
 print('Running Step 4. Checking address linkages via closest adp limited by linking data')
 
@@ -229,21 +219,26 @@ addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tup
 
 # Flag plural linkages.
 flag_plural = addresses["footprint_index"].map(len) > 1
-# Reduce plural linkages to the building segment with the lowest (nearest) geometric distance.
-
-addresses.loc[flag_plural, "footprint_index"] = addresses[flag_plural][["geometry", "footprint_index"]].apply(
-    lambda row: get_nearest_linkage(*row), axis=1) 
+addresses = addresses.explode('footprint_index') # Convert the lists into unique rows per building linkage (cleaned up later)
 
 addresses = addresses[addresses['footprint_index'] != np.nan]
-# Unpack first tuple element for singular linkages.
-addresses.loc[~flag_plural, "footprint_index"] = addresses[~flag_plural]["footprint_index"].map(itemgetter(0))
 addresses.method.fillna('data_linking', inplace=True)
 
-print("Running Step 5. Merge Results to Polygons")
+print("Running Step 5. Merge Results")
 
 outgdf = addresses.append(intersections)
-# outgdf = outgdf.merge(addresses, how='Left', left_on='addresses_index', right_index=True )
-# addresses.to_file(output_gpkg, layer='addresses_post_matching', driver='GPKG')
+
+print("Running Step 6: Change Point Location to Building Centroid")
+print('     Creating footprint centroids')
+footprint['centroid_geo'] = footprint['geometry'].apply(lambda bf: bf.centroid)
+print('     Matching address points with footprint centroids')
+outgdf['out_geom'] = outgdf['footprint_index'].apply(lambda row: create_centroid_match(row, footprint['centroid_geo']))
+
+outgdf = outgdf.set_geometry('out_geometry')
+outgdf.drop('geometry', inplace=True)
+outgdf.rename(columns={'out_geometry':'geometry'}, inplace=True)
+outgdf = outgdf.set_geometry('geometry')
+
 outgdf.to_file(output_gpkg, layer='point_linkages',  driver='GPKG')
 
 end_time = datetime.datetime.now()
