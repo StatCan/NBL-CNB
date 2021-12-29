@@ -234,9 +234,10 @@ footprint['centroid_geo'] = footprint['geometry'].apply(lambda bf: bf.centroid)
 print('     Matching address points with footprint centroids')
 outgdf['out_geom'] = outgdf['footprint_index'].apply(lambda row: create_centroid_match(row, footprint['centroid_geo']))
 
-outgdf = outgdf.set_geometry('out_geometry')
-outgdf.drop('geometry', inplace=True)
-outgdf.rename(columns={'out_geometry':'geometry'}, inplace=True)
+outgdf = outgdf.set_geometry('out_geom')
+
+outgdf.drop(columns='geometry', inplace=True)
+outgdf.rename(columns={'out_geom':'geometry'}, inplace=True)
 outgdf = outgdf.set_geometry('geometry')
 
 outgdf.to_file(output_gpkg, layer='point_linkages',  driver='GPKG')
