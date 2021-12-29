@@ -11,11 +11,22 @@ shapely.speedups.enable()
 
 '''
 The purpose of this script is to highlight potentially problematic building footprints as they relate to associated parcel fabrics and building points.
+Generates a report of counts based on known potentially problematic situations
 
-Examples of potentially problematic situations include:0
+Examples of potentially problematic situations include:
 
--Footprint intersects with multiple parcels
--Footprint contains many points with many unique addresses
+Footprints:
+- Footprint intersects with multiple parcels
+- Footprint contains many points with many unique addresses
+- Footprint not within a parcel
+- Multiple footprints within one parcel
+
+Points:
+- Point not within parcel
+- Point address does not match parcel address
+- Multipoint within one parcel
+- More points than buildings in a parcel
+
 
 '''
 
@@ -68,23 +79,24 @@ starttime = datetime.datetime.now()
 if type(aoi_mask) != None:
     aoi_gdf = gpd.read_file(aoi_mask)
 
-# addresses = pd.read_csv(ap_path)
-# addresses = gpd.GeoDataFrame(addresses, geometry=gpd.points_from_xy(addresses.longitude, addresses.latitude))
-
+addresses = gpd.read_file(ap_path, layer=ap_lyr_nme) 
 footprints = gpd.read_file(bf_path, mask=aoi_gdf)
 parcels = gpd.read_file(linking_data_path, layer=linking_lyr_nme, mask=aoi_gdf)
 
 footprints.to_crs(crs=proj_crs, inplace=True)
 parcels.to_crs(crs=proj_crs, inplace=True)
-# addresses.to_crs(crs=proj_crs, inplace=True)
+addresses.to_crs(crs=proj_crs, inplace=True)
 
-print('Running check on intersect counts')
-footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
 
-print('Counting Flags')
-footprints['multi_intersect_flag'] = footprints['intersect_count'] .apply(lambda row: intersect_count_flag(row))
 
-footprints.to_file(output_gpkg, layer='record_flagging', driver='GPKG')
+# Intersect Count check
+# print('Running check on intersect counts')
+# footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
+
+# print('Counting Flags')
+# footprints['multi_intersect_flag'] = footprints['intersect_count'].apply(lambda row: intersect_count_flag(row))
+
+# footprints.to_file(output_gpkg, layer='record_flagging', driver='GPKG')
 
 # hour : minute : second : microsecond
 print(f'Total Runtime: {datetime.datetime.now() - starttime}')
