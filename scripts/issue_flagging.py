@@ -22,7 +22,7 @@ Footprints:
 - Multiple footprints within one parcel
 
 Points:
-- Point not within parcel
+- Point not within parcel ✓
 - Point address does not match parcel address
 - Multipoint within one parcel
 - More points than buildings in a parcel
@@ -79,7 +79,7 @@ starttime = datetime.datetime.now()
 if type(aoi_mask) != None:
     aoi_gdf = gpd.read_file(aoi_mask)
 
-addresses = gpd.read_file(ap_path, layer=ap_lyr_nme) 
+addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_gdf) 
 footprints = gpd.read_file(bf_path, mask=aoi_gdf)
 parcels = gpd.read_file(linking_data_path, layer=linking_lyr_nme, mask=aoi_gdf)
 
@@ -87,8 +87,29 @@ footprints.to_crs(crs=proj_crs, inplace=True)
 parcels.to_crs(crs=proj_crs, inplace=True)
 addresses.to_crs(crs=proj_crs, inplace=True)
 
+metrics = []
 
+# Linking fields creation
+addresses["addresses_index"] = addresses.index
+footprints["footprint_index"] = footprints.index
+parcels['parcel_linkage'] = range(1, int(len(parcels.index)+1))
 
+parcels_drop_cols = parcels.columns.tolist()
+parcels_drop_cols.remove('geometry')
+
+addresses = gpd.sjoin(addresses, parcels, op='within', how='left')
+
+# Count of points not in parcels
+print(f"METRIC: POINTS NOT IN PARCEL = {addresses['parcel_linkage'].isna().sum()}")
+metrics.append(['POINTS NOT IN PARCEL', addresses['parcel_linkage'].isna().sum()])
+
+# Counts of all parcels with more than 1 point
+print(addresses['parcel_linkage'].value_counts().drop(labels=1, inplace= True))
+sys.exit()
+print(f"METRIC: MORE THAN 1 POINT IN PARCEL = {len(addresses['parcel_linkage'].value_counts().drop(labels=1, inplace= True))}")
+metrics.append(['MORE THAN 1 POINT IN PARCEL', len(addresses['parcel_linkage'].value_counts().drop(labels=1, inplace= True))])
+
+sys.exit()
 # Intersect Count check
 # print('Running check on intersect counts')
 # footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
