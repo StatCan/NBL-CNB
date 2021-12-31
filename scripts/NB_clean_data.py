@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import codecs
 from pathlib import Path
 import fiona
 import geopandas as gpd
@@ -10,8 +9,9 @@ from numpy.core.numeric import True_
 import pandas as pd
 from pyproj import crs
 from shapely import geometry
-from shapely.geometry import MultiPolygon, Point, Polygon
+from shapely.geometry import MultiPolygon, Point, Polygon, geo
 from dotenv import load_dotenv
+import datetime
 
 # ------------------------------------------------------------------------------------------------
 # Functions
@@ -155,7 +155,7 @@ footprint_lyr = Path(os.getenv('BF_PATH'))
 ap_path = Path(os.getenv('ADDRESS_PATH'))
 ap_lyr_nme = os.getenv('ADDRESS_LAYER')
 
-ap_add_fields = ['CIVIC_NUM', 'STREET_NAME', 'ST_TYPE_CD', 'ST_NAME_COMPLETE', 'geometry']
+ap_add_fields = ['CIVIC_NUM', 'STREET', 'ST_TYPE_E', 'ADDR_DESC', 'geometry'] # geoNB fields ['CIVIC_NUM', 'STREET_NAME', 'ST_TYPE_CD', 'ST_NAME_COMPLETE', 'geometry']
 ap_type_cds = Path(os.getenv('ADDRESS_TYPE_CODES'))
 
 linking_data_path = Path(os.getenv('LINKING_PATH'))
@@ -235,28 +235,22 @@ else:
 
 print('Cleaning and prepping address points')
 
-addresses = addresses[ap_add_fields]
+# addresses = addresses[ap_add_fields]
 addresses = reproject(addresses, proj_crs)
-addresses = gpd.sjoin(addresses, linking_data, op='within')
+addresses = gpd.sjoin(addresses, linking_data, op='within', how='left')
 
-ap_cds_doc = codecs.open(ap_type_cds, 'rU', 'ANSI')
-ap_t_cds_df = pd.read_csv(ap_cds_doc, sep='\t')
-
-addresses.drop(columns= ['index_right'], inplace=True)
+addresses.drop(columns=['index_right'], inplace=True)
 
 for f in ['index_right', 'index_left']:
     if f in addresses.columns.tolist():
         addresses.drop(columns=f, inplace=True)
 
-addresses['ST_TYPE'] = addresses['ST_TYPE_CD'].apply(lambda code: ap_t_cds_df[ap_t_cds_df['CD'] == code]['NAME'].tolist()[0] )
-addresses.drop(columns=['ST_TYPE_CD'], inplace=True)
-del ap_t_cds_df
-addresses.dropna(subset=[ap_add_fields[0]], inplace=True)
 addresses["number"] = addresses[ap_add_fields[0]].map(int)
 addresses['street'] = addresses[ap_add_fields[1]].str.upper()
+addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1]], inplace=True)
 
 print('Exporting cleaned dataset')
-addresses['aid'] = addresses.index
+
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 del addresses
 
