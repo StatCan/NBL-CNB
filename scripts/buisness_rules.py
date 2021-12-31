@@ -47,6 +47,11 @@ def get_road_linkage(bf, road_df, addresses_df):
     
     
     adp = addresses_df[addresses_df.index == int(bf['addresses_index'])][['number', 'street']]
+    print(adp)
+    if len(road_df[road_df['l_nme_cln'] == adp['street'].values[0]]) == 0:
+        # PLACEHOLDER in lieu of cleaner road data this will stop name mismatches from getting to from the rest of the comparisons
+        return -99999
+    
     roadsegs = road_df[road_df['l_nme_cln'] == adp['street'].values[0]]
     
     if len(roadsegs) == 0:
@@ -105,7 +110,7 @@ road_names = list(set(list(addresses[addresses.index.isin(multi_links.index.toli
 roads = roads[roads['l_nme_cln'].isin(road_names)] # cut down roads so that only those that we need are retained
 
 not_in_names = addresses[~addresses['street'].isin(list(set(roads['l_nme_cln'].tolist())))]
-not_in_names.to_file(pr_gpkg, layer='name_errors')
+not_in_names.to_file(pr_gpkg, layer='name_errs')
 
 # Create linkage between the multi df and the roads based on address range and road name
 multi_df['road_index'] = multi_df.apply(lambda row: get_road_linkage(row, roads, addresses), axis=1)
