@@ -13,10 +13,10 @@ shapely.speedups.enable()
 The purpose of this script is to highlight potentially problematic building footprints as they relate to associated parcel fabrics and building points.
 Generates a report of counts based on known potentially problematic situations
 
-Examples of potentially problematic situations include:
+Examples of potentially problematic situations include (examples with ✓ are those that have been added rest are planned):
 
 Footprints:
-- Footprint intersects with multiple parcels
+- Footprint intersects with multiple parcels ✓
 - Footprint contains many points with many unique addresses
 - Footprint not within a parcel
 - Multiple footprints within one parcel
@@ -24,31 +24,14 @@ Footprints:
 Points:
 - Point not within parcel ✓
 - Point address does not match parcel address
-- Multipoint within one parcel
+- Multipoint within one parcel ✓
 - More points than buildings in a parcel
-
 
 '''
 
 # -------------------------------------------------------
 # Functions
 
-def intersect_type_check(bf, parcel_gdf):
-    '''
-    Function to check for type of intersection between building footprints and linking data. Outputs an integer value based on the number of intersections
-    '''
-
-    inter = tuple(map(lambda p: p.intersects(bf), parcel_gdf['geometry']))
-    
-    true_count = sum(inter) # Because True == 1 False == 0    
-    return true_count
-
-def intersect_count_flag(intersect_count):
-    '''Returns a flag when more than 1 intersect is detected'''
-    if intersect_count <= 1:
-        return np.nan
-    if intersect_count > 1:
-        return 1
 
 # -------------------------------------------------------
 # Inputs
@@ -69,12 +52,15 @@ proj_crs = int(os.getenv('PROJ_CRS'))
 
 aoi_mask = Path(os.getenv('AOI_MASK'))
 
+metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
+
 # -------------------------------------------------------
 # Logic
 
 print('Loading in layers')
 
 starttime = datetime.datetime.now()
+print(f'Start Time {starttime}')
 
 if type(aoi_mask) != None:
     aoi_gdf = gpd.read_file(aoi_mask)
@@ -98,26 +84,40 @@ parcels_drop_cols = parcels.columns.tolist()
 parcels_drop_cols.remove('geometry')
 
 addresses = gpd.sjoin(addresses, parcels, op='within', how='left')
-
+ap_par_len = addresses['parcel_linkage'].isna().sum()
 # Count of points not in parcels
-print(f"METRIC: POINTS NOT IN PARCEL = {addresses['parcel_linkage'].isna().sum()}")
-metrics.append(['POINTS NOT IN PARCEL', addresses['parcel_linkage'].isna().sum()])
+print(f"METRIC: POINTS NOT IN PARCEL = {ap_par_len}")
+metrics.append(['POINTS NOT IN PARCEL', ap_par_len])
 
 # Counts of all parcels with more than 1 point
-print(addresses['parcel_linkage'].value_counts().drop(labels=1, inplace= True))
-sys.exit()
-print(f"METRIC: MORE THAN 1 POINT IN PARCEL = {len(addresses['parcel_linkage'].value_counts().drop(labels=1, inplace= True))}")
-metrics.append(['MORE THAN 1 POINT IN PARCEL', len(addresses['parcel_linkage'].value_counts().drop(labels=1, inplace= True))])
+linkage_counts = addresses['parcel_linkage'].value_counts()
+linkage_counts = linkage_counts[linkage_counts != 1].index.tolist()
+linkage_len = len(linkage_counts)
 
-sys.exit()
+print(f"METRIC: MORE THAN 1 POINT IN PARCEL = {linkage_len}")
+metrics.append(['MORE THAN 1 POINT IN PARCEL', linkage_len])
+
 # Intersect Count check
-# print('Running check on intersect counts')
+print('Running check on intersect counts')
 # footprints['intersect_count'] = footprints['geometry'].apply(lambda row: intersect_type_check(row, parcels))
 
-# print('Counting Flags')
-# footprints['multi_intersect_flag'] = footprints['intersect_count'].apply(lambda row: intersect_count_flag(row))
+spatial_join = gpd.sjoin(footprints[['footprint_index', 'geometry']], parcels[['parcel_linkage', 'geometry']], how='left')
+sjoin_counts = spatial_join.footprint_index.value_counts()
+footprints = footprints.merge(sjoin_counts, left_on='footprint_index', right_index=True, how='left')
+footprints.drop(columns=['footprint_index_x'], inplace=True)
+footprints.rename(columns={'footprint_index_y': 'parcel_count'}, inplace=True)
 
-# footprints.to_file(output_gpkg, layer='record_flagging', driver='GPKG')
+no_intersect = footprints.loc[footprints['parcel_count'].isna()]
+print(f"METRIC: FOOTPRINT NOT IN A PARCEL = {len(no_intersect)}")
+metrics.append('FOOTPRINT NOT IN A PARCEL', len(no_intersect))
+
+multi_parcel_int_count = len(footprints.loc[footprints['parcel_count'] > 1])
+print(f"METRIC: MULTI-INTERSECT FOOTPRINTS TO PARCELS =  {multi_parcel_int_count}")
+metrics.append(['MULTI-INTERSECT FOOTPRINTS TO PARCELS', multi_parcel_int_count])
+
+print('Creating and exporting metrics doc as spreadsheet')
+metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
+metrics_df.to_csv(os.path.join(metrics_out_path, 'Input_Metrics.csv'))
 
 # hour : minute : second : microsecond
 print(f'Total Runtime: {datetime.datetime.now() - starttime}')
