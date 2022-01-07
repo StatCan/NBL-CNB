@@ -145,6 +145,9 @@ def road_partitioner(address):
     return [str_nme, rtype, direction, alt_name, alt_type, alt_name_full, str_nme_full]    
 # ------------------------------------------------------------------------------------------------
 # Inputs
+
+start_time = datetime.datetime.now()
+
 load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 geo_crs = os.getenv('CRS')
@@ -323,4 +326,8 @@ for f in ['index_right', 'index_left']:
 print('Exporting cleaned dataset')
 footprint.to_file(project_gpkg, layer='footprints_cleaned', driver='GPKG')
 
+end_time = datetime.datetime.now()
+print(f'Start Time: {start_time}')
+print(f'End Time: {end_time}')
+print(f'Total Runtime: {end_time - start_time}')
 print('DONE!')
