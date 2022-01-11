@@ -32,6 +32,15 @@ Points:
 # -------------------------------------------------------
 # Functions
 
+def as_int(val):
+    "Step 4: Converts linkages to integer tuples, if possible"
+    try:
+        if isinstance(val, int):
+            return val
+        else:
+            return int(val)
+    except ValueError:
+        return val
 
 # -------------------------------------------------------
 # Inputs
@@ -138,8 +147,8 @@ p_bf_inter_cnt.rename('bf_count', inplace=True)
 
 parcels = parcels.merge(p_ap_inter_cnt, left_index= True, right_index=True, how='left')
 parcels = parcels.merge(p_bf_inter_cnt, left_index= True, right_index=True, how='left')
-
-print(parcels.head())
+parcels["bf_count"] = parcels["bf_count"].map(lambda vals: tuple(set(map(as_int, vals))))
+parcels["ap_count"] = parcels["ap_count"].map(lambda vals: tuple(set(map(as_int, vals))))
 
 print(parcels[parcels['bf_count'] < parcels['ap_count']].head())
 m_ap_than_bf_cnt = len(parcels[parcels['bf_count'] < parcels['ap_count']])
@@ -147,6 +156,7 @@ print(f"METRIC: MORE AP THAN BF IN PARCEL = {m_ap_than_bf_cnt}")
 metrics.append(['MORE AP THAN BF IN PARCEL', m_ap_than_bf_cnt])
 
 parcels[parcels['bf_count'] < parcels['ap_count']].to_file(output_gpkg, layer='parcel_test', driver='GPKG')
+
 
 multi_bf_parcels = len(parcels[parcels['bf_count'] > 1])
 print(f"METRIC: MULTI FOOTPRINTS IN PARCEL = {multi_bf_parcels}")
@@ -156,9 +166,14 @@ multi_ap_parcels = len(parcels[parcels['ap_count'] > 1])
 print(f"METRIC: MULTI ADDRESS POINTS IN PARCEL = {multi_ap_parcels}")
 metrics.append(['MULTI ADDRESS POINTS IN PARCEL', multi_ap_parcels])
 
+one_to_one = parcels[(parcels['ap_count'] == 1) & (parcels['bf_count'] == 1)].index.tolist()
+print(f"METRIC: ONE TO ONE ON PARCEL = {len(one_to_one)}")
+metrics.append(['ONE TO ONE ON PARCEL', len(one_to_one)])
+parcels.to_file(output_gpkg, layer='parcel_test', driver='GPKG')
+
 print('Creating and exporting metrics doc as spreadsheet')
 metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
-metrics_df.to_csv(os.path.join(metrics_out_path, 'Data_Metrics.csv'), index=False)
+metrics_df.to_csv(os.path.join(metrics_out_path, 'Preprocess_Metrics.csv'), index=False)
 
 # hour : minute : second : microsecond
 print(f'Total Runtime: {datetime.datetime.now() - starttime}')
