@@ -139,6 +139,8 @@ out_lyr_nme = os.getenv('LINKED_BY_DATA_NME')
 
 buffer_distances = [5,10,20] # distance for the buffers
 
+metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
+
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
@@ -243,6 +245,16 @@ outgdf = outgdf.set_geometry('geometry')
 outgdf.to_file(output_gpkg, layer='point_linkages',  driver='GPKG')
 
 end_time = datetime.datetime.now()
+
+metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])], 
+        ['DATA_LINKING', len(outgdf[outgdf['method'] == 'data_linking'])],
+        [f'{buffer_distances[0]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[0]}m buffer'])],
+        [f'{buffer_distances[1]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[1]}m buffer'])],
+        [f'{buffer_distances[2]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[2]}m buffer'])]
+        ]
+
+metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
+metrics_df.to_csv(os.path.join(metrics_out_path, 'Matching_Metrics.csv'), index=False)
 
 print(f'Start Time: {start_time}')
 print(f'End Time: {end_time}')
