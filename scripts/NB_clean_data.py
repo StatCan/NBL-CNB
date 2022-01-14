@@ -305,7 +305,7 @@ footprint = reproject(footprint, proj_crs)
 print('Cleaning and prepping footprint data')
 # footprint = explode(footprint) # Remove multipart polygons convert to single polygons
 footprint['area'] = footprint['geometry'].area
-footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
+# footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
 footprint = footprint.reset_index()
 footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])
