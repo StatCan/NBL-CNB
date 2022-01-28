@@ -271,9 +271,10 @@ for t in fiona.listlayers(matched_ap_gpkg):
     print(match_counts)
     unique_counts = []
     for f in ['FULL', 'PARTIAL', 'FALSE']:
-        print('Unique addresses per type')
         unique_counts.append(len(list(set(addresses[addresses['match_flag'] == f]['ADDR_SYM'].tolist()))))
         addresses[addresses['match_flag'] == f].to_file(os.path.join(m_acc_gpkg_path, f'{out_gpkg_nme}.gpkg'), layer=f'{f.lower()}_flags', driver='GPKG')
     print('UNIQUE ADDRESS COUNTS')
-    print(unique_counts)
+    print(f'FULL: {unique_counts[0]}')
+    print(f'PARTIAL: {unique_counts[1]}')
+    print(f'FALSE: {unique_counts[2]}')
 print('DONE!')
