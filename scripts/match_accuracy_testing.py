@@ -225,8 +225,8 @@ str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
 bf_address_fields = 'Prop_Loc' # convert to list in future if needed
 
 bf_link_field = 'footprint_index'
-
-m_acc_gpkg = Path(os.getenv('MATCH_ACC_GPKG'))
+ 
+m_acc_gpkg_path = Path(os.getenv('MATCH_ACC_GPKG'))
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Logic
@@ -241,8 +241,6 @@ str_types_df['Street type'] = str_types_df['Street type'].str.upper()
 footprint = gpd.read_file(footprint_gpkg, layer=footprints_lyr_nme, crs=26911, mask=aoi_gdf)
 footprint.to_crs(crs=proj_crs, inplace=True)
 
-addresses = gpd.read_file(matched_ap_gpkg, layer='ap_one_to_one_bf_links', driver='GPKG', mask=aoi_gdf)
-addresses = addresses[~addresses['footprint_index'].isna()]
 # Clean and prep the address data in the inputs
 
 # Footprint address field cleaning
@@ -250,21 +248,32 @@ footprint['address_components'] = footprint[bf_address_fields].apply(lambda bf_a
 footprint[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(footprint['address_components'].tolist(), index= footprint.index)
 footprint.drop(columns=['address_components'], inplace= True)
 
-# Address points address field cleaning/prep
-addresses['type_en_abv'] = addresses['ST_TYPE_E'].apply(lambda x: abbreviate_street_type(x, str_types_df))
+for t in fiona.listlayers(matched_ap_gpkg):
+    out_gpkg_nme = '_'.join(t.split('_', -2))
+    print(f'Running analysis on {t}')
+    addresses = gpd.read_file(matched_ap_gpkg, layer=t, driver='GPKG', mask=aoi_gdf)
+    addresses = addresses[~addresses['footprint_index'].isna()]
+    print()
+    # Address points address field cleaning/prep
+    addresses['type_en_abv'] = addresses['ST_TYPE_E'].apply(lambda x: abbreviate_street_type(x, str_types_df))
 
-addresses['ad_rng_check'] = addresses[['footprint_index', 'number']].apply(lambda x: match_range_address(x['footprint_index'], x['number'], footprint), axis=1)
-addresses['str_nme_check'] = addresses[['footprint_index', 'street']].apply(lambda x: match_street_name(x['footprint_index'], x['street'], footprint), axis=1)
-addresses['str_typ_check'] = addresses[['footprint_index', 'type_en_abv']].apply(lambda x: match_street_typ(x['footprint_index'], x['type_en_abv'], footprint), axis=1)
+    addresses['ad_rng_check'] = addresses[['footprint_index', 'number']].apply(lambda x: match_range_address(x['footprint_index'], x['number'], footprint), axis=1)
+    addresses['str_nme_check'] = addresses[['footprint_index', 'street']].apply(lambda x: match_street_name(x['footprint_index'], x['street'], footprint), axis=1)
+    addresses['str_typ_check'] = addresses[['footprint_index', 'type_en_abv']].apply(lambda x: match_street_typ(x['footprint_index'], x['type_en_abv'], footprint), axis=1)
 
-addresses['match_flag'] = addresses.apply(lambda x: match_flagger(x['ad_rng_check'], x['str_nme_check'], x['str_typ_check']), axis=1)
+    addresses['match_flag'] = addresses.apply(lambda x: match_flagger(x['ad_rng_check'], x['str_nme_check'], x['str_typ_check']), axis=1)
 
-print(addresses[['footprint_index','number', 'street','type_en_abv', 'ad_rng_check', 'str_nme_check', 'str_typ_check', 'match_flag']].head())
-print(footprint.iloc[[1608, 719, 8938, 20477, 2770]])
+    # print(addresses[['footprint_index','number', 'street','type_en_abv', 'ad_rng_check', 'str_nme_check', 'str_typ_check', 'match_flag']].head())
+    # print(footprint.iloc[[1608, 719, 8938, 20477, 2770]])
 
-match_counts = addresses['match_flag'].value_counts()
-print(match_counts)
-for f in ['FULL', 'PARTIAL', 'FALSE']:
-    addresses[addresses['match_flag'] == f].to_file(m_acc_gpkg, layer=f'{f.lower()}_flags', driver='GPKG')
-
+    match_counts = addresses['match_flag'].value_counts()
+    print(t)
+    print(match_counts)
+    unique_counts = []
+    for f in ['FULL', 'PARTIAL', 'FALSE']:
+        print('Unique addresses per type')
+        unique_counts.append(len(list(set(addresses[addresses['match_flag'] == f]['ADDR_SYM'].tolist()))))
+        addresses[addresses['match_flag'] == f].to_file(os.path.join(m_acc_gpkg_path, f'{out_gpkg_nme}.gpkg'), layer=f'{f.lower()}_flags', driver='GPKG')
+    print('UNIQUE ADDRESS COUNTS')
+    print(unique_counts)
 print('DONE!')
