@@ -1,5 +1,6 @@
 import os
 import re
+import string
 import sys
 from pathlib import Path
 import fiona
@@ -12,6 +13,8 @@ from shapely import geometry
 from shapely.geometry import MultiPolygon, Point, Polygon, geo
 from dotenv import load_dotenv
 import datetime
+
+pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
 # ------------------------------------------------------------------------------------------------
 # Functions
@@ -84,7 +87,7 @@ def str_type_cln(street_name, correction_dict):
     return cleaned_name
     
 
-def road_partitioner(address):
+def road_partitioner(address: string):
     '''Takes a road string which possibly containes name, type and direction and converts it into a list of parts based off of master lists of road types'''
     
     def determiner(in_string, check_list):
@@ -143,6 +146,24 @@ def road_partitioner(address):
     str_nme_full = ' '.join(str_nme_full)
 
     return [str_nme, rtype, direction, alt_name, alt_type, alt_name_full, str_nme_full]    
+
+
+def return_smallest_match(ap_matches, parcel_df, unique_id):
+    '''Takes plural matches of buildings or address points and compares them against the size of the matched parcel. Returns only the smallest parcel that was matched'''
+    ap_matches['ap_match_id'] = range(1, len(ap_matches.index)+1)
+    o_ids = []
+    for rid in list(set(ap_matches[unique_id].tolist())):
+        rid_matches = ap_matches[ap_matches[unique_id] == rid]
+        rid_ids = list(set(rid_matches['link_field'].tolist()))
+        match_parcels = parcel_df[parcel_df['link_field'].isin(rid_ids)]
+        match_parcels.sort_values(by=['AREA'], inplace=True, ascending=True)
+        min_parcel_link = match_parcels['link_field'].tolist()[0]
+        o_ids.append(rid_matches[rid_matches['link_field'] == min_parcel_link].ap_match_id.tolist()[0])
+    ap_matches = ap_matches[ap_matches['ap_match_id'].isin(o_ids)]
+    ap_matches.drop(columns=['ap_match_id'], inplace=True)
+    return ap_matches
+    
+
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -177,34 +198,30 @@ project_gpkg = Path(os.getenv('DATA_GPKG'))
 rd_crs = os.getenv('RD_CRS')
 
 # Road name correction dictionary
-type_corr_dict = {
-    'CR' : 'CRES',
-    'LN' : 'LANE', 
-    'CRESCENT': 'CRES', 
-    'AVENUE' : 'AVE',
-    'BOULEVARD' : 'BLVD',
-    'DRIVE' : 'DR', 
-    'LANE' : 'LN', 
-    'PLACE' : 'PL',
-    'CENTRE' : 'CTR',
-    'CIRCLE' : 'CIR', 
-    'CIRCUIT' : 'CIRCT',
-    'CHEMIN' : 'CH', 
-    'CONCESSION' : 'CONC',
-    'COURT' : 'CRT',
-    'DRIVE' : 'DR',
-    'HIGHWAY' : 'HWY',
-    'PLACE' : 'PL',
-    'POINT' : 'PT',
-    'PRIVATE' : 'PVT',
-    'PROMINADE' : 'PROM',
-    'RANGE' : 'RG',
-    'ROAD' :'RD',
-    'ROUTE' : 'RTE',
-    'STREET' : 'ST',
-    'SUBDIVISION' : 'SUB',
-    'TERRACE' : 'TSSE',
-}
+type_corr_dict = {'CRESCENT': 'CRES', 
+                'AVENUE' : 'AVE',
+                'BOULEVARD' : 'BLVD',
+                'DRIVE' : 'DR', 
+                'LANE' : 'LN', 
+                'PLACE' : 'PL',
+                'CENTRE' : 'CTR',
+                'CIRCLE' : 'CIR', 
+                'CIRCUIT' : 'CIRCT',
+                'CHEMIN' : 'CH', 
+                'CONCESSION' : 'CONC',
+                'COURT' : 'CRT',
+                'DRIVE' : 'DR',
+                'HIGHWAY' : 'HWY',
+                'PLACE' : 'PL',
+                'POINT' : 'PT',
+                'PRIVATE' : 'PVT',
+                'PROMINADE' : 'PROM',
+                'RANGE' : 'RG',
+                'ROAD' :'RD',
+                'ROUTE' : 'RTE',
+                'STREET' : 'ST',
+                'SUBDIVISION' : 'SUB',
+                'TERRACE' : 'TSSE',}
 master_types = ['ABBEY', 'ACRES', 'ALLÉE', 'ALLEY', 'AUT', 'AVE', 'AV', 'BAY', 'BEACH', 'BEND', 'BLVD', 'BOUL', 'BYPASS', 'BYWAY', 'CAMPUS', 'CAPE', 'CAR', 
             'CARREF', 'CTR', 'C', 'CERCLE', 'CHASE', 'CH', 'CIR', 'CIRCT', 'CLOSE', 'COMMON', 'CONC', 'CRNRS', 'CÔTE', 'COUR', 'COURS', 'CRT', 'COVE', 'CRES', 
             'CROIS', 'CROSS', 'CDS', 'DALE', 'DELL', 'DIVERS', 'DOWNS', 'DR', 'ÉCH', 'END', 'ESPL', 'ESTATE', 'EXPY', 'EXTEN', 'PINES','PL', 'PLACE', 'PLAT', 
@@ -222,9 +239,11 @@ print('Loading in linking data')
 linking_data = gpd.read_file(linking_data_path, layer=linking_lyr_nme, linking_ignore_columns=linking_ignore_columns, mask=aoi_gdf)
 linking_cols_drop = linking_data.columns.tolist()
 linking_data['link_field'] = range(1, len(linking_data.index)+1)
+linking_data['AREA'] = linking_data['geometry'].area
+linking_data = linking_data[linking_data['AREA'] > 101]
 linking_data = reproject(linking_data, proj_crs)
 linking_cols_drop.remove('geometry')
-# linking_cols_drop += ['index_right']
+linking_cols_drop.remove('Pan_Int') 
 linking_data.drop(columns=linking_cols_drop, inplace=True)
 
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
@@ -242,7 +261,13 @@ print('Cleaning and prepping address points')
 addresses = reproject(addresses, proj_crs)
 addresses = gpd.sjoin(addresses, linking_data, op='within', how='left')
 
-addresses.drop(columns=['index_right'], inplace=True)
+# Deal with duplications in the address  layer caused by the spatial join. Take the smallest parcel as assumed to be the most accurate
+grouped = addresses.groupby('CIV_ID', dropna=True)['CIV_ID'].count()
+grouped = grouped[grouped > 1].index.tolist()
+addresses_plural_sj = addresses[addresses['CIV_ID'].isin(grouped)]
+addresses_singular = addresses[~addresses['CIV_ID'].isin(grouped)]
+addresses_plural_sj = return_smallest_match(addresses_plural_sj, linking_data, 'CIV_ID')
+addresses = addresses_singular.append(addresses_plural_sj)
 
 for f in ['index_right', 'index_left']:
     if f in addresses.columns.tolist():
@@ -313,8 +338,18 @@ footprint = reproject(footprint, proj_crs)
 
 footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
-
+print(len(footprint))
 footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
+
+grouped_bf = footprint.groupby('bf_index', dropna=True)['bf_index'].count()
+grouped_bf = grouped_bf[grouped_bf > 1].index.tolist()
+footprint_plural_sj = footprint[footprint['bf_index'].isin(grouped_bf)]
+footprint_singular = footprint[~footprint['bf_index'].isin(grouped_bf)]
+footprint_plural_sj = return_smallest_match(footprint_plural_sj, linking_data, 'bf_index')
+footprint = footprint_singular.append(footprint_plural_sj)
+print(len(footprint))
+print(footprint.head())
+sys.exit()
 
 footprint = footprint.set_geometry('geometry')
 footprint.drop(columns=['centroid_geo'], inplace=True)
@@ -324,6 +359,8 @@ for f in ['index_right', 'index_left']:
         footprint.drop(columns=f, inplace=True)
 
 print('Exporting cleaned dataset')
+print(footprint.head())
+sys.exit()
 footprint.to_file(project_gpkg, layer='footprints_cleaned', driver='GPKG')
 
 end_time = datetime.datetime.now()
