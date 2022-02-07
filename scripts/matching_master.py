@@ -1,3 +1,4 @@
+
 import logging
 import geopandas as gpd
 import numpy as np
@@ -31,6 +32,7 @@ link to a building footprint
 # Functions
 
 def groupby_to_list(df, group_field, list_field):
+    
     """
     Helper function: faster alternative to pandas groupby.apply/agg(list).
     Groups records by one or more fields and compiles an output field into a list for each group.
@@ -116,6 +118,21 @@ def create_centroid_match(footprint_index, bf_centroids):
     new_geom = bf_centroids.iloc[int(footprint_index)]
     return new_geom
 
+def get_nearest_linkage(ap, footprint_indexes):
+    """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
+    # Get footprint geometries.
+    footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
+    # Get footprint distances from address point.
+    footprint_distances = tuple(map(lambda footprint: footprint.distance(ap), footprint_geometries))                                     
+    distance_values = [a[a.index == a.index[0]].values[0] for a in footprint_distances if len(a.index) != 0]
+    distance_indexes = [a.index[0] for a in footprint_distances if len(a.index) != 0]
+
+    if len(distance_indexes) == 0: # If empty then return drop val
+        return np.nan
+
+    footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
+    return footprint_index
+
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -128,7 +145,7 @@ output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
 # Layer inputs cleaned versions only
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
-addresses_lyr_nme = os.getenv('CLEANED_AP_LYR_NAME')
+addresses_lyr_nme = os.getenv('FLAGGED_AP_LYR_NME')
 
 proj_crs = int(os.getenv('PROJ_CRS'))
 
@@ -141,13 +158,15 @@ buffer_distances = [5,10,20] # distance for the buffers
 
 metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
 
+bp_threshold = int(os.getenv('BP_THRESHOLD'))
+
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
 
 print( "Running Step 1. Load dataframes and configure attributes")
 # Load dataframes
-addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=26911)
-footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme, crs=26911)
+addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
+footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme, crs=proj_crs)
 
 addresses.to_crs(crs= proj_crs, inplace=True)
 footprint.to_crs(crs=proj_crs, inplace=True)
@@ -163,14 +182,34 @@ addresses["addresses_index"] = addresses.index
 footprint["footprint_index"] = footprint.index
 
 print('     creating and grouping linkages')
-merge = addresses.merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
+merge = addresses[~addresses[join_addresses].isna()].merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
 addresses['footprint_index'] = groupby_to_list(merge, "addresses_index", "footprint_index")
 
 addresses.drop(columns=["addresses_index"], inplace=True)
 
+# Big Parcel (BP) case extraction (remove and match before all other cases)
+ap_counts = addresses.groupby('link_field', dropna=True)['link_field'].count()
+
+# Take only parcels that have more than the big parcel (bp) threshold intersects of both a the inputs
+addresses_bp = addresses.loc[addresses['link_field'].isin(ap_counts[ap_counts > bp_threshold].index.tolist())]
+addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
+addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distances)
+
+# Find and reduce plural linkages to the closest linkage
+ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
+addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1) 
+addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
+addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
+
 # Extract non-linked addresses if any.
 print('     extracting unlinked addresses')
-unlinked_aps = addresses[addresses["footprint_index"].map(itemgetter(0)).isna()] # Seperate out for the buffer phase
+addresses_na = addresses[addresses['footprint_index'].isna()] # Special cases with NaN instead of a tuple
+addresses = addresses[~addresses.index.isin(addresses_na.index.tolist())]
+
+unlinked_aps = addresses[addresses["footprint_index"].map(itemgetter(0)).isna()] 
+if len(addresses_na) > 0:    
+    unlinked_aps = unlinked_aps.append(addresses_na)
+# Seperate out for the buffer phase
 # Discard non-linked addresses.
 addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
@@ -228,7 +267,7 @@ addresses.method.fillna('data_linking', inplace=True)
 
 print("Running Step 5. Merge Results")
 
-outgdf = addresses.append(intersections)
+outgdf = addresses.append([intersections, addresses_bp])
 
 print("Running Step 6: Change Point Location to Building Centroid")
 print('     Creating footprint centroids')
@@ -244,8 +283,6 @@ outgdf = outgdf.set_geometry('geometry')
 
 outgdf.to_file(output_gpkg, layer='point_linkages',  driver='GPKG')
 
-end_time = datetime.datetime.now()
-
 metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])], 
         ['DATA_LINKING', len(outgdf[outgdf['method'] == 'data_linking'])],
         [f'{buffer_distances[0]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[0]}m buffer'])],
@@ -256,6 +293,7 @@ metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])],
 metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
 metrics_df.to_csv(os.path.join(metrics_out_path, 'Matching_Metrics.csv'), index=False)
 
+end_time = datetime.datetime.now()
 print(f'Start Time: {start_time}')
 print(f'End Time: {end_time}')
 print(f'Total Runtime: {end_time - start_time}')
