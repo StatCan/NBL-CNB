@@ -128,6 +128,7 @@ footprints["footprint_index"] = footprints.index
 print(f"TOTAL # PARCELS = {len(parcels)}")
 print(f"TOTAL # ADDRESS POINTS = {len(addresses)}")
 print(f"TOTAL # BUILDING FOOTPRINTS = {len(footprints)}")
+
 metrics.append(['TOTAL # PARCELS', len(parcels)])
 metrics.append(['TOTAL # ADDRESS POINTS', len(addresses)])
 metrics.append(['TOTAL # BUILDING FOOTPRINTS', len(footprints)])
@@ -252,7 +253,7 @@ metrics_df.to_csv(os.path.join(metrics_out_path, 'Preprocess_Metrics.csv'), inde
     # footprints.to_file(output_gpkg, layer=f'bf_{l}', driver='GPKG')
 
 addresses.drop(columns=['addresses_index'], inplace=True)
-addresses.to_file(ap_cases_gpkg, layer=f'ap_full', driver='GPKG')
+addresses.to_file(output_gpkg, layer=f'ap_full', driver='GPKG')
 # hour : minute : second : microsecond
 print(f'Total Runtime: {datetime.datetime.now() - starttime}')
 
