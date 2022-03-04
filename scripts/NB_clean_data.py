@@ -19,24 +19,6 @@ pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 # ------------------------------------------------------------------------------------------------
 # Functions
 
-def explode(ingdf):
-    # not one of Jesse's. To solve multipolygon issue
-    indf = ingdf
-    outdf = gpd.GeoDataFrame(columns=indf.columns)
-    for idx, row in indf.iterrows():
-        
-        if type(row.geometry) == Polygon:
-            outdf = outdf.append(row,ignore_index=True)
-        if type(row.geometry) == MultiPolygon:
-            multdf = gpd.GeoDataFrame(columns=indf.columns)
-            recs = len(row.geometry)
-            multdf = multdf.append([row]*recs,ignore_index=True)
-            for geom in range(recs):
-                multdf.loc[geom,'geometry'] = row.geometry[geom]
-            outdf = outdf.append(multdf,ignore_index=True)
-    return outdf
-
-
 def reproject(ingdf, output_crs):
     ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
     if ingdf.crs == None:
