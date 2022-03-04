@@ -37,3 +37,54 @@ Python script that takes the cleaned datasets and analyses them for intersection
 Experimental script that tests a workflow for dealing with situations where linking data is not available. This methodology uses a incrimentally increasing series of buffers to determine the closest address point to a building footprint. Accuracy yet to be determined.
 
 
+### Environment Variables
+
+Scripts utilize python-dotenv to carry environment variables between scirpts. The given layout below contains all key variables for the most recent version of the process. To
+utilize this frame work fill in appropriate information in each of the variables below 
+
+
+# Cleaned Data
+CLEANED_BF_LYR_NAME = footprints_cleaned
+CLEANED_AP_LYR_NAME = addresses_cleaned
+CLEANED_RD_LYR_NAME = roads_cleaned
+CLEANED_SP_LYR_NAME = parcels_cleaned
+UNLINKED_BF_LYR_NME = unmatched_bfs
+FLAGGED_AP_LYR_NME = ap_full
+AP_CIVIC_ADDRESS_FIELD_NAME = NUMBER
+
+# NB_INPUT_VARS
+DATA_GPKG = 
+OUTPUT_GPKG = 
+
+CRS = 4269
+PROJ_CRS = 2960
+RD_CRS = 4617
+
+LINKING_PATH = 
+LINKING_LYR_NME = 'pan_ncb'
+
+BF_PATH = 
+# BF_PATH = 
+# BF_LYR_NME = 
+
+ADDRESS_PATH = 
+ADDRESS_LAYER = 
+
+ADDRESS_TYPE_CODES = 
+
+AOI_MASK = 
+
+LINKED_BY_DATA_NME = fredericton_inter_linked_merged
+LINKED_BY_BUFFER_NME = via_buffer_linkage
+UNLINKED_NME = non_geolinked
+
+MATCHED_OUTPUT_GPKG = 
+
+METRICS_CSV_OUT_PATH = 
+
+AP_CASES_GPKG = 
+
+MATCH_ACC_GPKG = 
+
+BP_THRESHOLD = 20
+
