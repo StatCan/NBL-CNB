@@ -224,6 +224,7 @@ geo_crs = os.getenv('CRS')
 proj_crs = os.getenv('PROJ_CRS')
 
 footprint_lyr = Path(os.getenv('BF_PATH'))
+footprint_lyr_name = os.getenv('BF_LYR_NME')
 
 ap_path = Path(os.getenv('ADDRESS_PATH'))
 ap_lyr_nme = os.getenv('ADDRESS_LAYER')
@@ -292,7 +293,7 @@ linking_data['AREA'] = linking_data['geometry'].area
 linking_data = linking_data[linking_data['AREA'] > 101]
 linking_data = reproject(linking_data, proj_crs)
 linking_cols_drop.remove('geometry')
-linking_cols_drop.remove('Pan_Int') 
+linking_cols_drop.remove('Pan_Int')
 linking_data.drop(columns=linking_cols_drop, inplace=True)
 
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
