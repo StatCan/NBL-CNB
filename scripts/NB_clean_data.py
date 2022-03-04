@@ -146,6 +146,73 @@ def return_smallest_match(ap_matches, parcel_df, unique_id):
     return ap_matches
     
 
+def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
+    '''
+    Methodology for flagging buildings as sheds
+    '''
+    
+    def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100):
+        '''
+        returns a list of all bf_indexes that should be flagged as sheds and should be considered unaddressable.
+        take the difference from the counts of each type of record in the parcel and flag the number of smallest
+        buildings that coorespond with the difference value
+        '''
+        bf_count = len(bf_data)
+        
+        # If either is equal to zero this method will not help select out sheds
+        if ap_count == 0 or bf_count == 0:
+            return []
+        if bf_count == 1:
+            return []
+
+        # Sizing is different in trailer parks so deal with these differently
+        if bf_count > bp_threshold:
+            # do just the tiny building check as the min max between home and shed in these areas overlaps
+            sheds = bf_data.loc[bf_data[bf_area_field] < min_adressable_area]
+            shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
+            return shed_indexes
+
+        # Take out the tiny buildings under 50m2 and prelabel them as sheds then take remainder and test count vs count
+        sheds = bf_data.loc[bf_data[bf_area_field] < min_adressable_area]
+        bf_data = bf_data.loc[(bf_data[bf_area_field] > min_adressable_area)]
+
+        bf_count = len(bf_data) # reset bf_count because we changed the # of buildings in bf_data
+
+        ap_bf_diff = bf_count - ap_count # how many more bf's there are than address points in the parcel
+        sheds = sheds.append(bf_data.sort_values(bf_area_field, ascending=True).head(ap_bf_diff)) # sort the smallest to the top then take the top x rows based on ap_bf_diff value 
+        
+        sheds = sheds[sheds[bf_area_field] <= max_shed_size] # remove things from the output that are unlikly to be sheds >= 100m2
+
+        shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
+        return shed_indexes
+
+    adp_parcel_linkages = address_gdf.groupby('link_field', dropna=True)['link_field'].count()
+    bf_parcel_linkages = footprint_gdf.groupby('link_field', dropna=True)['link_field'].count()
+
+    # Return only cases where the bf count is higher than the adp count
+    adp_parcel_l_bf = adp_parcel_linkages[adp_parcel_linkages.index.isin(bf_parcel_linkages.index.tolist())]
+    bf_parcel_l_ap = bf_parcel_linkages[bf_parcel_linkages.index.isin(adp_parcel_linkages.index.tolist())]
+
+    bf_parcel_l_ap = pd.DataFrame(bf_parcel_l_ap)
+    bf_parcel_l_ap.rename(columns={ bf_parcel_l_ap.columns[0]: "bf_count"}, inplace=True)
+
+    adp_parcel_l_bf = pd.DataFrame(adp_parcel_l_bf)
+    adp_parcel_l_bf.rename(columns={adp_parcel_l_bf.columns[0]: "ap_count"}, inplace=True)
+
+    linking_gdf = linking_gdf.loc[linking_gdf['link_field'].isin(bf_parcel_l_ap.index.tolist())]
+    linking_gdf['shed_list'] = linking_gdf['link_field'].apply(lambda x: find_sheds(footprint_gdf[footprint_gdf['link_field'] == x], adp_parcel_l_bf[adp_parcel_l_bf.index == x].ap_count.tolist()[0]))
+    shed_indexes = [ i for l in linking_gdf['shed_list'].tolist() for i in l ] # item for sublist in t for item in sublist: t being the shed_list list
+
+    shed_gdf = footprint_gdf[footprint_gdf['bf_index'].isin(shed_indexes)]
+    footprint_gdf = footprint_gdf.loc[~footprint_gdf['bf_index'].isin(shed_indexes)]
+
+    shed_gdf['shed_flag'] = True
+    footprint_gdf['shed_flag'] = False
+
+    footprint_gdf = footprint_gdf.append(shed_gdf)
+    return footprint_gdf
+
+
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -320,18 +387,16 @@ footprint = reproject(footprint, proj_crs)
 
 footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
-print(len(footprint))
 footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
-
+footprint.drop(columns=['AREA'], inplace=True)
 grouped_bf = footprint.groupby('bf_index', dropna=True)['bf_index'].count()
 grouped_bf = grouped_bf[grouped_bf > 1].index.tolist()
 footprint_plural_sj = footprint[footprint['bf_index'].isin(grouped_bf)]
 footprint_singular = footprint[~footprint['bf_index'].isin(grouped_bf)]
 footprint_plural_sj = return_smallest_match(footprint_plural_sj, linking_data, 'bf_index')
 footprint = footprint_singular.append(footprint_plural_sj)
-print(len(footprint))
-print(footprint.head())
-sys.exit()
+
+footprint = shed_flagging(footprint, addresses, linking_data)
 
 footprint = footprint.set_geometry('geometry')
 footprint.drop(columns=['centroid_geo'], inplace=True)
