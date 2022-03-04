@@ -22,10 +22,10 @@ pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
 '''
 
-This script is a proof of concept building on the work of Jessie Stewart for the NRN. This script attempts to take
-building footprints and match them to an address point. Multiple copies of an address points created if there are 
-multiple buildings but only 1 address point. This script will return a point layer with each record containing a
-link to a building footprint
+This script attempts to take building footprints and match them to an address point. Multiple copies of an address 
+points created if there are multiple buildings but only 1 address point. This script will return a point layer with 
+each record containing a link to a building footprint. Unlinked addresses and buildings will then be output for 
+further analysis
 
 '''
 # ------------------------------------------------------------------------------------------------------------
@@ -178,6 +178,7 @@ join_addresses = 'link_field'
 print("Running Step 2. Configure address to footprint linkages")
 
 # Link addresses and footprint on join fields.
+
 addresses["addresses_index"] = addresses.index
 footprint["footprint_index"] = footprint.index
 
@@ -213,7 +214,7 @@ if len(addresses_na) > 0:
 # Discard non-linked addresses.
 addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
-# Get linkages via buffer if any unlinked data ia present
+# Get linkages via buffer if any unlinked data is present
 print('     get linkages via buffer')
 if len(unlinked_aps) > 0:
     unlinked_aps.drop(columns=['footprint_index'], inplace=True)
