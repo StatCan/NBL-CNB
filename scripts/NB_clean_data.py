@@ -329,56 +329,17 @@ addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1]], inplace=True)
 print('Exporting cleaned dataset')
 
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
-del addresses
-
-# print('Loading in road data')
-# roads = gpd.GeoDataFrame.from_features(records(rd_gpkg, rd_use_flds, layer=rd_lyr_nme, driver='GPKG'), mask=aoi_gdf) # Load in only needed fields
-# roads.set_crs(epsg=rd_crs, inplace=True)
-
-# roads['uid'] = range(1, len(roads.index)+1)
-
-# roads = roads[(roads['L_STNAME_C'] != 'Unknown') | (roads['R_STNAME_C'] != 'Unknown')]
-# # Remove all the winter roads
-# roads = roads[(roads['ROADCLASS'] != 'Winter')]
-
-# # Remove additional punctuation that is no longer needed
-# for punc in [',', '.']:
-#     roads['L_STNAME_C'] = roads.L_STNAME_C.str.replace(punc, '')
-#     roads['R_STNAME_C'] = roads.R_STNAME_C.str.replace(punc, '')
-
-# roads['l_nme_cln'] = roads['L_STNAME_C']
-# roads['R_nme_cln'] = roads['R_STNAME_C']
-
-# # Correct road type abbreviations
-# # print(roads[roads.uid == 4613])
-# # roads = roads[roads.uid == 4613]
-
-# roads['l_nme_cln'] = roads['l_nme_cln'].apply(lambda row: str_type_cln(row, type_corr_dict))
-
-# roads['road_parts'] = roads['l_nme_cln'].apply(lambda s_name: road_partitioner(s_name))
-# roads['STREET_NAME_FULL'] = roads['road_parts'].apply(lambda x: x[6])
-# roads['STREET_NAME'] = roads['road_parts'].apply(lambda x: x[0])
-# roads['STREET_TYPE'] = roads['road_parts'].apply(lambda x: x[1])
-# roads['STREET_DIRECTION'] = roads['road_parts'].apply(lambda x: x[2])
-# roads['ALT_NAME_FULL'] = roads['road_parts'].apply(lambda x: x[5])
-# roads['ALT_NAME'] =  roads['road_parts'].apply(lambda x: x[3])
-# roads['ALT_TYPE'] =  roads['road_parts'].apply(lambda x: x[4])
-
-# # Drop unecessary columns
-# roads.drop(columns=['L_STNAME_C', 'R_STNAME_C', 'road_parts'],  inplace=True)
-
-# print('Exporting cleaned dataset')
-# roads.to_file(project_gpkg, layer='roads_cleaned', driver='GPKG')
-# del roads
 
 print('Loading in footprint data')
-footprint = gpd.read_file(footprint_lyr, mask=aoi_gdf)
+footprint = gpd.read_file(footprint_lyr, layer=footprint_lyr_name ,mask=aoi_gdf)
 
 footprint = reproject(footprint, proj_crs)
 
+footprint['geometry'] = footprint['geometry'].buffer(0)
+
 print('Cleaning and prepping footprint data')
 # footprint = explode(footprint) # Remove multipart polygons convert to single polygons
-footprint['area'] = footprint['geometry'].area
+footprint['bf_area'] = footprint['geometry'].area
 # footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
 footprint = footprint.reset_index()
 footprint.rename(columns={'index':'bf_index'}, inplace=True)
@@ -406,8 +367,6 @@ for f in ['index_right', 'index_left']:
         footprint.drop(columns=f, inplace=True)
 
 print('Exporting cleaned dataset')
-print(footprint.head())
-sys.exit()
 footprint.to_file(project_gpkg, layer='footprints_cleaned', driver='GPKG')
 
 end_time = datetime.datetime.now()
