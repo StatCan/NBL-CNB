@@ -182,6 +182,10 @@ print("Running Step 2. Configure address to footprint linkages")
 addresses["addresses_index"] = addresses.index
 footprint["footprint_index"] = footprint.index
 
+# Remove buildings flagged as sheds as they do not need to be matched
+# sheds = footprint[footprint['shed_flag'] == True] # Set aside for use in future if sheds need to be matched
+footprint = footprint[footprint['shed_flag'] == False]
+
 print('     creating and grouping linkages')
 merge = addresses[~addresses[join_addresses].isna()].merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
 addresses['footprint_index'] = groupby_to_list(merge, "addresses_index", "footprint_index")
