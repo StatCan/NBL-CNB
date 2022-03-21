@@ -213,6 +213,182 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
     return footprint_gdf
 
 
+def parse_cadastral_address(address_string:str, street_types_dataframe: pd.DataFrame):
+    '''
+    For parsing the address found in the location field in the pan_ncb. Output is a list in the following format:
+    [civic_number_min, civic_number_max, street_name, street_type]
+    '''
+    
+    def determine_min_max(address_string):
+        def return_only_numbers(astring):
+            '''Takes a string and returns only numbers if applicable else it returns np.NaN'''
+            stripped = re.sub("[^0-9]", "", astring)
+            if len(address_string) > 0:
+                return stripped
+            else: return np.NaN
+
+        if len(address_string) == 1:
+            return [np.NaN, np.NaN]
+
+        fas = address_string[0]
+
+        if not fas.isdigit():
+            return [np.NaN, np.NaN] 
+
+        output_index = 0
+        if (address_string[1] == '-') or (address_string[1] == '&') or (address_string[1] == 'to'):
+            fas = return_only_numbers(fas)
+            sas = return_only_numbers(address_string[2])
+            return [fas, sas, 2]
+
+        if any(char.isdigit() for char in fas):
+            if ('-' in fas) or ('&' in fas):
+                fas_split = fas.split('-')
+                fas_split = [return_only_numbers(f) for f in fas_split]
+                return [min(fas_split), max(fas_split), output_index]
+            else:
+                fas = return_only_numbers(fas)
+                if isinstance(fas, str):
+                    return [fas, fas, output_index]
+                else: return [fas, fas, np.NaN]
+                
+        else:
+            return [np.NaN, np.NaN, np.NaN]
+
+
+    def get_street_name(address_string):
+        '''
+        Returns the name of the street from the address string
+        '''
+        # If empty list don't bother looking
+        if len(address_string) == 0:
+            return np.NaN
+
+        # If all empty strings also don't bother looking
+        if sum(len(s) for s in address_string) == 0:
+            return np.NaN
+
+        # remove any remaining blank strings
+        address_string = [x for x in address_string if len(x) > 0]       
+
+        return ' '.join(address_string)
+
+
+    def get_street_type(address_string, street_types_dataframe):
+        '''
+        Returns the address type for the given address as a string
+        '''
+        if len(address_string) == 0: 
+            return [np.NaN, np.NaN]
+ 
+        for i in reversed(address_string):
+            i_index = [ind for ind, element in enumerate(address_string) if element == i][-1] # use index for last occurance of the element to avoid erasure of str type like words in street names
+            i = i.strip("&/-.")
+            # If simple match can be found make it on the abbreviation
+            if i in street_types_dataframe.Abbreviation.tolist():
+                return [i, i_index]
+            # If no simple match can be found check if the type is in unabbreviated form
+            if i in  street_types_dataframe['Street type'].tolist():
+                i_index = street_types_dataframe.index[street_types_dataframe['Street type'] == i].tolist()[0]
+                return [street_types_dataframe.Abbreviation.iloc[i_index], i_index]
+            
+        return [np.NaN, np.NaN]
+    
+    if not isinstance(address_string, str):
+        return [np.NaN, np.NaN, np.NaN, np.NaN]
+
+    address = address_string.upper()
+    a_split = address.split(' ')
+    street_name = ''
+    # Handle numbers if any
+    a_numbers = determine_min_max(a_split)
+    address_max = a_numbers[1]
+    address_min = a_numbers[0]
+
+    # Remove civic number containing index if necessary
+    if (len(a_split) > 2) and (type(a_numbers[0]) != float):  # Don't remove things where there are no numbers in the address data 
+        if isinstance(a_numbers[2], int):
+            a_split = a_split[a_numbers[2] + 1:]
+
+    # Extract Street Type
+    stype_list = get_street_type(a_split, street_types_dataframe)
+    street_type = stype_list[0]
+    # Remove street type index if necessary
+    if isinstance(street_type, str):
+        a_split = a_split[:stype_list[1]]
+
+    street_name = get_street_name(a_split)
+
+    out_list = [address_min, address_max, street_name, street_type]      
+    return out_list
+
+
+def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFrame):
+    '''
+    Takes an input street type and returns the abbreviation bas off the street types dataframe
+    '''
+
+    street_type = street_type.strip("&/-.")
+    # If match can be found on the abbreviation return that
+    if street_type in street_types_dataframe.Abbreviation.tolist():
+        return street_type
+    # If no simple match can be found check if the type is in unabbreviated form
+    if street_type in  street_types_dataframe['Street type'].tolist():
+        stype_ab = street_types_dataframe.Abbreviation[street_types_dataframe['Street type'] == street_type].tolist()[0]
+        return stype_ab
+
+
+def adp_parcel_compare(address_row, parcel_row):
+    '''
+    Compares the address data for address points against linked parcels (if available). A full, partial, or false match is determined and a flag of the correct type is
+    placed on the record. 
+
+    outputs the following flags:
+
+    0 - No flag on address
+    1 - Flag on address
+    -1 - Underlying parcel issue (either no underlying parcel or no valid underlying address)
+
+    '''
+    
+    # For cases where there are no underlying parcel but should be filtered out before being put through this function
+    if len(parcel_row) == 0:
+        return -1
+    
+    a_list = address_row.tolist()
+    p_list = parcel_row.iloc[0].tolist()
+
+    # if cadastral data has no civic number then we return cad_ncn as no accuracy comparison can ba made
+    if not isinstance(p_list[1], str):
+        return -1 # cadastral data no civic number
+
+    # parcel (cadastral) and address point address part values in simple vars
+    adp_civic = int(a_list[1])
+    cad_min = int(p_list[1])
+    cad_max = int(p_list[2])
+    adp_sname = a_list[2] 
+    cad_sname = p_list[3]
+    adp_stype = a_list[-1]
+    cad_stype = p_list[-1]
+
+    # Setup flag vars as false
+    flag_count = 0
+
+    if not (adp_civic >= cad_min) or not (adp_civic <= cad_max):
+        flag_count += 1
+    if adp_sname != cad_sname:
+        flag_count += 1
+
+    if flag_count > 0:
+        return 1
+    if flag_count == 0:
+        return 0
+
+    print(parcel_row)
+    print(address_row)
+    sys.exit()
+
+
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -237,9 +413,9 @@ linking_lyr_nme = os.getenv('LINKING_LYR_NME')
 
 linking_ignore_columns = os.getenv('LINKING_IGNORE_COLS') 
 
-rd_gpkg = Path(os.getenv('RD_GPKG'))
-rd_lyr_nme = os.getenv('RD_LYR_NME')
-rd_use_flds = ['L_HNUMF', 'R_HNUMF', 'L_HNUML', 'R_HNUML', 'L_STNAME_C', 'R_STNAME_C', 'ROADCLASS']
+# road types txt
+str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
+
 # AOI mask if necessary
 aoi_mask = Path(os.getenv('AOI_MASK'))
 
@@ -247,43 +423,15 @@ aoi_mask = Path(os.getenv('AOI_MASK'))
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 rd_crs = os.getenv('RD_CRS')
 
-# Road name correction dictionary
-type_corr_dict = {'CRESCENT': 'CRES', 
-                'AVENUE' : 'AVE',
-                'BOULEVARD' : 'BLVD',
-                'DRIVE' : 'DR', 
-                'LANE' : 'LN', 
-                'PLACE' : 'PL',
-                'CENTRE' : 'CTR',
-                'CIRCLE' : 'CIR', 
-                'CIRCUIT' : 'CIRCT',
-                'CHEMIN' : 'CH', 
-                'CONCESSION' : 'CONC',
-                'COURT' : 'CRT',
-                'DRIVE' : 'DR',
-                'HIGHWAY' : 'HWY',
-                'PLACE' : 'PL',
-                'POINT' : 'PT',
-                'PRIVATE' : 'PVT',
-                'PROMINADE' : 'PROM',
-                'RANGE' : 'RG',
-                'ROAD' :'RD',
-                'ROUTE' : 'RTE',
-                'STREET' : 'ST',
-                'SUBDIVISION' : 'SUB',
-                'TERRACE' : 'TSSE',}
-master_types = ['ABBEY', 'ACRES', 'ALLÉE', 'ALLEY', 'AUT', 'AVE', 'AV', 'BAY', 'BEACH', 'BEND', 'BLVD', 'BOUL', 'BYPASS', 'BYWAY', 'CAMPUS', 'CAPE', 'CAR', 
-            'CARREF', 'CTR', 'C', 'CERCLE', 'CHASE', 'CH', 'CIR', 'CIRCT', 'CLOSE', 'COMMON', 'CONC', 'CRNRS', 'CÔTE', 'COUR', 'COURS', 'CRT', 'COVE', 'CRES', 
-            'CROIS', 'CROSS', 'CDS', 'DALE', 'DELL', 'DIVERS', 'DOWNS', 'DR', 'ÉCH', 'END', 'ESPL', 'ESTATE', 'EXPY', 'EXTEN', 'PINES','PL', 'PLACE', 'PLAT', 
-            'PLAZA', 'PT', 'POINTE', 'PORT', 'PVT', 'PROM', 'QUAI', 'QUAY', 'RAMP', 'RANG', 'RG', 'RIDGE', 'RISE', 'RD', 'RDPT', 'RTE', 'ROW', 'RUE', 'RLE', 
-            'RUN', 'SENT', 'SQ', 'ST', 'SUBDIV', 'TERR', 'TSSE', 'THICK', 'TOWERS', 'TLINE', 'TRAIL', 'TRNABT', 'VALE', 'VIA', 'VIEW', 'VILLGE', 'VILLAS', 
-            'VISTA', 'VOIE', 'WALK', 'WAY', 'WHARF', 'WOOD', 'WYND']
 # ------------------------------------------------------------------------------------------------
 # Logic
 
 # Load dataframes.
 if type(aoi_mask) != None:
     aoi_gdf = gpd.read_file(aoi_mask)
+
+str_types_df = pd.read_csv(str_types_path, delimiter='\t')
+str_types_df['Street type'] = str_types_df['Street type'].str.upper()
 
 print('Loading in linking data')
 linking_data = gpd.read_file(linking_data_path, layer=linking_lyr_nme, linking_ignore_columns=linking_ignore_columns, mask=aoi_gdf)
@@ -292,9 +440,16 @@ linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data['AREA'] = linking_data['geometry'].area
 linking_data = linking_data[linking_data['AREA'] > 101]
 linking_data = reproject(linking_data, proj_crs)
-linking_cols_drop.remove('geometry')
-linking_cols_drop.remove('Pan_Int')
+
+for col in ['geometry', 'Pan_Int', 'Location']:
+    linking_cols_drop.remove(col)
+
 linking_data.drop(columns=linking_cols_drop, inplace=True)
+
+linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
+
+linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
+linking_data.drop(columns=['parsed_list'], inplace=True)
 
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
@@ -323,12 +478,17 @@ for f in ['index_right', 'index_left']:
     if f in addresses.columns.tolist():
         addresses.drop(columns=f, inplace=True)
 
+addresses['a_id'] = addresses.index
 addresses["number"] = addresses[ap_add_fields[0]].map(int)
 addresses['street'] = addresses[ap_add_fields[1]].str.upper()
-addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1]], inplace=True)
+addresses['stype_en'] =addresses[ap_add_fields[2]].str.upper()
+addresses['stype_abbr'] = addresses['stype_en'].apply(lambda stype: address_type_abbreviator(stype, str_types_df))
+addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
 
-print('Exporting cleaned dataset')
+addresses['parcel_location_match'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: adp_parcel_compare(row, linking_data[linking_data['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
 
+
+print('Exporting cleaned address dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 
 print('Loading in footprint data')
