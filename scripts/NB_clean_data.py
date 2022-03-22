@@ -327,7 +327,8 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
     '''
     Takes an input street type and returns the abbreviation bas off the street types dataframe
     '''
-
+    if type(street_type) != string:
+        return None
     street_type = street_type.strip("&/-.")
     # If match can be found on the abbreviation return that
     if street_type in street_types_dataframe.Abbreviation.tolist():
@@ -417,7 +418,7 @@ linking_ignore_columns = os.getenv('LINKING_IGNORE_COLS')
 str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
 
 # AOI mask if necessary
-aoi_mask = Path(os.getenv('AOI_MASK'))
+aoi_mask = os.getenv('AOI_MASK')
 
 # output gpkg
 project_gpkg = Path(os.getenv('DATA_GPKG'))
@@ -427,7 +428,8 @@ rd_crs = os.getenv('RD_CRS')
 # Logic
 
 # Load dataframes.
-if type(aoi_mask) != None:
+aoi_gdf = None
+if aoi_mask != None:
     aoi_gdf = gpd.read_file(aoi_mask)
 
 str_types_df = pd.read_csv(str_types_path, delimiter='\t')
@@ -482,7 +484,10 @@ addresses['a_id'] = addresses.index
 addresses["number"] = addresses[ap_add_fields[0]].map(int)
 addresses['street'] = addresses[ap_add_fields[1]].str.upper()
 addresses['stype_en'] =addresses[ap_add_fields[2]].str.upper()
+# none_stype = addresses[addresses['stype_en'] == None]
+# addresses = addresses[~addresses['stype_en'] == None]
 addresses['stype_abbr'] = addresses['stype_en'].apply(lambda stype: address_type_abbreviator(stype, str_types_df))
+# addresses = addresses.append(none_stype)
 addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
 
 addresses['parcel_location_match'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: adp_parcel_compare(row, linking_data[linking_data['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
