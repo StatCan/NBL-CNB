@@ -173,13 +173,13 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
             return shed_indexes
 
         # Take out the tiny buildings under 50m2 and prelabel them as sheds then take remainder and test count vs count
-        sheds = bf_data.loc[bf_data[bf_area_field] < min_adressable_area]
+        sheds = pd.DataFrame(bf_data.loc[bf_data[bf_area_field] < min_adressable_area])
         bf_data = bf_data.loc[(bf_data[bf_area_field] > min_adressable_area)]
 
         bf_count = len(bf_data) # reset bf_count because we changed the # of buildings in bf_data
 
         ap_bf_diff = bf_count - ap_count # how many more bf's there are than address points in the parcel
-        sheds = sheds.append(bf_data.sort_values(bf_area_field, ascending=True).head(ap_bf_diff)) # sort the smallest to the top then take the top x rows based on ap_bf_diff value 
+        sheds = pd.concat([sheds, bf_data.sort_values(bf_area_field, ascending=True).head(ap_bf_diff)], axis=0, join='outer') # sort the smallest to the top then take the top x rows based on ap_bf_diff value 
         
         sheds = sheds[sheds[bf_area_field] <= max_shed_size] # remove things from the output that are unlikly to be sheds >= 100m2
 
