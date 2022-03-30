@@ -231,11 +231,17 @@ def parse_cadastral_address(address_string:str, street_types_dataframe: pd.DataF
             return [np.NaN, np.NaN]
 
         fas = address_string[0]
-
-        if not fas.isdigit():
-            return [np.NaN, np.NaN] 
-
         output_index = 0
+
+        if '-' in address_string[0]:
+            # if there is a dash between number without spaces split the string on the dash
+            split_string = address_string[0].split('-')
+            fas = split_string[0]
+            sas = split_string[-1]
+        
+        if not fas.isdigit():
+            return [np.NaN, np.NaN]
+
         if (address_string[1] == '-') or (address_string[1] == '&') or (address_string[1] == 'to'):
             fas = return_only_numbers(fas)
             sas = return_only_numbers(address_string[2])
