@@ -94,7 +94,7 @@ output_gpkg = Path(os.getenv('DATA_GPKG'))
 
 proj_crs = int(os.getenv('PROJ_CRS'))
 
-aoi_mask = Path(os.getenv('AOI_MASK'))
+aoi_mask = os.getenv('AOI_MASK')
 
 metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
 
@@ -108,7 +108,8 @@ print('Loading in layers')
 starttime = datetime.datetime.now()
 print(f'Start Time {starttime}')
 
-if type(aoi_mask) != None:
+aoi_gdf = None
+if aoi_mask != None:
     aoi_gdf = gpd.read_file(aoi_mask)
 
 addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_gdf)
