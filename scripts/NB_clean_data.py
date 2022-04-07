@@ -191,9 +191,6 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
     footprint_gdf['C'] = footprint_gdf.apply(lambda c: (4*pi*c['bf_area'])/(c['perimiter']*c['perimiter']), axis=1)
     # separate out the round sheds from rest of the 
     round_sheds = footprint_gdf[footprint_gdf['C'] >= 0.98]
-    round_sheds.drop(columns=['geometry'], inplace=True)
-    round_sheds.to_file(r'C:\projects\point_in_polygon\data\NB_data\round_nao.gpkg', layer='round_nao', driver='GPKG')
-    sys.exit()
     footprint_gdf = footprint_gdf[footprint_gdf['C'] < 0.98]
     footprint_gdf.drop(columns=['C'], inplace=True)
     round_sheds.drop(columns=['C'], inplace=True)
