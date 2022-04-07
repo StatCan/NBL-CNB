@@ -186,6 +186,19 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
         shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
         return shed_indexes
 
+    # Start by finding all the perfectly round buildings and labelling them as sheds size doesn't matter here.
+    footprint_gdf['perimiter'] = footprint_gdf['geometry'].apply(lambda x: x.length)
+    footprint_gdf['C'] = footprint_gdf.apply(lambda c: (4*pi*c['bf_area'])/(c['perimiter']*c['perimiter']), axis=1)
+    # separate out the round sheds from rest of the 
+    round_sheds = footprint_gdf[footprint_gdf['C'] >= 0.98]
+    round_sheds.drop(columns=['geometry'], inplace=True)
+    round_sheds.to_file(r'C:\projects\point_in_polygon\data\NB_data\round_nao.gpkg', layer='round_nao', driver='GPKG')
+    sys.exit()
+    footprint_gdf = footprint_gdf[footprint_gdf['C'] < 0.98]
+    footprint_gdf.drop(columns=['C'], inplace=True)
+    round_sheds.drop(columns=['C'], inplace=True)
+    
+    # Of the remaining group, count, slice
     adp_parcel_linkages = address_gdf.groupby('link_field', dropna=True)['link_field'].count()
     bf_parcel_linkages = footprint_gdf.groupby('link_field', dropna=True)['link_field'].count()
 
