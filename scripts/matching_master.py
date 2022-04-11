@@ -256,15 +256,15 @@ flag_plural = addresses["footprint_index"].map(len) > 1
 addresses = addresses.explode('footprint_index') # Convert the lists into unique rows per building linkage (cleaned up later)
 
 addresses = addresses[addresses['footprint_index'] != np.nan]
-addresses.method.fillna('data_linking', inplace=True)
+addresses['method'] = 'data_linking'
 
 print("Running Step 5. Merge Results")
 
-outgdf = addresses.append([intersections, addresses_bp])
+outgdf = addresses.append([intersections, addresses_bp, unlinked_aps])
 
 print("Running Step 6: Change Point Location to Building Centroid")
 print('     Creating footprint centroids')
-footprint['centroid_geo'] = footprint['geometry'].apply(lambda bf: bf.centroid)
+footprint['centroid_geo'] = footprint['geometry'].apply(lambda bf: bf.representative_point())
 print('     Matching address points with footprint centroids')
 outgdf['out_geom'] = outgdf['footprint_index'].apply(lambda row: create_centroid_match(row, footprint['centroid_geo']))
 
