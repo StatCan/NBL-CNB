@@ -276,15 +276,15 @@ outgdf = outgdf.set_geometry('geometry')
 
 outgdf.to_file(output_gpkg, layer='point_linkages',  driver='GPKG')
 
-metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])], 
-        ['DATA_LINKING', len(outgdf[outgdf['method'] == 'data_linking'])],
-        [f'{buffer_distances[0]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[0]}m buffer'])],
-        [f'{buffer_distances[1]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[1]}m buffer'])],
-        [f'{buffer_distances[2]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[2]}m buffer'])]
-        ]
+# metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])], 
+#         ['DATA_LINKING', len(outgdf[outgdf['method'] == 'data_linking'])],
+#         [f'{buffer_distances[0]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[0]}m buffer'])],
+#         [f'{buffer_distances[1]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[1]}m buffer'])],
+#         [f'{buffer_distances[2]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[2]}m buffer'])]
+#         ]
 
-metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
-metrics_df.to_csv(os.path.join(metrics_out_path, 'Matching_Metrics.csv'), index=False)
+# metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
+# metrics_df.to_csv(os.path.join(metrics_out_path, 'Matching_Metrics.csv'), index=False)
 
 end_time = datetime.datetime.now()
 print(f'Start Time: {start_time}')
