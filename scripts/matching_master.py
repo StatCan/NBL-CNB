@@ -64,7 +64,7 @@ def as_int(val):
     except ValueError:
         return val
 
-def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
+def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
     'Returns indexes for the bf based on the increasing buffer size'
     
     def list_bf_indexes(buffer_geom, bf_gdf):
@@ -80,29 +80,14 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distances):
         else: 
             return np.nan
     
-    
-    addresses_gdf['method'] = np.nan
-    linked_dfs = []
-    
-    for dist in buffer_distances:
-        
-        addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(dist)
-        addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
+    addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(buffer_distance)
+    addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
 
-        linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
-        linked_df['method'] = f'{dist}m buffer'
-        linked_df.drop(columns=["buffer_geom"], inplace=True)
-        linked_dfs.append(linked_df)
-        
-        addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
-        
-        # addresses.drop(columns=["buffer_geom"], inplace=True)
-        
-        if len(addresses_gdf) == 0:
-            break
-
-    master_gdf = pd.concat(linked_dfs)
-    return master_gdf
+    linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
+    linked_df['method'] = f'{buffer_distance}m buffer'
+    linked_df.drop(columns=["buffer_geom"], inplace=True)
+    addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
+    return linked_df
 
 def check_for_intersects(address_pt, footprint_indexes):
     '''Similar to the get nearest linkage function except this looks for intersects (uses within because its much faster) and spits out the index of any intersect'''
@@ -153,7 +138,7 @@ unlinked_bf_lyr_nme = os.getenv('UNLINKED_BF_LYR_NME')
 
 out_lyr_nme = os.getenv('LINKED_BY_DATA_NME')
 
-buffer_distances = [5,10,20] # distance for the buffers
+buffer_size = 20 # distance for the buffer
 
 metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
 
@@ -197,11 +182,11 @@ ap_counts = addresses.groupby('link_field', dropna=True)['link_field'].count()
 # Take only parcels that have more than the big parcel (bp) threshold intersects of both a the inputs
 addresses_bp = addresses.loc[addresses['link_field'].isin(ap_counts[ap_counts > bp_threshold].index.tolist())]
 addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
-addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distances)
+addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
 
 # Find and reduce plural linkages to the closest linkage
 ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
-addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1) 
+addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
 addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
 addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
 
@@ -224,10 +209,14 @@ if len(unlinked_aps) > 0:
     unlinked_aps.to_crs(proj_crs, inplace=True)
     print('     processing unlinked geometry')
     # run the next line using only the footprints that are not already linked to an address point
-    unlinked_aps = get_unlinked_geometry(unlinked_aps, footprint[~footprint['footprint_index'].isin(addresses.footprint_index.explode().unique().tolist())], buffer_distances)
+    unlinked_aps = get_unlinked_geometry(unlinked_aps, footprint, buffer_size)
+    # Take only the closest linkage for unlinked geometries
+    unlinked_plural = unlinked_aps['footprint_index'].map(len) > 1
+    unlinked_aps.loc[unlinked_plural, "footprint_index"] = unlinked_aps[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
+    unlinked_aps = unlinked_aps.explode('footprint_index')
+    unlinked_aps['method'] = f'{buffer_size}m_buffer'
     print('     appending unlinked geometry to address data')
-    addresses = addresses.append(unlinked_aps)
-    
+
 print('Running Step 3. Checking address linkages via intersects')
 
 addresses['intersect_index'] = addresses[["geometry", "footprint_index"]].apply(lambda row: check_for_intersects(*row), axis=1)
