@@ -240,22 +240,34 @@ addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tup
 flag_plural = addresses["footprint_index"].map(len) > 1
 addresses = addresses.explode('footprint_index') # Convert the lists into unique rows per building linkage (cleaned up later)
 
+unlinked_aps = unlinked_aps.append(addresses[addresses['footprint_index'] == np.nan]) # Add data missed at data linking phase to the data to be checked by proximity
 addresses = addresses[addresses['footprint_index'] != np.nan]
 addresses['method'] = 'data_linking'
 
 # Get linkages via buffer if any unlinked data is present
 print('     get linkages via buffer')
 if len(unlinked_aps) > 0:
-    # get all footprint_indexes (fi) from the previous steps to exclude in the next step
+    
+    unlinked_aps.to_crs(proj_crs, inplace=True)
+    unlinked_aps.drop(columns=['footprint_index'], inplace=True)
+
+    # split into two groups = points linked to a parcel - run against full building dataset, points with no footprint - only run against unlinked buildings
+    no_parcel = unlinked_aps[unlinked_aps['link_field'].isna()]
+    parcel_link = unlinked_aps[~unlinked_aps['link_field'].isna()]
+
+    # get all footprint_indexes (fi) from the previous steps to exclude in the next step for no parcel aps
     intersect_fi = list(set(intersections.footprint_index.tolist()))
     linking_fi = list(set(addresses.footprint_index.tolist()))
+
     # Bring in only those footprints that haven't yet been matched to remove matches on buildings already matched
     unlinked_footprint = footprint[~(footprint['footprint_index'].isin(linking_fi) | footprint['footprint_index'].isin(intersect_fi))]
-    unlinked_aps.drop(columns=['footprint_index'], inplace=True)
-    unlinked_aps.to_crs(proj_crs, inplace=True)
+
     print('     processing unlinked geometry')
     # run the next line using only the footprints that are not already linked to an address point
-    unlinked_aps = get_unlinked_geometry(unlinked_aps, unlinked_footprint, buffer_size)
+    no_parcel = get_unlinked_geometry(no_parcel, unlinked_footprint, buffer_size)
+    parcel_link = get_unlinked_geometry(parcel_link, footprint, buffer_size)
+    
+    unlinked_aps = no_parcel.append(parcel_link)
     # Take only the closest linkage for unlinked geometries
     unlinked_plural = unlinked_aps['footprint_index'].map(len) > 1
     unlinked_aps.loc[unlinked_plural, "footprint_index"] = unlinked_aps[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
