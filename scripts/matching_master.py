@@ -250,8 +250,6 @@ if len(unlinked_aps) > 0:
     intersect_fi = list(set(intersections.footprint_index.tolist()))
     linking_fi = list(set(addresses.footprint_index.tolist()))
     # Bring in only those footprints that haven't yet been matched to remove matches on buildings already matched
-    # print(footprint.head())
-    # print(footprint[~footprint['footprint_index'].isin(list(set(addresses['footprint_index'].to_list())))])
     unlinked_footprint = footprint[~(footprint['footprint_index'].isin(linking_fi) | footprint['footprint_index'].isin(intersect_fi))]
     unlinked_aps.drop(columns=['footprint_index'], inplace=True)
     unlinked_aps.to_crs(proj_crs, inplace=True)
