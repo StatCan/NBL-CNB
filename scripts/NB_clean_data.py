@@ -148,7 +148,7 @@ def return_smallest_match(ap_matches, parcel_df, unique_id):
 
 def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
     '''
-    Methodology for flagging buildings as sheds
+    Methodology for flagging buildings as sheds. Sheds meaning unaddressable outbuildings
     '''
     
     def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100):
@@ -217,9 +217,9 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
     footprint_gdf = footprint_gdf.loc[~footprint_gdf['bf_index'].isin(shed_indexes)]
 
     shed_gdf['shed_flag'] = True
+    round_sheds['shed_flag'] = True
     footprint_gdf['shed_flag'] = False
-
-    footprint_gdf = footprint_gdf.append(shed_gdf)
+    footprint_gdf = footprint_gdf.append([shed_gdf, round_sheds])
     return footprint_gdf
 
 
