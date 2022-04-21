@@ -362,8 +362,8 @@ def adp_parcel_compare(address_row, parcel_row):
 
     outputs the following flags:
 
-    0 - No flag on address
-    1 - Flag on address
+    0 - Address point and parcel address match do not match
+    1 - Address point and parcel address match
     -1 - Underlying parcel issue (either no underlying parcel or no valid underlying address)
 
     '''
@@ -385,15 +385,15 @@ def adp_parcel_compare(address_row, parcel_row):
     cad_max = int(p_list[2])
     adp_sname = a_list[2] 
     cad_sname = p_list[3]
-    adp_stype = a_list[-1]
-    cad_stype = p_list[-1]
+    # adp_stype = a_list[-1]
+    # cad_stype = p_list[-1]
 
     # Setup flag vars as false
     flag_count = 0
 
-    if not (adp_civic >= cad_min) or not (adp_civic <= cad_max):
+    if (adp_civic >= cad_min) or (adp_civic <= cad_max):
         flag_count += 1
-    if adp_sname != cad_sname:
+    if adp_sname == cad_sname:
         flag_count += 1
 
     if flag_count > 0:
