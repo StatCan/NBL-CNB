@@ -391,7 +391,7 @@ def adp_parcel_compare(address_row, parcel_row):
     # Setup flag vars as false
     flag_count = 0
 
-    if (adp_civic >= cad_min) or (adp_civic <= cad_max):
+    if (adp_civic >= cad_min) and (adp_civic <= cad_max):
         flag_count += 1
     if adp_sname == cad_sname:
         flag_count += 1
@@ -502,12 +502,11 @@ addresses['street'] = addresses[ap_add_fields[1]].str.upper()
 addresses['stype_en'] =addresses[ap_add_fields[2]].str.upper()
 # none_stype = addresses[addresses['stype_en'] == None]
 # addresses = addresses[~addresses['stype_en'] == None]
-addresses['stype_abbr'] = addresses['stype_en'].apply(lambda stype: address_type_abbreviator(stype, str_types_df))
+addresses['stype_abbr'] = addresses['stype_en'].swifter.apply(lambda stype: address_type_abbreviator(stype, str_types_df))
 # addresses = addresses.append(none_stype)
 addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
 
-addresses['parcel_location_match'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: adp_parcel_compare(row, linking_data[linking_data['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
-
+addresses['parcel_location_match'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].swifter.apply(lambda row: adp_parcel_compare(row, linking_data[linking_data['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
 
 print('Exporting cleaned address dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
