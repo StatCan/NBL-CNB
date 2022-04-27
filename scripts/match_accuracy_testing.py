@@ -142,9 +142,7 @@ def abbreviate_street_type(stype, st_type_key_df):
     if len(filtered_key) == 1:
         return filtered_key['Abbreviation'].tolist()[0]
 
-    print(st_type_key_df[st_type_key_df['Street type'] == stype.upper()])
-    print(stype)
-    sys.exit()
+    return stype.upper()
 
 
 def match_range_address(bf_index, add_val, bf_df):
@@ -229,6 +227,8 @@ bf_link_field = 'footprint_index'
  
 m_acc_gpkg_path = Path(os.getenv('MATCH_ACC_GPKG'))
 
+m_acc_table_path = os.getenv('METRICS_CSV_OUT_PATH')
+
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Logic
 
@@ -256,7 +256,7 @@ addresses = gpd.read_file(matched_ap_gpkg, layer=matched_ap_lyr_nme, driver='GPK
 addresses = addresses[~addresses['footprint_index'].isna()]
 
 # Address points address field cleaning/prep
-addresses['type_en_abv'] = addresses['ST_TYPE_E'].apply(lambda x: abbreviate_street_type(x, str_types_df))
+addresses['type_en_abv'] = addresses['stype_en'].apply(lambda x: abbreviate_street_type(x, str_types_df))
 
 addresses['ad_rng_check'] = addresses[['footprint_index', 'number']].apply(lambda x: match_range_address(x['footprint_index'], x['number'], footprint), axis=1)
 addresses['str_nme_check'] = addresses[['footprint_index', 'street']].apply(lambda x: match_street_name(x['footprint_index'], x['street'], footprint), axis=1)
@@ -281,15 +281,29 @@ print(f'PARTIAL: {unique_counts[1]}')
 print(f'FALSE: {unique_counts[2]}')
 
 # Case based matching
-for case in ['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many', 'unlinked', 'no_linked_building']:
+counts = []
+unique_counts = []
+for case in ['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many', 'unlinked']:
     case_df = addresses[addresses['parcel_rel'] == case]                                                                                                                                                                                                            
     print(f'FLAG for: {case}')
     case_counts = case_df['match_flag'].value_counts()
     print(case_counts)
+    case_sum = sum([case_counts['FULL'], case_counts['PARTIAL'], case_counts['FALSE']])
+    row = [case, case_counts['FULL'], case_counts['PARTIAL'], case_counts['FALSE'], case_sum, round((case_counts['FULL']/case_sum)*100, 2)]
+    counts.append(row)
     print("UNIQUE COUNTS")
+    u_row = [case]
     for f in ['FULL', 'PARTIAL', 'FALSE']:
         uniques_count = (len(list(set(case_df[case_df['match_flag'] == f]['ADDR_SYM'].tolist()))))
+        u_row.append(uniques_count)
         print(f"{f}: {uniques_count}")
+    u_row.append(sum([u_row[1], u_row[2], u_row[3]]))
+    u_row.append(round((u_row[1]/u_row[4])*100, 2))
+    unique_counts.append(u_row)
 
+counts_df = pd.DataFrame(counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'Total', 'Percent_FULL'])
+ucounts_df = pd.DataFrame(unique_counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'Total', 'Percent_FULL'])
+counts_df.to_csv(os.path.join(m_acc_table_path, 'accuracy_table.csv'))
+ucounts_df.to_csv(os.path.join(m_acc_table_path, 'unique_accuracy_table.csv'))
 
 print('DONE!')
