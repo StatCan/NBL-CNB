@@ -1,4 +1,4 @@
-# points_to_polygons_PoC
+# NBL-CNB Implimentation Prototype- New Brunswick
 
 ## Description and Sources
 Proof of concept for matching address points to building footprints. As an initial prototype  New Brunswick was chosen. 
