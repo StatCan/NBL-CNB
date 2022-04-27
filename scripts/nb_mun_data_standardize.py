@@ -87,7 +87,7 @@ for f in os.listdir(civics_path):
     civics = civics[~civics[mun_ad_fields[0]].isna()]
 
     civics['civic_num'] = civics[mun_ad_fields[0]]#.map(int) # Commented out because there are .5's in Moncton
-    civics['st_nme'] = civics[mun_ad_fields[1]].str.upper().str.strip('.')
+    civics['st_nme'] = civics[mun_ad_fields[1]].str.upper().str.strip('.').str.strip(' ')
     civics['st_type'] = civics[mun_ad_fields[2]].str.upper().str.strip('.')
     
     if mun == 'SaintJohn':
