@@ -101,7 +101,6 @@ ap_cases_gpkg = Path(os.getenv('AP_CASES_GPKG'))
 # -------------------------------------------------------
 # Logic
 def main():
-    print('Loading in layers')
     starttime = datetime.datetime.now()
     print(f'Start Time {starttime}')
 
@@ -140,7 +139,7 @@ def main():
     print(f"METRIC: POINTS NOT IN PARCEL = {ap_par_len}")
     metrics.append(['POINTS NOT IN PARCEL', ap_par_len])
 
-    no_link = addresses[addresses.Pan_Int.isna()]
+    # no_link = addresses[addresses.Pan_Int.isna()]
 
     # Counts of all parcels with more than 1 point
     linkage_counts = addresses['link_field'].value_counts()
