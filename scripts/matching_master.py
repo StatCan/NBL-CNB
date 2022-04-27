@@ -126,6 +126,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
 output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
+matched_lyr_nme = os.getenv('MATCHED_OUTPUT_LYR_NME')
 # Layer inputs cleaned versions only
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
@@ -290,7 +291,7 @@ outgdf.drop(columns='geometry', inplace=True)
 outgdf.rename(columns={'out_geom':'geometry'}, inplace=True)
 outgdf = outgdf.set_geometry('geometry')
 
-outgdf.to_file(output_gpkg, layer='point_linkages',  driver='GPKG')
+outgdf.to_file(output_gpkg, layer=matched_lyr_nme,  driver='GPKG')
 
 # metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])], 
 #         ['DATA_LINKING', len(outgdf[outgdf['method'] == 'data_linking'])],
