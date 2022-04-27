@@ -16,7 +16,7 @@ from shapely import geometry
 from shapely.geometry import Point, Polygon, MultiPolygon
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import datetime
-
+import swifter
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
 '''
