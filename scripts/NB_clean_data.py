@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 import string
@@ -6,13 +7,14 @@ from pathlib import Path
 import fiona
 import geopandas as gpd
 import numpy as np
-from numpy.core.numeric import True_
 import pandas as pd
+import swifter
+from dotenv import load_dotenv
+from numpy.core.numeric import True_
 from pyproj import crs
 from shapely import geometry
 from shapely.geometry import MultiPolygon, Point, Polygon, geo
-from dotenv import load_dotenv
-import datetime
+from math import pi
 
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
@@ -355,57 +357,6 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
         return stype_ab
 
 
-def adp_parcel_compare(address_row, parcel_row):
-    '''
-    Compares the address data for address points against linked parcels (if available). A full, partial, or false match is determined and a flag of the correct type is
-    placed on the record. 
-
-    outputs the following flags:
-
-    0 - Address point and parcel address match do not match
-    1 - Address point and parcel address match
-    -1 - Underlying parcel issue (either no underlying parcel or no valid underlying address)
-
-    '''
-    
-    # For cases where there are no underlying parcel but should be filtered out before being put through this function
-    if len(parcel_row) == 0:
-        return -1
-    
-    a_list = address_row.tolist()
-    p_list = parcel_row.iloc[0].tolist()
-
-    # if cadastral data has no civic number then we return cad_ncn as no accuracy comparison can ba made
-    if not isinstance(p_list[1], str):
-        return -1 # cadastral data no civic number
-
-    # parcel (cadastral) and address point address part values in simple vars
-    adp_civic = int(a_list[1])
-    cad_min = int(p_list[1])
-    cad_max = int(p_list[2])
-    adp_sname = a_list[2] 
-    cad_sname = p_list[3]
-    # adp_stype = a_list[-1]
-    # cad_stype = p_list[-1]
-
-    # Setup flag vars as false
-    flag_count = 0
-
-    if (adp_civic >= cad_min) and (adp_civic <= cad_max):
-        flag_count += 1
-    if adp_sname == cad_sname:
-        flag_count += 1
-
-    if flag_count > 0:
-        return 1
-    if flag_count == 0:
-        return 0
-
-    print(parcel_row)
-    print(address_row)
-    sys.exit()
-
-
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -413,7 +364,6 @@ start_time = datetime.datetime.now()
 
 load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
-geo_crs = os.getenv('CRS')
 proj_crs = os.getenv('PROJ_CRS')
 
 footprint_lyr = Path(os.getenv('BF_PATH'))
@@ -453,11 +403,11 @@ str_types_df['Street type'] = str_types_df['Street type'].str.upper()
 
 print('Loading in linking data')
 linking_data = gpd.read_file(linking_data_path, layer=linking_lyr_nme, linking_ignore_columns=linking_ignore_columns, mask=aoi_gdf)
+linking_data = reproject(linking_data, proj_crs)
 linking_cols_drop = linking_data.columns.tolist()
 linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data['AREA'] = linking_data['geometry'].area
 linking_data = linking_data[linking_data['AREA'] > 101]
-linking_data = reproject(linking_data, proj_crs)
 
 for col in ['geometry', 'Pan_Int', 'Location']:
     linking_cols_drop.remove(col)
@@ -468,7 +418,7 @@ linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: pa
 
 linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
 linking_data.drop(columns=['parsed_list'], inplace=True)
-
+#linking_data.drop(columns=['fid'], inplace=True) # for voronoi only
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
 print('Loading in address data')
@@ -482,7 +432,7 @@ print('Cleaning and prepping address points')
 
 # addresses = addresses[ap_add_fields]
 addresses = reproject(addresses, proj_crs)
-addresses = gpd.sjoin(addresses, linking_data, op='within', how='left')
+addresses = gpd.sjoin(addresses, linking_data[['link_field', 'geometry']], op='within', how='left')
 
 # Deal with duplications in the address  layer caused by the spatial join. Take the smallest parcel as assumed to be the most accurate
 grouped = addresses.groupby('CIV_ID', dropna=True)['CIV_ID'].count()
@@ -527,7 +477,7 @@ footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])
 footprint = reproject(footprint, proj_crs)
 
-footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
+footprint['centroid_geo'] = footprint['geometry'].swifter.apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
 footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
 footprint.drop(columns=['AREA'], inplace=True)
