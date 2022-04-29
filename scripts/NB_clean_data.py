@@ -456,8 +456,6 @@ addresses['stype_abbr'] = addresses['stype_en'].swifter.apply(lambda stype: addr
 # addresses = addresses.append(none_stype)
 addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
 
-addresses['parcel_location_match'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].swifter.apply(lambda row: adp_parcel_compare(row, linking_data[linking_data['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
-
 print('Exporting cleaned address dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
 
