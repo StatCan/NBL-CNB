@@ -117,6 +117,24 @@ def get_nearest_linkage(ap, footprint_indexes):
     footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
     return footprint_index
 
+
+def building_area_theshold_id(building_gdf, bf_area_threshold , area_field_name='bf_area'):
+    '''
+    Returns a boolean on whether a majority of the buildings in the bp fall under the bp threshold defined in the environments. 
+    Buildings should be filtered to only those in the polygon before being passed into this function
+    '''
+    
+    all_bf_cnt = len(building_gdf)
+
+    bf_u_thresh = building_gdf[building_gdf[area_field_name] <= bf_area_threshold]
+    bf_u_thresh_cnt = len(bf_u_thresh)
+
+    if bf_u_thresh_cnt >= (all_bf_cnt/2):
+        return True
+    else:
+        return False
+
+
 # ---------------------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -144,6 +162,7 @@ buffer_size = 20 # distance for the buffer
 metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
 
 bp_threshold = int(os.getenv('BP_THRESHOLD'))
+bp_area_threshold = int(os.getenv('BP_AREA_THRESHOLD'))
 
 # ---------------------------------------------------------------------------------------------------------------
 # Logic
@@ -178,10 +197,17 @@ addresses['footprint_index'] = groupby_to_list(merge, "addresses_index", "footpr
 addresses.drop(columns=["addresses_index"], inplace=True)
 
 # Big Parcel (BP) case extraction (remove and match before all other cases)
+bf_counts = footprint.groupby('link_field', dropna=True)['link_field'].count()
 ap_counts = addresses.groupby('link_field', dropna=True)['link_field'].count()
 
 # Take only parcels that have more than the big parcel (bp) threshold intersects of both a the inputs
-addresses_bp = addresses.loc[addresses['link_field'].isin(ap_counts[ap_counts > bp_threshold].index.tolist())]
+addresses_bp = addresses.loc[(addresses['link_field'].isin(bf_counts[bf_counts > bp_threshold].index.tolist())) & (addresses['link_field'].isin(ap_counts[ap_counts > bp_threshold].index.tolist()))]
+
+# return all addresses with a majority of the buildings under the area threshold
+addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
+addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
+addresses_bp.drop(columns=['u_areaflag'], inplace=True)
+
 addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
 addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
 
