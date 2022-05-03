@@ -50,12 +50,17 @@ proj_crs = int(os.getenv('PROJ_CRS'))
 matched_points_path = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
 matched_points_lyr_nme = 'point_linkages'
 
+# matched_points_path = r'C:\projects\point_in_polygon\data\NB_data\parcelflag_filter.gpkg'
+# matched_points_lyr_nme = 'linkage_filter_test'
+
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 addresses_lyr_nme = os.getenv('FLAGGED_AP_LYR_NME')
 
 qa_qc_gpkg = Path(os.getenv('QA_GPKG'))
+# qa_qc_gpkg = r'C:\projects\point_in_polygon\data\NB_data\parcelflag_filter.gpkg'
 # ----------------------------------------------------------------------------------------------------
 # logic
+
 
 match_adp = gpd.read_file(matched_points_path, layer=matched_points_lyr_nme, crs=proj_crs)
 clean_adp = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
@@ -64,10 +69,22 @@ match_adp['line_geom'] = match_adp[['a_id', 'geometry']].apply(lambda row: point
 
 match_adp = match_adp.set_geometry('line_geom')
 
-match_adp.drop(columns='geometry', inplace=True)
+match_adp.rename(columns={'geometry': 'point_geometry'}, inplace=True)
 match_adp.rename(columns={'line_geom':'geometry'}, inplace=True)
 match_adp= match_adp.set_geometry('geometry')
 
-match_adp.to_file(qa_qc_gpkg, layer=f"line_link_{datetime.datetime.now().strftime('%d_%m_%Y')}", driver='GPKG')
+# Filter out those links that exceed the maximum limit for linkage distance
+match_adp['link_length'] = match_adp['geometry'].apply(lambda l: l.length)
+
+# Output line file to the qa_qc gpkg
+line_links = match_adp.copy(deep=True)
+line_links.drop(columns=['point_geometry'], inplace=True)
+line_links.to_file(qa_qc_gpkg, layer=f"line_link_{datetime.datetime.now().strftime('%d_%m_%Y')}", driver='GPKG')
+
+match_adp.drop(columns=['geometry'], inplace=True)
+match_adp.rename(columns={'point_geometry':'geometry'}, inplace=True)
+match_adp= match_adp.set_geometry('geometry')
+
+match_adp.to_file(qa_qc_gpkg, layer='qc_points', driver='GPKG')
 
 print('DONE!')
