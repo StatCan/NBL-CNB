@@ -145,6 +145,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 output_path = os.getcwd()
 output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
 matched_lyr_nme = os.getenv('MATCHED_OUTPUT_LYR_NME')
+unmatched_lyr_nme = os.getenv('UNMATCHED_OUTPUT_LYR_NME')
 # Layer inputs cleaned versions only
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
@@ -203,29 +204,31 @@ ap_counts = addresses.groupby('link_field', dropna=True)['link_field'].count()
 # Take only parcels that have more than the big parcel (bp) threshold intersects of both a the inputs
 addresses_bp = addresses.loc[(addresses['link_field'].isin(bf_counts[bf_counts > bp_threshold].index.tolist())) & (addresses['link_field'].isin(ap_counts[ap_counts > bp_threshold].index.tolist()))]
 
-# return all addresses with a majority of the buildings under the area threshold
-addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
-addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
-addresses_bp.drop(columns=['u_areaflag'], inplace=True)
+if len(addresses_bp) > 0:
+    # return all addresses with a majority of the buildings under the area threshold
+    addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
+    addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
+    addresses_bp.drop(columns=['u_areaflag'], inplace=True)
 
-addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
-addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
+    addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
+    addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
 
-# Find and reduce plural linkages to the closest linkage
-ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
-addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
-addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
-addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
+    # Find and reduce plural linkages to the closest linkage
+    ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
+    addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
+    addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
+    addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
 
 # Extract non-linked addresses if any.
 print('     extracting unlinked addresses')
 addresses_na = addresses[addresses['footprint_index'].isna()] # Special cases with NaN instead of a tuple
 addresses = addresses[~addresses.index.isin(addresses_na.index.tolist())]
 
-unlinked_aps = addresses[addresses["footprint_index"].map(itemgetter(0)).isna()] 
+unlinked_aps = addresses[addresses["footprint_index"].map(itemgetter(0)).isna()] # Extract unlinked addresses
 if len(addresses_na) > 0:    
-    unlinked_aps = unlinked_aps.append(addresses_na)
-# Seperate out for the buffer phase
+    unlinked_aps = unlinked_aps.append(addresses_na) # append unlinked addresses to the addresses_na
+
+# Separate out for the buffer phase
 # Discard non-linked addresses.
 addresses.drop(addresses[addresses["footprint_index"].map(itemgetter(0)).isna()].index, axis=0, inplace=True)
 
@@ -251,14 +254,12 @@ intersections.drop(columns='intersect_index', inplace=True)
 intersections['method'] = 'intersect'
 
 # footprint = footprint[~footprint.index.isin(list(set(intersections.footprint_index.tolist())))] # remove all footprints that were matched in the intersection stage
-
 print('Running Step 4. Checking address linkages via closest adp limited by linking data')
 
 # Ensure projected crs is used
 intersections.to_crs(crs=proj_crs, inplace=True)
 addresses.to_crs(crs= proj_crs, inplace=True)
 footprint.to_crs(crs=proj_crs, inplace=True)
-# intersections.to_crs(crs=proj_crs, inplace=True)
 
 # Convert linkages to integer tuples, if possible.
 addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tuple(set(map(as_int, vals))))
@@ -267,20 +268,19 @@ addresses["footprint_index"] = addresses["footprint_index"].map(lambda vals: tup
 flag_plural = addresses["footprint_index"].map(len) > 1
 addresses = addresses.explode('footprint_index') # Convert the lists into unique rows per building linkage (cleaned up later)
 
-unlinked_aps = unlinked_aps.append(addresses[addresses['footprint_index'] == np.nan]) # Add data missed at data linking phase to the data to be checked by proximity
 addresses = addresses[addresses['footprint_index'] != np.nan]
 addresses['method'] = 'data_linking'
 
 # Get linkages via buffer if any unlinked data is present
 print('     get linkages via buffer')
-if len(unlinked_aps) > 0:
+if len(addresses_na) > 0:
     
-    unlinked_aps.to_crs(proj_crs, inplace=True)
-    unlinked_aps.drop(columns=['footprint_index'], inplace=True)
+    addresses_na.to_crs(proj_crs, inplace=True)
+    addresses_na.drop(columns=['footprint_index'], inplace=True)
 
     # split into two groups = points linked to a parcel - run against full building dataset, points with no footprint - only run against unlinked buildings
-    no_parcel = unlinked_aps[unlinked_aps['link_field'].isna()]
-    parcel_link = unlinked_aps[~unlinked_aps['link_field'].isna()]
+    no_parcel = addresses_na[addresses_na['link_field'].isna()]
+    parcel_link = addresses_na[~addresses_na['link_field'].isna()]
 
     # get all footprint_indexes (fi) from the previous steps to exclude in the next step for no parcel aps
     intersect_fi = list(set(intersections.footprint_index.tolist()))
@@ -294,16 +294,20 @@ if len(unlinked_aps) > 0:
     no_parcel = get_unlinked_geometry(no_parcel, unlinked_footprint, buffer_size)
     parcel_link = get_unlinked_geometry(parcel_link, footprint, buffer_size)
     
-    unlinked_aps = no_parcel.append(parcel_link)
+    # Grab those records that still have no link and export them for other analysis
+    unmatched = addresses_na[~((addresses_na.index.isin(list(set(no_parcel.index.to_list())))) | (addresses_na.index.isin(list(set(parcel_link.index.to_list())))))]
+    print(f'Number of unlinked addresses {len(unmatched)}')
+    
+    addresses_na = no_parcel.append(parcel_link)
     # Take only the closest linkage for unlinked geometries
-    unlinked_plural = unlinked_aps['footprint_index'].map(len) > 1
-    unlinked_aps.loc[unlinked_plural, "footprint_index"] = unlinked_aps[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
-    unlinked_aps = unlinked_aps.explode('footprint_index')
-    unlinked_aps['method'] = f'{buffer_size}m_buffer'
+    unlinked_plural = addresses_na['footprint_index'].map(len) > 1
+    addresses_na.loc[unlinked_plural, "footprint_index"] = addresses_na[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
+    addresses_na = addresses_na.explode('footprint_index')
+    addresses_na['method'] = f'{buffer_size}m_buffer'
 
-print("Running Step 5. Merge Results")
+print("Running Step 5. Merge and Export Results")
 
-outgdf = addresses.append([intersections, addresses_bp, unlinked_aps])
+outgdf = addresses.append([intersections, addresses_bp, addresses_na])
 
 print("Running Step 6: Change Point Location to Building Centroid")
 print('     Creating footprint centroids')
@@ -317,17 +321,10 @@ outgdf.drop(columns='geometry', inplace=True)
 outgdf.rename(columns={'out_geom':'geometry'}, inplace=True)
 outgdf = outgdf.set_geometry('geometry')
 
+# Export matched geometry
 outgdf.to_file(output_gpkg, layer=matched_lyr_nme,  driver='GPKG')
-
-# metrics = [['INTERSECT', len(outgdf[outgdf['method'] == 'intersect'])], 
-#         ['DATA_LINKING', len(outgdf[outgdf['method'] == 'data_linking'])],
-#         [f'{buffer_distances[0]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[0]}m buffer'])],
-#         [f'{buffer_distances[1]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[1]}m buffer'])],
-#         [f'{buffer_distances[2]}M_BUFFER', len(outgdf[outgdf['method'] == f'{buffer_distances[2]}m buffer'])]
-#         ]
-
-# metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
-# metrics_df.to_csv(os.path.join(metrics_out_path, 'Matching_Metrics.csv'), index=False)
+# Export unmatched geometry
+unmatched.to_file(output_gpkg, layer=unmatched_lyr_nme, driver='GPKG')
 
 end_time = datetime.datetime.now()
 print(f'Start Time: {start_time}')
