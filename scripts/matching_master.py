@@ -273,14 +273,14 @@ addresses['method'] = 'data_linking'
 
 # Get linkages via buffer if any unlinked data is present
 print('     get linkages via buffer')
-if len(addresses_na) > 0:
+if len(unlinked_aps) > 0:
     
-    addresses_na.to_crs(proj_crs, inplace=True)
-    addresses_na.drop(columns=['footprint_index'], inplace=True)
+    unlinked_aps.to_crs(proj_crs, inplace=True)
+    unlinked_aps.drop(columns=['footprint_index'], inplace=True)
 
     # split into two groups = points linked to a parcel - run against full building dataset, points with no footprint - only run against unlinked buildings
-    no_parcel = addresses_na[addresses_na['link_field'].isna()]
-    parcel_link = addresses_na[~addresses_na['link_field'].isna()]
+    no_parcel = unlinked_aps[unlinked_aps['link_field'].isna()]
+    parcel_link = unlinked_aps[~unlinked_aps['link_field'].isna()]
 
     # get all footprint_indexes (fi) from the previous steps to exclude in the next step for no parcel aps
     intersect_fi = list(set(intersections.footprint_index.tolist()))
@@ -295,19 +295,19 @@ if len(addresses_na) > 0:
     parcel_link = get_unlinked_geometry(parcel_link, footprint, buffer_size)
     
     # Grab those records that still have no link and export them for other analysis
-    unmatched = addresses_na[~((addresses_na.index.isin(list(set(no_parcel.index.to_list())))) | (addresses_na.index.isin(list(set(parcel_link.index.to_list())))))]
+    unmatched = unlinked_aps[~((unlinked_aps.index.isin(list(set(no_parcel.index.to_list())))) | (unlinked_aps.index.isin(list(set(parcel_link.index.to_list())))))]
     print(f'Number of unlinked addresses {len(unmatched)}')
     
-    addresses_na = no_parcel.append(parcel_link)
+    unlinked_aps = no_parcel.append(parcel_link)
     # Take only the closest linkage for unlinked geometries
-    unlinked_plural = addresses_na['footprint_index'].map(len) > 1
-    addresses_na.loc[unlinked_plural, "footprint_index"] = addresses_na[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
-    addresses_na = addresses_na.explode('footprint_index')
-    addresses_na['method'] = f'{buffer_size}m_buffer'
+    unlinked_plural = unlinked_aps['footprint_index'].map(len) > 1
+    unlinked_aps.loc[unlinked_plural, "footprint_index"] = unlinked_aps[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
+    unlinked_aps = unlinked_aps.explode('footprint_index')
+    unlinked_aps['method'] = f'{buffer_size}m_buffer'
 
 print("Running Step 5. Merge and Export Results")
 
-outgdf = addresses.append([intersections, addresses_bp, addresses_na])
+outgdf = addresses.append([intersections, addresses_bp, unlinked_aps])
 
 print("Running Step 6: Change Point Location to Building Centroid")
 print('     Creating footprint centroids')
