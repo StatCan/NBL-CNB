@@ -146,6 +146,8 @@ output_path = os.getcwd()
 output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
 matched_lyr_nme = os.getenv('MATCHED_OUTPUT_LYR_NME')
 unmatched_lyr_nme = os.getenv('UNMATCHED_OUTPUT_LYR_NME')
+unmatched_poly_lyr_nme = os.getenv('UNMATCHED_POLY_LYR_NME')
+
 # Layer inputs cleaned versions only
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
@@ -295,8 +297,8 @@ if len(unlinked_aps) > 0:
     parcel_link = get_unlinked_geometry(parcel_link, footprint, buffer_size)
     
     # Grab those records that still have no link and export them for other analysis
-    unmatched = unlinked_aps[~((unlinked_aps.index.isin(list(set(no_parcel.index.to_list())))) | (unlinked_aps.index.isin(list(set(parcel_link.index.to_list())))))]
-    print(f'Number of unlinked addresses {len(unmatched)}')
+    unmatched_points = unlinked_aps[~((unlinked_aps.index.isin(list(set(no_parcel.index.to_list())))) | (unlinked_aps.index.isin(list(set(parcel_link.index.to_list())))))]
+    print(f'Number of unlinked addresses {len(unmatched_points)}')
     
     unlinked_aps = no_parcel.append(parcel_link)
     # Take only the closest linkage for unlinked geometries
@@ -321,10 +323,18 @@ outgdf.drop(columns='geometry', inplace=True)
 outgdf.rename(columns={'out_geom':'geometry'}, inplace=True)
 outgdf = outgdf.set_geometry('geometry')
 
-# Export matched geometry
+footprint.drop(columns='centroid_geo', inplace=True)
+
+# Find unlinked building polygons
+unlinked_footprint = footprint[~footprint['footprint_index'].isin(outgdf['footprint_index'].to_list())]
+
+# Export unlinked building polygons
+unlinked_footprint.to_file(output_gpkg, layer=unmatched_poly_lyr_nme, driver='GPKG')
+
+# Export matched address geometry
 outgdf.to_file(output_gpkg, layer=matched_lyr_nme,  driver='GPKG')
-# Export unmatched geometry
-unmatched.to_file(output_gpkg, layer=unmatched_lyr_nme, driver='GPKG')
+# Export unmatched address geometry
+unmatched_points.to_file(output_gpkg, layer=unmatched_lyr_nme, driver='GPKG')
 
 end_time = datetime.datetime.now()
 print(f'Start Time: {start_time}')
