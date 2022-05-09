@@ -50,14 +50,15 @@ proj_crs = int(os.getenv('PROJ_CRS'))
 matched_points_path = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
 matched_points_lyr_nme = 'point_linkages'
 
-# matched_points_path = r'C:\projects\point_in_polygon\data\NB_data\parcelflag_filter.gpkg'
-# matched_points_lyr_nme = 'linkage_filter_test'
+long_link_point_lyr_nme = 'long_points'
+long_link_line_lyr_nme = 'long_lines'
+
+max_link_distance = 400 # maximum link distance possible for a linkage in meters
 
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 addresses_lyr_nme = os.getenv('FLAGGED_AP_LYR_NME')
 
 qa_qc_gpkg = Path(os.getenv('QA_GPKG'))
-# qa_qc_gpkg = r'C:\projects\point_in_polygon\data\NB_data\parcelflag_filter.gpkg'
 # ----------------------------------------------------------------------------------------------------
 # logic
 
@@ -76,6 +77,22 @@ match_adp= match_adp.set_geometry('geometry')
 # Filter out those links that exceed the maximum limit for linkage distance
 match_adp['link_length'] = match_adp['geometry'].apply(lambda l: l.length)
 
+# Filter out records that are greater than the maximum acceptable link length
+long_links = match_adp.loc[match_adp['link_length'] > max_link_distance]
+print(f'Exporting: {len(long_links)} long links')
+if len(long_links) > 0:
+    long_lines = long_links.copy(deep=True)
+    long_lines.drop(columns=['point_geometry'], inplace=True)
+    long_lines.to_file(qa_qc_gpkg, layer=long_link_line_lyr_nme, driver='GPKG')
+
+    long_links.drop(columns=['geometry'], inplace=True)
+    long_links.rename(columns={'point_geometry':'geometry'}, inplace=True)
+    long_links = long_links.set_geometry('geometry')
+    long_links.to_file(qa_qc_gpkg, layer=long_link_point_lyr_nme, driver='GPKG')
+
+    # filter out records that are above the link threshold 
+    match_adp = match_adp[~match_adp.index.isin((long_links.index))]
+
 # Output line file to the qa_qc gpkg
 line_links = match_adp.copy(deep=True)
 line_links.drop(columns=['point_geometry'], inplace=True)
@@ -83,7 +100,7 @@ line_links.to_file(qa_qc_gpkg, layer=f"line_link_{datetime.datetime.now().strfti
 
 match_adp.drop(columns=['geometry'], inplace=True)
 match_adp.rename(columns={'point_geometry':'geometry'}, inplace=True)
-match_adp= match_adp.set_geometry('geometry')
+match_adp = match_adp.set_geometry('geometry')
 
 match_adp.to_file(qa_qc_gpkg, layer='qc_points', driver='GPKG')
 
