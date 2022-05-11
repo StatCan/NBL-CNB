@@ -228,7 +228,7 @@ confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_leng
 addresses['confidence'] = addresses[confidence_vars].apply(lambda row: confidence_score_calculator(*row), axis=1)
 
 addresses['con_valid_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: valid_confidence_input_counter(*row), axis=1)
-addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: valid_confidence_input_counter(*row), axis=1)
+addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: total_confidence_input_counter(*row), axis=1)
 
 addresses.to_file(r'C:\projects\point_in_polygon\data\NB_data\confidence_testing.gpkg', layer='confidence_v2', dirver='GPKG')
 
