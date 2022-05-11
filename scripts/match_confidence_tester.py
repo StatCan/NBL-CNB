@@ -1,11 +1,11 @@
 import datetime
-from lib2to3.pgen2 import driver
 import os
 import re
 import sys
 from pathlib import Path
 import fiona
 import geopandas as gpd
+from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
 import swifter
@@ -104,6 +104,85 @@ def parcel_location_flag_builder(address_row, parcel_row):
     print(address_row)
     sys.exit()
 
+def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_len):
+    '''Returns a match confidence score based on key fields calculated during the matching process. Use only as part of an apply function on a single record'''
+    parcel_rel_scores = {'one_to_one' : 85,
+                        'one_to_many' : 60, 
+                        'many_to_one' : 50, 
+                        'many_to_many' : 30, 
+                        'unlinked' : 0, 
+                        'manual' : 100,
+                        'other' : 0}
+    
+    confidence = 0
+
+    # initial calculation based on the parcel relationship
+    if parcel_rel in parcel_rel_scores:
+        confidence += parcel_rel_scores[parcel_rel]
+    else:
+        confidence += parcel_rel_scores['other']
+    
+    # MODIFIER #1: Secondary Address Sources (municipal civic, NAR, parcel location)
+    if mun_civ_flag == 1:
+        confidence += 5
+    
+    if parcel_loc_flag == 1:
+        confidence += 5
+
+    # MODIFIER #2 Link Distance 
+    if link_len <= 5:
+        confidence += 10
+    if (link_len > 5) and (link_len <= 20):
+        confidence += 5
+    if (link_len > 20) and (link_len <= 50):
+        confidence += 1
+    if (link_len > 50) and (link_len <= 200): # Here just to visualize the category. Doesn't change score
+        confidence += 0
+    if (link_len > 200) and (link_len <= 400): # Score reduction starts here
+        confidence -= 10
+    if (link_len > 400):
+        extra_len = link_len - 400
+        confidence -= 10 + int(extra_len/10) 
+    
+    # MODIFIER #3: Linked road address range comparison
+
+    return confidence
+ 
+def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
+    '''Returns the number of valid modifiers on the parcel relationship score that were used to help calculate the confidence value. 
+    Parcel relationship is not included in this calculation.'''
+
+    v_score = 0 
+    # For preflagged modifiers check for the match flag
+    for mod in [mun_civ_flag, parcel_loc_flag]:
+        if mod == 1:
+            v_score += 1
+    
+    # Specific checks for other flags
+    
+    # For link len check that the link len is within the lowest positive scoring distance (<50)
+    if link_len < 50:
+        v_score +=1
+    
+    # Add other specific modifiers here if they become available
+    
+    return v_score
+
+def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
+    '''Returns the total number of confidence modifiers that had a valid input (
+        modifiers with an invalid input -1 or NULL are excluded from this calculation)'''
+    
+    i_score = 0 
+    
+    # For preflagged modifiers check if the record doesn't equal the invalid flag
+    for mod in [mun_civ_flag, parcel_loc_flag]:
+        if mod != -1:
+            i_score += 1
+    
+    if link_len >= 0.0:
+        v_score +=1
+    
+    return i_score
 
 # --------------------------------------------------
 # Inputs
@@ -116,8 +195,10 @@ match_lyr_nme = os.getenv('MATCHED_OUTPUT_LYR_NME')
 
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
-addresses_lyr_nme = os.getenv('FLAGGED_AP_LYR_NME')
 parcel_lyr_nme = 'parcels_cleaned'
+
+qa_qc_gpkg = Path(os.getenv('QA_GPKG'))
+addresses_lyr_nme = 'qc_points'
 
 mun_civic_gpkg = Path(os.getenv('QA_GPKG'))
 mun_civic_lyr_nme = os.getenv('ST_MUN_CIVICS')
@@ -130,30 +211,25 @@ out_name = os.getenv('FLAGGED_ADP_LYR_NME')
 # Logic
 
 print('Loading in data')
-addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
+addresses = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
 mun_civics = gpd.read_file(mun_civic_gpkg, layer=mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
 parcels = gpd.read_file(project_gpkg, layer=parcel_lyr_nme, crs=proj_crs)
 
+# Create flags for secondary address sources
 print('Creating municipal civics flag')
 addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
 
 print('Creating parcel location field flags')
 addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
 
-print(addresses[['link_field', 'number', 'street', 'stype_abbr', 'mun_civic_flag', 'parcel_loc_flag', 'geometry']].head())
-# PCODE setup move to alternate file later
-# PCODE_directoy = r'C:\projects\point_in_polygon\data\NB_data\PCODE\csv'
+# Calculate confidence score and associated fields
+confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length']
 
-# for f in os.listdir(PCODE_directoy):
-#     df = pd.read_csv(os.path.join(PCODE_directoy, f), encoding='latin1')
-#     df.to_excel(os.path.join(r'C:\projects\point_in_polygon\data\NB_data\PCODE\excel', f.split('.')[0]+'.xlsx'))
-#     # print(f)
-#     # print(df['cpc_stname'].head())
-#     # print(len(df.columns.tolist()))
+addresses['confidence'] = addresses[confidence_vars].apply(lambda row: confidence_score_calculator(*row), axis=1)
 
+addresses['con_valid_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: valid_confidence_input_counter(*row), axis=1)
+addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: valid_confidence_input_counter(*row), axis=1)
 
-
-
-# addresses[['link_field', 'number', 'street', 'stype_abbr', 'mun_civic_flag', 'geometry']].to_file(out_gpkg, layer=out_name, driver='GPKG')
+addresses.to_file(r'C:\projects\point_in_polygon\data\NB_data\confidence_testing.gpkg', layer='confidence_v2', dirver='GPKG')
 
 print('DONE!')
