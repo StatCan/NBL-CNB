@@ -180,7 +180,7 @@ def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
             i_score += 1
     
     if link_len >= 0.0:
-        v_score +=1
+        i_score +=1
     
     return i_score
 
