@@ -40,7 +40,7 @@ def civics_flag_builder(civic_num, str_nme, str_type, mun_civics, civics_number_
     # if no municipal civics are present return -1
     if len(mun_civics) == 0:
         return -1
-    
+
     check_address = mun_civics.loc[(mun_civics[civics_number_field].map(int) == int(civic_num)) & (mun_civics[civics_sname_field] == str_nme)]
     if len(check_address) == 0:
         # as there was no match on street name return 0
@@ -104,6 +104,7 @@ def parcel_location_flag_builder(address_row, parcel_row):
     print(address_row)
     sys.exit()
 
+
 def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_len):
     '''Returns a match confidence score based on key fields calculated during the matching process. Use only as part of an apply function on a single record'''
     parcel_rel_scores = {'one_to_one' : 85,
@@ -147,7 +148,8 @@ def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_
     # MODIFIER #3: Linked road address range comparison
 
     return confidence
- 
+
+
 def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
     '''Returns the number of valid modifiers on the parcel relationship score that were used to help calculate the confidence value. 
     Parcel relationship is not included in this calculation.'''
@@ -168,6 +170,7 @@ def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
     
     return v_score
 
+
 def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
     '''Returns the total number of confidence modifiers that had a valid input (
         modifiers with an invalid input -1 or NULL are excluded from this calculation)'''
@@ -178,11 +181,12 @@ def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
     for mod in [mun_civ_flag, parcel_loc_flag]:
         if mod != -1:
             i_score += 1
-    
-    if link_len >= 0.0:
+    # If score is between 0 and 50 take as a positive indicator (50 being the lowest positive category)
+    if (link_len >= 0.0) and (link_len <= 50.0):
         i_score +=1
     
     return i_score
+
 
 # --------------------------------------------------
 # Inputs
@@ -215,12 +219,15 @@ addresses = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
 mun_civics = gpd.read_file(mun_civic_gpkg, layer=mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
 parcels = gpd.read_file(project_gpkg, layer=parcel_lyr_nme, crs=proj_crs)
 
+print('Prepping municipal civic fields')
+mun_civics['st_nme'] = mun_civics['st_nme'].str.upper().str.replace(' ', '')
+
 # Create flags for secondary address sources
 print('Creating municipal civics flag')
-addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
+addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
 
 print('Creating parcel location field flags')
-addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
+addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
 
 # Calculate confidence score and associated fields
 confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length']

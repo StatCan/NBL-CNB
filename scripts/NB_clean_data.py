@@ -380,6 +380,10 @@ linking_lyr_nme = os.getenv('LINKING_LYR_NME')
 
 linking_ignore_columns = os.getenv('LINKING_IGNORE_COLS') 
 
+# PCODE resuls for joining
+pcode_pan_path = Path(os.getenv('PCODE_PAN'))
+pcode_gnb_path = Path(os.getenv('PCODE_GNB'))
+
 # road types txt
 str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
 
@@ -409,16 +413,22 @@ linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data['AREA'] = linking_data['geometry'].area
 linking_data = linking_data[linking_data['AREA'] > 101]
 
-for col in ['geometry', 'Pan_Int', 'Location']:
-    linking_cols_drop.remove(col)
+for col in ['geometry', 'Pan_Int', 'Location', 'Pan']:
+    if col in linking_cols_drop:
+        linking_cols_drop.remove(col)
 
+# Load in pan PCODE results
+pcode_pan = pd.read_csv(pcode_pan_path, encoding='latin1', usecols=['Pan', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'])
+
+linking_data = linking_data.merge(pcode_pan, how='left', left_on='Pan_Int', right_on='Pan')
+linking_data.drop(columns=['Pan_x', 'Pan_y'], inplace=True)
 linking_data.drop(columns=linking_cols_drop, inplace=True)
 
 linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
 
 linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
 linking_data.drop(columns=['parsed_list'], inplace=True)
-#linking_data.drop(columns=['fid'], inplace=True) # for voronoi only
+# linking_data.drop(columns=['fid'], inplace=True) # for voronoi only
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
 print('Loading in address data')
@@ -446,15 +456,17 @@ for f in ['index_right', 'index_left']:
     if f in addresses.columns.tolist():
         addresses.drop(columns=f, inplace=True)
 
+# Load in gnb PCODE results
+pcode_gnb = pd.read_csv(pcode_gnb_path, encoding='latin1')
+
+addresses = addresses.merge(pcode_gnb[['CIV_ID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number']], how='left', on='CIV_ID')
 addresses['a_id'] = addresses.index
-addresses["number"] = addresses[ap_add_fields[0]].map(int)
-addresses['street'] = addresses[ap_add_fields[1]].str.upper()
-addresses['stype_en'] =addresses[ap_add_fields[2]].str.upper()
-# none_stype = addresses[addresses['stype_en'] == None]
-# addresses = addresses[~addresses['stype_en'] == None]
-addresses['stype_abbr'] = addresses['stype_en'].swifter.apply(lambda stype: address_type_abbreviator(stype, str_types_df))
+addresses["number"] = addresses['street_number']
+addresses['street'] = addresses['match_stname_key_no_art']
+addresses['stype_en'] =addresses['match_sttype_key']
+
 # addresses = addresses.append(none_stype)
-addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
+addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2], 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'], inplace=True)
 
 print('Exporting cleaned address dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
