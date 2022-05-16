@@ -109,6 +109,6 @@ match_adp.drop(columns=['geometry'], inplace=True)
 match_adp.rename(columns={'point_geometry':'geometry'}, inplace=True)
 match_adp = match_adp.set_geometry('geometry')
 
-match_adp.to_file(qa_qc_gpkg, layer='qc_points', driver='GPKG')
+match_adp.to_file(qa_qc_gpkg, layer='qc_points', driver='GPKG', crs=proj_crs)
 
 print('DONE!')
