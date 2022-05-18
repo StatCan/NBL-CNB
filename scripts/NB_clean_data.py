@@ -384,6 +384,11 @@ linking_ignore_columns = os.getenv('LINKING_IGNORE_COLS')
 pcode_pan_path = Path(os.getenv('PCODE_PAN'))
 pcode_gnb_path = Path(os.getenv('PCODE_GNB'))
 
+# PCODE geo
+pcode_geo_path = r'C:\projects\point_in_polygon\data\NB_data\pcode_geo.gdb'
+geo_pan_lyr_nme = 'pan_ncb_to_colb'
+geo_gnb_lyr_nme = 'geonb_to_colb'
+
 # road types txt
 str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
 
@@ -417,11 +422,17 @@ for col in ['geometry', 'Pan_Int', 'Location', 'Pan']:
     if col in linking_cols_drop:
         linking_cols_drop.remove(col)
 
-# Load in pan PCODE results
-pcode_pan = pd.read_csv(pcode_pan_path, encoding='latin1', usecols=['Pan', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'])
+# Add the tmp_id field to the pcode results for more accurate joining
+print('Importing and pan geo to get the TmpUID sent to PCODE')
+pan_geo = gpd.read_file(pcode_geo_path, layer=geo_pan_lyr_nme)
+print(pan_geo.head())
 
-linking_data = linking_data.merge(pcode_pan, how='left', left_on='Pan_Int', right_on='Pan')
-linking_data.drop(columns=['Pan_x', 'Pan_y'], inplace=True)
+linking_data = linking_data.merge(pan_geo[['Pan_Int', 'TmpUID']], how='left', on='Pan_Int')
+
+# Load in pan PCODE results
+pcode_pan = pd.read_csv(pcode_pan_path, encoding='latin1', usecols=['TmpUID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'])
+# Merge on tmp uid for best accuracy
+linking_data = linking_data.merge(pcode_pan, how='left', on= 'TmpUID')
 linking_data.drop(columns=linking_cols_drop, inplace=True)
 
 linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
