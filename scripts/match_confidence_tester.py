@@ -20,18 +20,19 @@ matches as a way to test for consistency across the datasets.
 
 The initial list of sources for this confidence test:
 
-- Point polygon parcel relationship
+- Point polygon parcel relationship ✓
 - NAR
-- Municipal level civic address points
+- Municipal level civic address points ✓
 - Underlying parcel location field 
 
+✓ = implimented
 '''
 
 def civics_flag_builder(civic_num, str_nme, str_type, mun_civics, civics_number_field='civic_num', civics_sname_field='st_nme', civics_stype_field='st_type'):
     '''Creates the confidence flags for a match and returns the following output:
     
     1: Address value matches a civic address that fall in same parcel
-    0: Address value does not match civic thaat fall in same parcel
+    0: Address value does not match civic that fall in same parcel
     -1: No civic value in parcel or no underlying parcel to compare
     
     Inputs should be prefiltered to only the records associated with the adp and parcel in question
@@ -105,13 +106,13 @@ def parcel_location_flag_builder(address_row, parcel_row):
     sys.exit()
 
 
-def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_len):
+def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_len, nar_link, sbgr_link):
     '''Returns a match confidence score based on key fields calculated during the matching process. Use only as part of an apply function on a single record'''
-    parcel_rel_scores = {'one_to_one' : 85,
-                        'one_to_many' : 60, 
+    parcel_rel_scores = {'one_to_one' : 60,
+                        'one_to_many' : 55, 
                         'many_to_one' : 50, 
-                        'many_to_many' : 30, 
-                        'unlinked' : 0, 
+                        'many_to_many' : 40, 
+                        'unlinked' : 30, 
                         'manual' : 100,
                         'other' : 0}
     
@@ -126,9 +127,9 @@ def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_
     # MODIFIER #1: Secondary Address Sources (municipal civic, NAR, parcel location)
     if mun_civ_flag == 1:
         confidence += 5
-    
-    if parcel_loc_flag == 1:
-        confidence += 5
+    # Commented out until new solution is found
+    # if parcel_loc_flag == 1:
+    #     confidence += 5
 
     # MODIFIER #2 Link Distance 
     if link_len <= 5:
@@ -141,22 +142,23 @@ def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_
         confidence += 0
     if (link_len > 200) and (link_len <= 400): # Score reduction starts here
         confidence -= 10
-    if (link_len > 400):
-        extra_len = link_len - 400
-        confidence -= 10 + int(extra_len/10) 
     
-    # MODIFIER #3: Linked road address range comparison
+    # MODIFIER #3: NAR and SBgR Linkages
+    if nar_link == 1:
+        confidence += 10
+    if sbgr_link == 1:
+        confidence += 5
 
     return confidence
 
 
-def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
+def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, nar_link, sbgr_link):
     '''Returns the number of valid modifiers on the parcel relationship score that were used to help calculate the confidence value. 
     Parcel relationship is not included in this calculation.'''
 
     v_score = 0 
     # For preflagged modifiers check for the match flag
-    for mod in [mun_civ_flag, parcel_loc_flag]:
+    for mod in [mun_civ_flag, nar_link, sbgr_link]: #parcel_loc_flag]:
         if mod == 1:
             v_score += 1
     
@@ -171,14 +173,14 @@ def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
     return v_score
 
 
-def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
+def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, nar_link, sbgr_link):
     '''Returns the total number of confidence modifiers that had a valid input (
         modifiers with an invalid input -1 or NULL are excluded from this calculation)'''
     
     i_score = 0 
     
     # For preflagged modifiers check if the record doesn't equal the invalid flag
-    for mod in [mun_civ_flag, parcel_loc_flag]:
+    for mod in [mun_civ_flag, nar_link, sbgr_link]:# parcel_loc_flag]:
         if mod != -1:
             i_score += 1
     # If score is between 0 and 50 take as a positive indicator (50 being the lowest positive category)
@@ -186,6 +188,17 @@ def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len):
         i_score +=1
     
     return i_score
+
+
+def determine_confidence_type(con_score):
+    '''Returns a string denoting the level of confidence in the match based on the integer value of a given input field (usually 'confidence')'''
+
+    if con_score >= 70:
+        return 'HIGH'
+    if (con_score >= 60) and (con_score < 70):
+        return 'MEDIUM'
+    else:
+        return 'LOW'
 
 
 # --------------------------------------------------
@@ -229,13 +242,21 @@ addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'styp
 print('Creating parcel location field flags')
 addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
 
+# Create flags for the NAR and SBgR linkages
+addresses['nar_link_flag'] = addresses['nar_addr_guid'].apply(lambda x: 1 if type(x) == str else 0)
+addresses['sbgr_link_flag'] = addresses['sbgr_bg_sn'].apply(lambda x: 1 if type(x) == str else 0)
+
 # Calculate confidence score and associated fields
-confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length']
+confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length', 'nar_link_flag', 'sbgr_link_flag']
+
+print('Calculating Confidence')
 
 addresses['confidence'] = addresses[confidence_vars].apply(lambda row: confidence_score_calculator(*row), axis=1)
 
 addresses['con_valid_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: valid_confidence_input_counter(*row), axis=1)
 addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: total_confidence_input_counter(*row), axis=1)
+
+addresses['confidence_type'] = addresses['confidence'].apply(lambda c: determine_confidence_type(c))
 
 addresses.to_file(r'C:\projects\point_in_polygon\data\NB_data\confidence_testing.gpkg', layer='confidence_v2', dirver='GPKG')
 
