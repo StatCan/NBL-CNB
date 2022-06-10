@@ -418,27 +418,26 @@ linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data['AREA'] = linking_data['geometry'].area
 linking_data = linking_data[linking_data['AREA'] > 101]
 
-for col in ['geometry', 'Pan_Int', 'Location', 'Pan']:
+for col in ['geometry', 'Pan_Int', 'Location']:
     if col in linking_cols_drop:
         linking_cols_drop.remove(col)
 
 # Add the tmp_id field to the pcode results for more accurate joining
 print('Importing and pan geo to get the TmpUID sent to PCODE')
-pan_geo = gpd.read_file(pcode_geo_path, layer=geo_pan_lyr_nme)
-print(pan_geo.head())
+# pan_geo = gpd.read_file(pcode_geo_path, layer=geo_pan_lyr_nme)
 
-linking_data = linking_data.merge(pan_geo[['Pan_Int', 'TmpUID']], how='left', on='Pan_Int')
+# linking_data = linking_data.merge(pan_geo[['Pan_Int', 'TmpUID']], how='left', on='Pan_Int')
 
-# Load in pan PCODE results
-pcode_pan = pd.read_csv(pcode_pan_path, encoding='latin1', usecols=['TmpUID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'])
-# Merge on tmp uid for best accuracy
-linking_data = linking_data.merge(pcode_pan, how='left', on= 'TmpUID')
+# # Load in pan PCODE results
+# pcode_pan = pd.read_csv(pcode_pan_path, encoding='latin1', usecols=['TmpUID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'])
+# # Merge on tmp uid for best accuracy
+# linking_data = linking_data.merge(pcode_pan, how='left', on= 'TmpUID')
 linking_data.drop(columns=linking_cols_drop, inplace=True)
 
-linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
+# linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
 
-linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
-linking_data.drop(columns=['parsed_list'], inplace=True)
+# linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
+# linking_data.drop(columns=['parsed_list'], inplace=True)
 # linking_data.drop(columns=['fid'], inplace=True) # for voronoi only
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
@@ -463,21 +462,22 @@ addresses_singular = addresses[~addresses['CIV_ID'].isin(grouped)]
 addresses_plural_sj = return_smallest_match(addresses_plural_sj, linking_data, 'CIV_ID')
 addresses = addresses_singular.append(addresses_plural_sj)
 
-for f in ['index_right', 'index_left']:
+for f in ['index_right', 'index_left', 'nbl_objectid', 'OBJECTID', 'DESCRIPT', 'ALT_ACCESS', 'COLL_MTHD', 'CREATED', 'MODIFIED', 'ST_TYPE_F', 'RD_SIDE_E', 'RD_SIDE_F', 'ST_DIR_E', 'ST_DIR_F',  'ADD_TYPE_E', 'ADD_TYPE_F', 'NUM_SUFFIX']:
     if f in addresses.columns.tolist():
         addresses.drop(columns=f, inplace=True)
 
 # Load in gnb PCODE results
-pcode_gnb = pd.read_csv(pcode_gnb_path, encoding='latin1')
+#pcode_gnb = pd.read_csv(pcode_gnb_path, encoding='latin1')
 
-addresses = addresses.merge(pcode_gnb[['CIV_ID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number']], how='left', on='CIV_ID')
+# addresses = addresses.merge(pcode_gnb[['CIV_ID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number']], how='left', on='CIV_ID')
+
 addresses['a_id'] = addresses.index
-addresses["number"] = addresses['street_number']
-addresses['street'] = addresses['match_stname_key_no_art']
-addresses['stype_en'] =addresses['match_sttype_key']
+addresses["number"] = addresses[ap_add_fields[0]]
+addresses['street'] = addresses[ap_add_fields[1]]
+addresses['stype_en'] =addresses[ap_add_fields[2]].str.upper()
 
 # addresses = addresses.append(none_stype)
-addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2], 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'], inplace=True)
+addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
 
 print('Exporting cleaned address dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
@@ -500,8 +500,8 @@ footprint = reproject(footprint, proj_crs)
 
 footprint['centroid_geo'] = footprint['geometry'].swifter.apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
-footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
-footprint.drop(columns=['AREA'], inplace=True)
+footprint = gpd.sjoin(footprint, linking_data[['link_field', 'geometry']], how='left', op='within')
+# footprint.drop(columns=['AREA'], inplace=True)
 grouped_bf = footprint.groupby('bf_index', dropna=True)['bf_index'].count()
 grouped_bf = grouped_bf[grouped_bf > 1].index.tolist()
 footprint_plural_sj = footprint[footprint['bf_index'].isin(grouped_bf)]
@@ -514,7 +514,7 @@ footprint = shed_flagging(footprint, addresses, linking_data)
 footprint = footprint.set_geometry('geometry')
 footprint.drop(columns=['centroid_geo'], inplace=True)
 
-for f in ['index_right', 'index_left']:
+for f in ['index_right', 'index_left', 'OBJECTID', 'fid']:
     if f in footprint.columns.tolist():
         footprint.drop(columns=f, inplace=True)
 

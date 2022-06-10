@@ -80,7 +80,8 @@ match_adp.rename(columns={'line_geom':'geometry'}, inplace=True)
 match_adp= match_adp.set_geometry('geometry')
 
 # Filter out those links that exceed the maximum limit for linkage distance
-match_adp['link_length'] = match_adp['geometry'].apply(lambda l: l.length)
+match_adp['link_length'] = match_adp['geometry'].apply(lambda l: round(l.length, 2))
+
 print('Filtering out long links')
 # Filter out records that are greater than the maximum acceptable link length
 long_links = match_adp.loc[match_adp['link_length'] > max_link_distance]
@@ -108,7 +109,7 @@ print('Exporting qc_points')
 match_adp.drop(columns=['geometry'], inplace=True)
 match_adp.rename(columns={'point_geometry':'geometry'}, inplace=True)
 match_adp = match_adp.set_geometry('geometry')
-
+match_adp.to_crs(crs=proj_crs, inplace=True)
 match_adp.to_file(qa_qc_gpkg, layer='qc_points', driver='GPKG', crs=proj_crs)
 
 print('DONE!')

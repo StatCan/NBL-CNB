@@ -1,5 +1,6 @@
 
 import logging
+import numpy
 import geopandas as gpd
 import numpy as np
 import os
@@ -54,6 +55,7 @@ def groupby_to_list(df, group_field, list_field):
     
     return pd.Series([list(vals_array) for vals_array in vals_arrays], index=keys_unique).copy(deep=True)
 
+
 def as_int(val):
     "Step 4: Converts linkages to integer tuples, if possible"
     try:
@@ -63,6 +65,7 @@ def as_int(val):
             return int(val)
     except ValueError:
         return val
+
 
 def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
     'Returns indexes for the bf based on the increasing buffer size'
@@ -89,6 +92,7 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
     addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
     return linked_df
 
+
 def check_for_intersects(address_pt, footprint_indexes):
     '''Similar to the get nearest linkage function except this looks for intersects (uses within because its much faster) and spits out the index of any intersect'''
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
@@ -97,10 +101,12 @@ def check_for_intersects(address_pt, footprint_indexes):
         t_index = inter.index(True)
         return int(footprint_geometries[t_index].index[0])
 
+
 def create_centroid_match(footprint_index, bf_centroids):
     '''Returns the centroid geometry for a given point'''
     new_geom = bf_centroids.iloc[int(footprint_index)]
     return new_geom
+
 
 def get_nearest_linkage(ap, footprint_indexes):
     """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
@@ -190,7 +196,7 @@ addresses["addresses_index"] = addresses.index
 footprint["footprint_index"] = footprint.index
 
 # Remove buildings flagged as sheds as they do not need to be matched
-# sheds = footprint[footprint['shed_flag'] == True] # Set aside for use in future if sheds need to be matched
+sheds = footprint[footprint['shed_flag'] == True] # Set aside for use in future if sheds need to be matched
 footprint = footprint[footprint['shed_flag'] == False]
 
 print('     creating and grouping linkages')
@@ -220,6 +226,7 @@ if len(addresses_bp) > 0:
     addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
     addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
     addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
+    addresses_bp['method'] = addresses_bp['method'].str.replace(' ','_')
 
 # Extract non-linked addresses if any.
 print('     extracting unlinked addresses')
@@ -256,7 +263,7 @@ intersections.drop(columns='intersect_index', inplace=True)
 intersections['method'] = 'intersect'
 
 # footprint = footprint[~footprint.index.isin(list(set(intersections.footprint_index.tolist())))] # remove all footprints that were matched in the intersection stage
-print('Running Step 4. Checking address linkages via closest adp limited by linking data')
+print('Running Step 4. Creating address linkages using linking data')
 
 # Ensure projected crs is used
 intersections.to_crs(crs=proj_crs, inplace=True)
@@ -333,8 +340,12 @@ unlinked_footprint.to_file(output_gpkg, layer=unmatched_poly_lyr_nme, driver='GP
 
 # Export matched address geometry
 outgdf.to_file(output_gpkg, layer=matched_lyr_nme,  driver='GPKG')
+
 # Export unmatched address geometry
 unmatched_points.to_file(output_gpkg, layer=unmatched_lyr_nme, driver='GPKG')
+
+# Export non-addressable outbuildings 
+sheds.to_file(output_gpkg, layer='sheds', driver='GPKG')
 
 end_time = datetime.datetime.now()
 print(f'Start Time: {start_time}')
