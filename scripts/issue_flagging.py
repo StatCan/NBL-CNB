@@ -152,7 +152,7 @@ def main():
     print('Grouping APs')
     grouped_ap = addresses.groupby('link_field', dropna=True)['link_field'].count()
     print('Grouping BFs')
-    grouped_bf = footprints.groupby('link_field', dropna=True)['link_field'].count()
+    grouped_bf = footprints[footprints['shed_flag'] == False].groupby('link_field', dropna=True)['link_field'].count()
     print('Determining relationship')
     addresses['parcel_rel'] = addresses['link_field'].swifter.apply(lambda x: relationship_setter(x, grouped_ap, grouped_bf))
 
@@ -161,7 +161,7 @@ def main():
     metrics_df.to_csv(os.path.join(metrics_out_path, 'Preprocess_Metrics.csv'), index=False)
 
     addresses.drop(columns=['addresses_index'], inplace=True)
-    addresses.to_file(output_gpkg, layer=f'ap_full', driver='GPKG')
+    addresses.to_file(output_gpkg, layer='ap_full', driver='GPKG')
     # hour : minute : second : microsecond
     print(f'Total Runtime: {datetime.datetime.now() - starttime}')
 
