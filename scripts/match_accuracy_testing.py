@@ -188,7 +188,7 @@ def match_flagger(adr_flag, stn_flag, stt_flag):
     '''Determines if a match is Full, Partial, or False based on the results from the address, street name,  and street type flag'''
     # All NaN skip match check
     if not isinstance(adr_flag, bool) and not isinstance(stn_flag, bool) and not isinstance(stt_flag, bool):
-        return np.NaN
+        return 'INVALID'
     match_quality = sum([adr_flag, stn_flag, stt_flag])
 
     if match_quality == 3:
@@ -197,6 +197,9 @@ def match_flagger(adr_flag, stn_flag, stt_flag):
         return 'PARTIAL'
     if match_quality == 0:
         return 'FALSE'  
+    else:
+        return 'INVALID'
+    
 
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -208,8 +211,8 @@ load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
 
-matched_ap_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
-matched_ap_lyr_nme = 'point_linkages'
+matched_ap_gpkg = Path(os.getenv('QA_GPKG'))
+matched_ap_lyr_nme = 'matches_w_confidence'
 
 aoi_mask = Path(os.getenv('AOI_MASK'))
 
@@ -270,6 +273,7 @@ addresses['match_flag'] = addresses.apply(lambda x: match_flagger(x['ad_rng_chec
 match_counts = addresses['match_flag'].value_counts()
 print(matched_ap_lyr_nme)
 print(match_counts)
+
 unique_counts = []
 for f in ['FULL', 'PARTIAL', 'FALSE']:
     unique_counts.append(len(list(set(addresses[addresses['match_flag'] == f]['ADDR_SYM'].tolist()))))
@@ -283,17 +287,17 @@ print(f'FALSE: {unique_counts[2]}')
 # Case based matching
 counts = []
 unique_counts = []
-for case in ['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many', 'unlinked']:
+for case in ['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many','no_linked_building', 'unlinked']:
     case_df = addresses[addresses['parcel_rel'] == case]                                                                                                                                                                                                            
     print(f'FLAG for: {case}')
     case_counts = case_df['match_flag'].value_counts()
     print(case_counts)
-    case_sum = sum([case_counts['FULL'], case_counts['PARTIAL'], case_counts['FALSE']])
-    row = [case, case_counts['FULL'], case_counts['PARTIAL'], case_counts['FALSE'], case_sum, round((case_counts['FULL']/case_sum)*100, 2)]
+    case_sum = sum([case_counts['FULL'], case_counts['PARTIAL'], case_counts['FALSE'], case_counts['INVALID']])
+    row = [case, case_counts['FULL'], case_counts['PARTIAL'], case_counts['FALSE'], case_counts['INVALID'], case_sum, round((case_counts['FULL']/case_sum)*100, 2)]
     counts.append(row)
     print("UNIQUE COUNTS")
     u_row = [case]
-    for f in ['FULL', 'PARTIAL', 'FALSE']:
+    for f in ['FULL', 'PARTIAL', 'FALSE', 'INVALID']:
         uniques_count = (len(list(set(case_df[case_df['match_flag'] == f]['ADDR_SYM'].tolist()))))
         u_row.append(uniques_count)
         print(f"{f}: {uniques_count}")
@@ -301,8 +305,8 @@ for case in ['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many', 'unlink
     u_row.append(round((u_row[1]/u_row[4])*100, 2))
     unique_counts.append(u_row)
 
-counts_df = pd.DataFrame(counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'Total', 'Percent_FULL'])
-ucounts_df = pd.DataFrame(unique_counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'Total', 'Percent_FULL'])
+counts_df = pd.DataFrame(counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'INVALID', 'Total', 'Percent_FULL'])
+ucounts_df = pd.DataFrame(unique_counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'INVALID', 'Total', 'Percent_FULL'])
 counts_df.to_csv(os.path.join(m_acc_table_path, 'accuracy_table.csv'))
 ucounts_df.to_csv(os.path.join(m_acc_table_path, 'unique_accuracy_table.csv'))
 

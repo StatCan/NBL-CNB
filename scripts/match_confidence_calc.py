@@ -240,8 +240,8 @@ print('Creating municipal civics flag')
 addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
 
 print('Creating parcel location field flags')
-addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
-
+#addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
+addresses['parcel_loc_flag'] = np.NaN
 # Create flags for the NAR and SBgR linkages
 addresses['nar_link_flag'] = addresses['nar_addr_guid'].apply(lambda x: 1 if type(x) == str else 0)
 addresses['sbgr_link_flag'] = addresses['sbgr_bg_sn'].apply(lambda x: 1 if type(x) == str else 0)
@@ -258,6 +258,6 @@ addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row:
 
 addresses['confidence_type'] = addresses['confidence'].apply(lambda c: determine_confidence_type(c))
 
-addresses.to_file(r'C:\projects\point_in_polygon\data\NB_data\confidence_testing.gpkg', layer='confidence_v2', dirver='GPKG')
+addresses.to_file(qa_qc_gpkg, layer='matches_w_confidence', driver='GPKG')
 
 print('DONE!')
