@@ -4,22 +4,16 @@ import geopandas as gpd
 import numpy as np
 import os
 import pandas as pd
-import fiona
 import re
-import shapely
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from bisect import bisect
-from collections import OrderedDict
-from operator import add, index, itemgetter
-from shapely import geometry
-from shapely.geometry import Point, Polygon, MultiPolygon
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
-import helpers
 import datetime
 
 '''
+This script is applicable only for areas that have a building dataset with pre matched addresses to allow for comparison
+
 Test the accuracy of the matching script on a case by case basis (one to one, many to many, etc). Clean and match the address in the building with the address on the point to 
 determine the accuracy of the match. Return metrics on the number of correct matches and the number of false postives. Also return the match layer with the point matches valdated so 
 that they can be visually inspected to determine logic improvements
@@ -199,7 +193,6 @@ def match_flagger(adr_flag, stn_flag, stt_flag):
         return 'FALSE'  
     else:
         return 'INVALID'
-    
 
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -235,8 +228,10 @@ m_acc_table_path = os.getenv('METRICS_CSV_OUT_PATH')
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Logic
 
-# Load in data and prep
+start_time = datetime.datetime.now()
+print(f'Start Time {start_time}')
 
+# Load in data and prep
 aoi_gdf = gpd.read_file(aoi_mask)
 
 str_types_df = pd.read_csv(str_types_path, delimiter='\t')
@@ -309,5 +304,10 @@ counts_df = pd.DataFrame(counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FA
 ucounts_df = pd.DataFrame(unique_counts, columns=['Relationship', 'FULL', 'PARTIAL', 'FALSE', 'INVALID', 'Total', 'Percent_FULL'])
 counts_df.to_csv(os.path.join(m_acc_table_path, 'accuracy_table.csv'))
 ucounts_df.to_csv(os.path.join(m_acc_table_path, 'unique_accuracy_table.csv'))
+
+end_time = datetime.datetime.now()
+print(f'Start Time: {start_time}')
+print(f'End Time: {end_time}')
+print(f'Total Runtime: {end_time - start_time}')
 
 print('DONE!')

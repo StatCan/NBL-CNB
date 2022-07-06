@@ -16,16 +16,17 @@ from shapely import geometry
 from shapely.geometry import MultiPolygon, Point, Polygon, geo
 
 ''' This script is to assign a confidence score to the matches made in the matching master script. To do this several difference sources are compiled and compared to the 
-matches as a way to test for consistency across the datasets. 
+matches as a way to test for consistency across the datasets. Formula for confidence calculation can be found in the confidence documentation
 
 The initial list of sources for this confidence test:
 
 - Point polygon parcel relationship ✓
-- NAR
+- NAR ✓
 - Municipal level civic address points ✓
-- Underlying parcel location field 
+- Underlying parcel location field *
 
 ✓ = implimented
+* = code implimented but data unavailable
 '''
 
 def civics_flag_builder(civic_num, str_nme, str_type, mun_civics, civics_number_field='civic_num', civics_sname_field='st_nme', civics_stype_field='st_type'):
@@ -227,6 +228,9 @@ out_name = os.getenv('FLAGGED_ADP_LYR_NME')
 # ----------------------------------------------------------------
 # Logic
 
+start_time = datetime.datetime.now()
+print(f'Start Time {start_time}')
+
 print('Loading in data')
 addresses = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
 mun_civics = gpd.read_file(mun_civic_gpkg, layer=mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
@@ -259,5 +263,10 @@ addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row:
 addresses['confidence_type'] = addresses['confidence'].apply(lambda c: determine_confidence_type(c))
 
 addresses.to_file(qa_qc_gpkg, layer='matches_w_confidence', driver='GPKG')
+
+end_time = datetime.datetime.now()
+print(f'Start Time: {start_time}')
+print(f'End Time: {end_time}')
+print(f'Total Runtime: {end_time - start_time}')
 
 print('DONE!')

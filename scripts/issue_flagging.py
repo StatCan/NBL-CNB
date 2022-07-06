@@ -116,38 +116,7 @@ def main():
     parcels.to_crs(crs=proj_crs, inplace=True)
     addresses.to_crs(crs=proj_crs, inplace=True)
 
-    metrics = []
-    flags = []
     print('Producing basic layers')
-    # Linking fields creation
-    addresses["addresses_index"] = addresses.index
-    footprints["footprint_index"] = footprints.index
-
-    print(f"TOTAL # PARCELS = {len(parcels)}")
-    print(f"TOTAL # ADDRESS POINTS = {len(addresses)}")
-    print(f"TOTAL # BUILDING FOOTPRINTS = {len(footprints)}")
-
-    metrics.append(['TOTAL # PARCELS', len(parcels)])
-    metrics.append(['TOTAL # ADDRESS POINTS', len(addresses)])
-    metrics.append(['TOTAL # BUILDING FOOTPRINTS', len(footprints)])
-    # Address Point Metrics
-
-    # Count of points not in parcels
-    ap_par_len = addresses['link_field'].isna().sum()
-
-    ap_n_pa = addresses.index[addresses['link_field'].isna()].tolist() # Put all the indexes into a list for later
-    print(f"METRIC: POINTS NOT IN PARCEL = {ap_par_len}")
-    metrics.append(['POINTS NOT IN PARCEL', ap_par_len])
-
-    # no_link = addresses[addresses.Pan_Int.isna()]
-
-    # Counts of all parcels with more than 1 point
-    linkage_counts = addresses['link_field'].value_counts()
-    linkage_counts = linkage_counts[linkage_counts > 1].index.tolist() # save the indexes for later
-    linkage_len = len(linkage_counts)
-    print(f"METRIC: MORE THAN 1 POINT IN PARCEL = {linkage_len}")
-    metrics.append(['MORE THAN 1 POINT IN PARCEL', linkage_len])
-
     # Add footprint and address relates by parcel 'groupby'
     print('Grouping APs')
     grouped_ap = addresses.groupby('link_field', dropna=True)['link_field'].count()
@@ -157,10 +126,7 @@ def main():
     addresses['parcel_rel'] = addresses['link_field'].swifter.apply(lambda x: relationship_setter(x, grouped_ap, grouped_bf))
 
     print('Creating and exporting metrics doc as spreadsheet')
-    metrics_df = pd.DataFrame(metrics, columns=['Metric', 'Count'])
-    metrics_df.to_csv(os.path.join(metrics_out_path, 'Preprocess_Metrics.csv'), index=False)
 
-    addresses.drop(columns=['addresses_index'], inplace=True)
     addresses.to_file(output_gpkg, layer='ap_full', driver='GPKG')
     # hour : minute : second : microsecond
     print(f'Total Runtime: {datetime.datetime.now() - starttime}')

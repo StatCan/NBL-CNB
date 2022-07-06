@@ -23,7 +23,10 @@ This script is responsible for all automated QA/QC steps and the production of c
 Currently this script produces:
 
     - line_link: A layer that visualizes the matches made in matching_master.py and creates a line from the original point to each match for that point (if any)
-    - more to be added as needed 
+    - long_lines: Lines that are longer than the maximum allowable link distance. These links are extracted from the main datasets and sequestered in their own 
+    layer for further analysis
+    - long_points: the points sources associated with the lines in the long lines layer
+    
 '''
 
 
@@ -62,6 +65,9 @@ qa_qc_gpkg = Path(os.getenv('QA_GPKG'))
 
 # ----------------------------------------------------------------------------------------------------
 # logic
+
+start_time = datetime.datetime.now()
+print(f'Start Time {start_time}')
 
 print('Running: qa_qc.py')
 match_adp = gpd.read_file(matched_points_path, layer=matched_points_lyr_nme, crs=proj_crs)
@@ -111,5 +117,10 @@ match_adp.rename(columns={'point_geometry':'geometry'}, inplace=True)
 match_adp = match_adp.set_geometry('geometry')
 match_adp.to_crs(crs=proj_crs, inplace=True)
 match_adp.to_file(qa_qc_gpkg, layer='qc_points', driver='GPKG', crs=proj_crs)
+
+end_time = datetime.datetime.now()
+print(f'Start Time: {start_time}')
+print(f'End Time: {end_time}')
+print(f'Total Runtime: {end_time - start_time}')
 
 print('DONE!')

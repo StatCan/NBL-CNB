@@ -1,4 +1,3 @@
-import datetime
 import os
 import re
 import string
@@ -7,14 +6,13 @@ from pathlib import Path
 import fiona
 import geopandas as gpd
 import numpy as np
-import pandas as pd
-import swifter
-from dotenv import load_dotenv
 from numpy.core.numeric import True_
+import pandas as pd
 from pyproj import crs
 from shapely import geometry
 from shapely.geometry import MultiPolygon, Point, Polygon, geo
-from math import pi
+from dotenv import load_dotenv
+import datetime
 
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
@@ -138,6 +136,7 @@ def return_smallest_match(ap_matches, parcel_df, unique_id):
     o_ids = []
     for rid in list(set(ap_matches[unique_id].tolist())):
         rid_matches = ap_matches[ap_matches[unique_id] == rid]
+     
         rid_ids = list(set(rid_matches['link_field'].tolist()))
         match_parcels = parcel_df[parcel_df['link_field'].isin(rid_ids)]
         match_parcels.sort_values(by=['AREA'], inplace=True, ascending=True)
@@ -150,7 +149,7 @@ def return_smallest_match(ap_matches, parcel_df, unique_id):
 
 def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
     '''
-    Methodology for flagging buildings as sheds. Sheds meaning unaddressable outbuildings
+    Methodology for flagging buildings as sheds
     '''
     
     def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100):
@@ -188,16 +187,6 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
         shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
         return shed_indexes
 
-    # Start by finding all the perfectly round buildings and labelling them as sheds size doesn't matter here.
-    footprint_gdf['perimiter'] = footprint_gdf['geometry'].apply(lambda x: round(x.length, 2))
-    footprint_gdf['C'] = footprint_gdf.apply(lambda c: (4*pi*c['bf_area'])/(c['perimiter']*c['perimiter']), axis=1)
-    # separate out the round sheds from rest of the 
-    round_sheds = footprint_gdf[footprint_gdf['C'] >= 0.98]
-    footprint_gdf = footprint_gdf[footprint_gdf['C'] < 0.98]
-    footprint_gdf.drop(columns=['C'], inplace=True)
-    round_sheds.drop(columns=['C'], inplace=True)
-    
-    # Of the remaining group, count, slice
     adp_parcel_linkages = address_gdf.groupby('link_field', dropna=True)['link_field'].count()
     bf_parcel_linkages = footprint_gdf.groupby('link_field', dropna=True)['link_field'].count()
 
@@ -219,9 +208,9 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
     footprint_gdf = footprint_gdf.loc[~footprint_gdf['bf_index'].isin(shed_indexes)]
 
     shed_gdf['shed_flag'] = True
-    round_sheds['shed_flag'] = True
     footprint_gdf['shed_flag'] = False
-    footprint_gdf = footprint_gdf.append([shed_gdf, round_sheds])
+
+    footprint_gdf = footprint_gdf.append(shed_gdf)
     return footprint_gdf
 
 
@@ -357,6 +346,57 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
         return stype_ab
 
 
+def adp_parcel_compare(address_row, parcel_row):
+    '''
+    Compares the address data for address points against linked parcels (if available). A full, partial, or false match is determined and a flag of the correct type is
+    placed on the record. 
+
+    outputs the following flags:
+
+    0 - No flag on address
+    1 - Flag on address
+    -1 - Underlying parcel issue (either no underlying parcel or no valid underlying address)
+
+    '''
+    
+    # For cases where there are no underlying parcel but should be filtered out before being put through this function
+    if len(parcel_row) == 0:
+        return -1
+    
+    a_list = address_row.tolist()
+    p_list = parcel_row.iloc[0].tolist()
+
+    # if cadastral data has no civic number then we return cad_ncn as no accuracy comparison can ba made
+    if not isinstance(p_list[1], str):
+        return -1 # cadastral data no civic number
+
+    # parcel (cadastral) and address point address part values in simple vars
+    adp_civic = int(a_list[1])
+    cad_min = int(p_list[1])
+    cad_max = int(p_list[2])
+    adp_sname = a_list[2] 
+    cad_sname = p_list[3]
+    adp_stype = a_list[-1]
+    cad_stype = p_list[-1]
+
+    # Setup flag vars as false
+    flag_count = 0
+
+    if not (adp_civic >= cad_min) or not (adp_civic <= cad_max):
+        flag_count += 1
+    if adp_sname != cad_sname:
+        flag_count += 1
+
+    if flag_count > 0:
+        return 1
+    if flag_count == 0:
+        return 0
+
+    print(parcel_row)
+    print(address_row)
+    sys.exit()
+
+
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -364,6 +404,7 @@ start_time = datetime.datetime.now()
 
 load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
+geo_crs = os.getenv('CRS')
 proj_crs = os.getenv('PROJ_CRS')
 
 footprint_lyr = Path(os.getenv('BF_PATH'))
@@ -379,15 +420,6 @@ linking_data_path = Path(os.getenv('LINKING_PATH'))
 linking_lyr_nme = os.getenv('LINKING_LYR_NME')
 
 linking_ignore_columns = os.getenv('LINKING_IGNORE_COLS') 
-
-# PCODE resuls for joining
-pcode_pan_path = Path(os.getenv('PCODE_PAN'))
-pcode_gnb_path = Path(os.getenv('PCODE_GNB'))
-
-# PCODE geo
-pcode_geo_path = r'C:\projects\point_in_polygon\data\NB_data\pcode_geo.gdb'
-geo_pan_lyr_nme = 'pan_ncb_to_colb'
-geo_gnb_lyr_nme = 'geonb_to_colb'
 
 # road types txt
 str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
@@ -412,33 +444,22 @@ str_types_df['Street type'] = str_types_df['Street type'].str.upper()
 
 print('Loading in linking data')
 linking_data = gpd.read_file(linking_data_path, layer=linking_lyr_nme, linking_ignore_columns=linking_ignore_columns, mask=aoi_gdf)
-linking_data = reproject(linking_data, proj_crs)
 linking_cols_drop = linking_data.columns.tolist()
 linking_data['link_field'] = range(1, len(linking_data.index)+1)
 linking_data['AREA'] = linking_data['geometry'].area
 linking_data = linking_data[linking_data['AREA'] > 101]
+linking_data = reproject(linking_data, proj_crs)
 
 for col in ['geometry', 'Pan_Int', 'Location']:
-    if col in linking_cols_drop:
-        linking_cols_drop.remove(col)
+    linking_cols_drop.remove(col)
 
-# Add the tmp_id field to the pcode results for more accurate joining
-print('Importing and pan geo to get the TmpUID sent to PCODE')
-# pan_geo = gpd.read_file(pcode_geo_path, layer=geo_pan_lyr_nme)
-
-# linking_data = linking_data.merge(pan_geo[['Pan_Int', 'TmpUID']], how='left', on='Pan_Int')
-
-# # Load in pan PCODE results
-# pcode_pan = pd.read_csv(pcode_pan_path, encoding='latin1', usecols=['TmpUID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number'])
-# # Merge on tmp uid for best accuracy
-# linking_data = linking_data.merge(pcode_pan, how='left', on= 'TmpUID')
 linking_data.drop(columns=linking_cols_drop, inplace=True)
 
-# linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
+linking_data['parsed_list'] = linking_data['Location'].apply(lambda location: parse_cadastral_address(location, str_types_df))
 
-# linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
-# linking_data.drop(columns=['parsed_list'], inplace=True)
-# linking_data.drop(columns=['fid'], inplace=True) # for voronoi only
+linking_data[['address_min', 'address_max', 'street_name', 'street_type']] = pd.DataFrame(linking_data['parsed_list'].tolist(), index= linking_data.index)
+linking_data.drop(columns=['parsed_list'], inplace=True)
+
 linking_data.to_file(project_gpkg, layer='parcels_cleaned', driver='GPKG')
 
 print('Loading in address data')
@@ -452,7 +473,7 @@ print('Cleaning and prepping address points')
 
 # addresses = addresses[ap_add_fields]
 addresses = reproject(addresses, proj_crs)
-addresses = gpd.sjoin(addresses, linking_data[['link_field', 'geometry']], op='within', how='left')
+addresses = gpd.sjoin(addresses, linking_data, op='within', how='left')
 
 # Deal with duplications in the address  layer caused by the spatial join. Take the smallest parcel as assumed to be the most accurate
 grouped = addresses.groupby('CIV_ID', dropna=True)['CIV_ID'].count()
@@ -462,22 +483,22 @@ addresses_singular = addresses[~addresses['CIV_ID'].isin(grouped)]
 addresses_plural_sj = return_smallest_match(addresses_plural_sj, linking_data, 'CIV_ID')
 addresses = addresses_singular.append(addresses_plural_sj)
 
-for f in ['index_right', 'index_left', 'nbl_objectid', 'OBJECTID', 'DESCRIPT', 'ALT_ACCESS', 'COLL_MTHD', 'CREATED', 'MODIFIED', 'ST_TYPE_F', 'RD_SIDE_E', 'RD_SIDE_F', 'ST_DIR_E', 'ST_DIR_F',  'ADD_TYPE_E', 'ADD_TYPE_F', 'NUM_SUFFIX']:
+for f in ['index_right', 'index_left']:
     if f in addresses.columns.tolist():
         addresses.drop(columns=f, inplace=True)
 
-# Load in gnb PCODE results
-#pcode_gnb = pd.read_csv(pcode_gnb_path, encoding='latin1')
-
-# addresses = addresses.merge(pcode_gnb[['CIV_ID', 'match_stname_key_no_art', 'match_sttype_key', 'match_stdir_key', 'street_number']], how='left', on='CIV_ID')
-
 addresses['a_id'] = addresses.index
-addresses["number"] = addresses[ap_add_fields[0]]
-addresses['street'] = addresses[ap_add_fields[1]]
+addresses["number"] = addresses[ap_add_fields[0]].map(int)
+addresses['street'] = addresses[ap_add_fields[1]].str.upper()
 addresses['stype_en'] =addresses[ap_add_fields[2]].str.upper()
-
+# none_stype = addresses[addresses['stype_en'] == None]
+# addresses = addresses[~addresses['stype_en'] == None]
+addresses['stype_abbr'] = addresses['stype_en'].apply(lambda stype: address_type_abbreviator(stype, str_types_df))
 # addresses = addresses.append(none_stype)
 addresses.drop(columns=[ap_add_fields[0], ap_add_fields[1], ap_add_fields[2]], inplace=True)
+
+addresses['parcel_location_match'] = addresses[['link_field', 'number', 'street', 'stype_abbr']].apply(lambda row: adp_parcel_compare(row, linking_data[linking_data['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
+
 
 print('Exporting cleaned address dataset')
 addresses.to_file(project_gpkg, layer='addresses_cleaned', driver='GPKG')
@@ -491,17 +512,17 @@ footprint['geometry'] = footprint['geometry'].buffer(0)
 
 print('Cleaning and prepping footprint data')
 # footprint = explode(footprint) # Remove multipart polygons convert to single polygons
-footprint['bf_area'] = round(footprint['geometry'].area, 2)
+footprint['bf_area'] = footprint['geometry'].area
 # footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
 footprint = footprint.reset_index()
 footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])
 footprint = reproject(footprint, proj_crs)
 
-footprint['centroid_geo'] = footprint['geometry'].swifter.apply(lambda pt: pt.centroid)
+footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
-footprint = gpd.sjoin(footprint, linking_data[['link_field', 'geometry']], how='left', op='within')
-# footprint.drop(columns=['AREA'], inplace=True)
+footprint = gpd.sjoin(footprint, linking_data, how='left', op='within')
+footprint.drop(columns=['AREA'], inplace=True)
 grouped_bf = footprint.groupby('bf_index', dropna=True)['bf_index'].count()
 grouped_bf = grouped_bf[grouped_bf > 1].index.tolist()
 footprint_plural_sj = footprint[footprint['bf_index'].isin(grouped_bf)]
@@ -514,7 +535,7 @@ footprint = shed_flagging(footprint, addresses, linking_data)
 footprint = footprint.set_geometry('geometry')
 footprint.drop(columns=['centroid_geo'], inplace=True)
 
-for f in ['index_right', 'index_left', 'OBJECTID', 'fid']:
+for f in ['index_right', 'index_left']:
     if f in footprint.columns.tolist():
         footprint.drop(columns=f, inplace=True)
 
