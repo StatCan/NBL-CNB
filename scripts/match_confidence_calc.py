@@ -1,19 +1,14 @@
 import datetime
 import os
-import re
 import sys
-from pathlib import Path
 import fiona
+from pathlib import Path
 import geopandas as gpd
 from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
-import swifter
+
 from dotenv import load_dotenv
-from numpy.core.numeric import True_
-from pyproj import crs
-from shapely import geometry
-from shapely.geometry import MultiPolygon, Point, Polygon, geo
 
 ''' This script is to assign a confidence score to the matches made in the matching master script. To do this several difference sources are compiled and compared to the 
 matches as a way to test for consistency across the datasets. Formula for confidence calculation can be found in the confidence documentation
@@ -205,7 +200,7 @@ def determine_confidence_type(con_score):
 # --------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
 
 output_path = os.getcwd()
 match_gpkg = os.getenv('MATCHED_OUTPUT_GPKG')
@@ -233,22 +228,42 @@ print(f'Start Time {start_time}')
 
 print('Loading in data')
 addresses = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
-mun_civics = gpd.read_file(mun_civic_gpkg, layer=mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
+
 parcels = gpd.read_file(project_gpkg, layer=parcel_lyr_nme, crs=proj_crs)
 
-print('Prepping municipal civic fields')
-mun_civics['st_nme'] = mun_civics['st_nme'].str.upper().str.replace(' ', '')
+
 
 # Create flags for secondary address sources
-print('Creating municipal civics flag')
-addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
+
+if mun_civic_lyr_nme not in fiona.listlayers(mun_civic_gpkg):
+    print('No municipal civics data available')
+    addresses['mun_civic_flag'] = np.NaN
+else:
+    mun_civics = gpd.read_file(mun_civic_gpkg, layer=mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
+    print('Prepping municipal civic fields')
+    mun_civics['st_nme'] = mun_civics['st_nme'].str.upper().str.replace(' ', '')
+    print('Creating municipal civics flag')
+    addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
 
 print('Creating parcel location field flags')
 #addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
 addresses['parcel_loc_flag'] = np.NaN
-# Create flags for the NAR and SBgR linkages
-addresses['nar_link_flag'] = addresses['nar_addr_guid'].apply(lambda x: 1 if type(x) == str else 0)
-addresses['sbgr_link_flag'] = addresses['sbgr_bg_sn'].apply(lambda x: 1 if type(x) == str else 0)
+
+if 'nar_addr_guid' in addresses.columns.tolist():
+    print('Creating NAR linkage flag')
+    addresses['nar_link_flag'] = addresses['nar_addr_guid'].apply(lambda x: 1 if type(x) == str else 0)
+
+else:
+    print('No NAR linkage available to check')
+    addresses['nar_link_flag'] = np.NaN
+
+if 'sbgr_bg_sn' in addresses.columns.tolist():
+    print('Creating SBgR SN linkage flag')
+    addresses['sbgr_link_flag'] = addresses['sbgr_bg_sn'].apply(lambda x: 1 if type(x) == str else 0)
+
+else:
+    print('No SBgR SN linkage available to check')
+    addresses['sbgr_link_flag'] = np.NaN
 
 # Calculate confidence score and associated fields
 confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length', 'nar_link_flag', 'sbgr_link_flag']

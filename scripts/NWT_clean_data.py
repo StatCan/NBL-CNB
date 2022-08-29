@@ -428,12 +428,12 @@ print('Cleaning and prepping address points')
 addresses = reproject(addresses, proj_crs)
 addresses = gpd.sjoin(addresses, linking_data[['link_field', 'geometry']], op='within', how='left')
 
-addresses['aid'] = range(1, len(addresses.index)+1)
-grouped = addresses.groupby('aid', dropna=True)['aid'].count()
+addresses['a_id'] = range(1, len(addresses.index)+1)
+grouped = addresses.groupby('a_id', dropna=True)['a_id'].count()
 grouped = grouped[grouped > 1].index.tolist()
-addresses_plural_sj = addresses[addresses['aid'].isin(grouped)]
-addresses_singular = addresses[~addresses['aid'].isin(grouped)]
-addresses_plural_sj = return_smallest_match(addresses_plural_sj, linking_data, 'aid')
+addresses_plural_sj = addresses[addresses['a_id'].isin(grouped)]
+addresses_singular = addresses[~addresses['a_id'].isin(grouped)]
+addresses_plural_sj = return_smallest_match(addresses_plural_sj, linking_data, 'a_id')
 addresses = addresses_singular.append(addresses_plural_sj)
 addresses.drop(columns=['index_right'], inplace=True)
 

@@ -1,19 +1,9 @@
 import os
-import matplotlib.pyplot as plt
-import re
-import string
 import sys
 from pathlib import Path
-import fiona
 import geopandas as gpd
-import numpy as np
-from numpy.core.numeric import True_
-from operator import add, index, itemgetter
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
-import pandas as pd
-from pyproj import crs
-from shapely import geometry
-from shapely.geometry import MultiPolygon, Point, Polygon, geo, LineString
+from shapely.geometry import LineString
 from dotenv import load_dotenv
 import datetime
 
@@ -44,7 +34,7 @@ def point_line_maker(matched_geometry, orig_geometry):
 # ---------------------------------------------------------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
 
 output_path = os.getcwd()
 

@@ -1,20 +1,17 @@
 import datetime
+import sys
+import shapely
 import os
 import re
 import string
-import sys
 from pathlib import Path
 import fiona
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import swifter
 from dotenv import load_dotenv
-from numpy.core.numeric import True_
-from pyproj import crs
-from shapely import geometry
-from shapely.geometry import MultiPolygon, Point, Polygon, geo
 from math import pi
+from shapely.geometry import MultiLineString, Polygon
 
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
