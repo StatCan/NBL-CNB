@@ -1,18 +1,13 @@
 
-import logging
 import geopandas as gpd
 import numpy as np
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
-import re
 import shapely
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from bisect import bisect
-from collections import OrderedDict
-from operator import add, index, itemgetter
 from shapely import geometry
 from shapely.geometry import Point, Polygon, MultiPolygon
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
@@ -37,12 +32,12 @@ https://towardsdatascience.com/how-to-create-voronoi-regions-with-geospatial-dat
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
-
+load_dotenv(os.path.join(r'C:\projects\point_in_polygon\scripts', 'NB_environments.env'))
 project_gpkg = Path(os.getenv('DATA_GPKG'))
 footprints_lyr_nme = os.getenv('CLEANED_BF_LYR_NAME')
 addresses_lyr_nme = os.getenv('FLAGGED_AP_LYR_NME')
-aoi_mask = Path(os.getenv('AOI_MASK'))
+aoi_mask = r'C:\projects\point_in_polygon\data\NB_data\voronoi_test_aoi.gpkg'
+aoi_lyr_nme = 'voronoi_test_aoi'
 
 proj_crs = int(os.getenv('PROJ_CRS'))
 
@@ -52,9 +47,9 @@ output_path = r'C:\projects\point_in_polygon\data\NB_data\voronoi_test.gpkg'
 # Logic
 
 # Load in the data
-bounds = gpd.read_file(aoi_mask)
-addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
-footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme, crs=proj_crs)
+bounds = gpd.read_file(aoi_mask, layer=aoi_lyr_nme)
+addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=proj_crs, mask=bounds)
+footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme, crs=proj_crs, mask=bounds)
 
 addresses.to_crs(crs= proj_crs, inplace=True)
 footprint.to_crs(crs=proj_crs, inplace=True)
@@ -71,10 +66,6 @@ poly_shapes, pts = voronoi_regions_from_coords(coords, boundary_shape)
 voronoi = pd.DataFrame.from_dict(poly_shapes, orient='index')
 # voronoi.rename({0:'geometry'}, inplace=True)
 voronoi = gpd.GeoDataFrame(voronoi, geometry=0)
-sys.exit()
-fig, ax = subplot_for_map()
-# plot_voronoi_polys_with_points_in_area(ax, boundary_shape, poly_shapes, pts)
-plt.tight_layout()
-plt.show()
+voronoi.to_file(aoi_mask, layer='test_voronoi')
 
 print('DONE!')
