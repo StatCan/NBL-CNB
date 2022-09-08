@@ -102,7 +102,7 @@ def parcel_location_flag_builder(address_row, parcel_row):
     sys.exit()
 
 
-def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_len, nar_link, sbgr_link):
+def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_len, method, nar_link, sbgr_link):
     '''Returns a match confidence score based on key fields calculated during the matching process. Use only as part of an apply function on a single record'''
     parcel_rel_scores = {'one_to_one' : 60,
                         'one_to_many' : 55, 
@@ -112,6 +112,13 @@ def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_
                         'manual' : 100,
                         'other' : 0}
     
+    method_scores = {
+        'intersect' : 7,
+        'data_linking' : 3,
+        '20m_buffer' : 0,
+        '20m_buffer_bp' : 0
+    }
+
     confidence = 0
 
     # initial calculation based on the parcel relationship
@@ -145,10 +152,16 @@ def confidence_score_calculator(parcel_rel, mun_civ_flag, parcel_loc_flag, link_
     if sbgr_link == 1:
         confidence += 5
 
+    # MODIFIER #4: Link Method
+    if method in method_scores:
+        confidence += method_scores[method]
+    else:
+        confidence += 0
+
     return confidence
 
 
-def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, nar_link, sbgr_link):
+def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, method, nar_link, sbgr_link):
     '''Returns the number of valid modifiers on the parcel relationship score that were used to help calculate the confidence value. 
     Parcel relationship is not included in this calculation.'''
 
@@ -164,12 +177,15 @@ def valid_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, nar_
     if link_len < 50:
         v_score +=1
     
+    # For method add only methods that contribute to a positive score
+    if method in ['intersect', 'data_linking']:
+        v_score +=1
     # Add other specific modifiers here if they become available
     
     return v_score
 
 
-def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, nar_link, sbgr_link):
+def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, method, nar_link, sbgr_link):
     '''Returns the total number of confidence modifiers that had a valid input (
         modifiers with an invalid input -1 or NULL are excluded from this calculation)'''
     
@@ -182,6 +198,9 @@ def total_confidence_input_counter(mun_civ_flag, parcel_loc_flag, link_len, nar_
     # If score is between 0 and 50 take as a positive indicator (50 being the lowest positive category)
     if (link_len >= 0.0) and (link_len <= 50.0):
         i_score +=1
+    
+    if type(method) == str:
+        i_score += 1
     
     return i_score
 
@@ -266,7 +285,7 @@ else:
     addresses['sbgr_link_flag'] = np.NaN
 
 # Calculate confidence score and associated fields
-confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length', 'nar_link_flag', 'sbgr_link_flag']
+confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length', 'method', 'nar_link_flag', 'sbgr_link_flag']
 
 print('Calculating Confidence')
 
@@ -278,6 +297,20 @@ addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row:
 addresses['confidence_type'] = addresses['confidence'].apply(lambda c: determine_confidence_type(c))
 
 addresses.to_file(qa_qc_gpkg, layer='matches_w_confidence', driver='GPKG')
+
+# Confidence Metrics Calculation
+
+metrics = []
+for rel in ['one_to_one', 'one_to_many', 'many_to_one',  'many_to_many', 'no_linked_building']:
+    relate = addresses[addresses['parcel_rel'] == rel]
+    relate_row = [rel]
+    for con in ['HIGH', 'MEDIUM', 'LOW', 'NO_SCORE']:
+        relate_row.append(len(relate[relate['confidence_type'] == con]))
+    relate_row.append(len(relate))
+    metrics.append(relate_row)
+metrics_df = pd.DataFrame(metrics, columns=['Relationship', 'High', 'Medium', 'Low', 'No Score', 'Total'])
+
+metrics_df.to_csv(os.path.join(output_path, 'confidence_metrics.csv'), index=False)
 
 end_time = datetime.datetime.now()
 print(f'Start Time: {start_time}')
