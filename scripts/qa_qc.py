@@ -67,6 +67,9 @@ print('Creating Line Links')
 match_adp.to_crs(crs=proj_crs, inplace=True)
 clean_adp.to_crs(crs=proj_crs, inplace=True)
 
+# Match unique id creation
+match_adp['link_id'] = range(1, len(match_adp.index)+1)
+
 match_adp['line_geom'] = match_adp[['a_id', 'geometry']].apply(lambda row: point_line_maker(row[1], clean_adp[clean_adp['a_id'] == row[0]]['geometry'].tolist()[0]), axis=1)
 
 match_adp = match_adp.set_geometry('line_geom')
@@ -99,7 +102,7 @@ if len(long_links) > 0:
 # Output line file to the qa_qc gpkg
 line_links = match_adp.copy(deep=True)
 line_links.drop(columns=['point_geometry'], inplace=True)
-line_links.to_file(qa_qc_gpkg, layer=f"line_link_{datetime.datetime.now().strftime('%d_%m_%Y')}", driver='GPKG', crs=proj_crs)
+line_links.to_file(qa_qc_gpkg, layer=f"line_links", driver='GPKG', crs=proj_crs)
 print('Exporting qc_points')
 
 match_adp.drop(columns=['geometry'], inplace=True)

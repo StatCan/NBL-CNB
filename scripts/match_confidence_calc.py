@@ -231,6 +231,7 @@ parcel_lyr_nme = 'parcels_cleaned'
 
 qa_qc_gpkg = Path(os.getenv('QA_GPKG'))
 addresses_lyr_nme = 'qc_points'
+line_link_lyr_nme = f"line_links"
 
 mun_civic_gpkg = Path(os.getenv('QA_GPKG'))
 mun_civic_lyr_nme = os.getenv('ST_MUN_CIVICS')
@@ -238,7 +239,8 @@ mun_civic_lyr_nme = os.getenv('ST_MUN_CIVICS')
 proj_crs = os.getenv('PROJ_CRS')
 
 out_gpkg = Path(os.getenv('QA_GPKG'))
-out_name = os.getenv('FLAGGED_ADP_LYR_NME')
+out_name = 'matches_w_confidence'
+out_line_links_name = f"line_link_{datetime.datetime.now().strftime('%d_%m_%Y')}"
 # ----------------------------------------------------------------
 # Logic
 
@@ -249,8 +251,6 @@ print('Loading in data')
 addresses = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
 
 parcels = gpd.read_file(project_gpkg, layer=parcel_lyr_nme, crs=proj_crs)
-
-
 
 # Create flags for secondary address sources
 
@@ -296,8 +296,13 @@ addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row:
 
 addresses['confidence_type'] = addresses['confidence'].apply(lambda c: determine_confidence_type(c))
 
-addresses.to_file(qa_qc_gpkg, layer='matches_w_confidence', driver='GPKG')
+# Add confidence to line links
+lines_gdf = gpd.read_file(qa_qc_gpkg, layer=line_link_lyr_nme)
+lines_gdf = lines_gdf.merge(addresses[['link_id', 'confidence', 'confidence_type']], on='link_id')
 
+# Export data with confidence
+addresses.to_file(qa_qc_gpkg, layer=out_name, driver='GPKG')
+lines_gdf.to_file(qa_qc_gpkg, layer= out_line_links_name)
 # Confidence Metrics Calculation
 
 metrics = []
