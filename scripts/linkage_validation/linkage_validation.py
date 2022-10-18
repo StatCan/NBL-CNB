@@ -82,37 +82,42 @@ NWT_crs = 26911
 # ----------------------------------------------------------------
 # Logic
 
+# Load in the inputs
 matched_gdf = gpd.read_file(matched_points_gpkg, layer=points_lyr_nme)
 par_adj_gdf = gpd.read_file(par_adj_gpkg, layer=par_adj_lyr_nme)
 
+# Check and set the crs for the inputs
 for gdf in [par_adj_gdf, matched_gdf]:
     if gdf.crs != NWT_crs:
         gdf.to_crs(NWT_crs, inplace=True)
 
+# Create dissolved parcel grid
 combo_polys = dissolved_parcel_grid(par_adj_gdf)
 
+# Create a unique block ID for each block
 combo_polys['block_id'] = combo_polys.index
 
+# Create spatial join to get the block_id for the matches
 matched_gdf = matched_gdf.sjoin(combo_polys[['block_id', 'geometry']])
 matched_gdf.drop(columns=['index_right'], inplace=True)
 
+# Group and get counts
 grouped_w_par = matched_gdf.groupby(by=['block_id'])
 con_type_cnts = grouped_w_par['confidence_type'].value_counts()
 
+# Convert the series to a dataframe
 counts_df = con_type_cnts.to_frame('confidence_type').unstack(fill_value=0, level=-1)
-
+# Get rid of the multi index
 counts_df.columns=counts_df.columns.droplevel(0)
 counts_df.reset_index(inplace=True)
-
-
-
+# Better column order
+counts_df = counts_df[['block_id', 'LOW', 'MEDIUM', 'HIGH']]
+# Calc total # records in the block
 counts_df['total'] = counts_df['HIGH'] + counts_df['MEDIUM'] + counts_df['LOW']
+# Sort largest totals to the top of the table
 counts_df.sort_values(by='total', inplace=True, ascending=False)
-
-counts_df = counts_df[['block_id', 'LOW', 'MEDIUM', 'HIGH', 'total']]
+# Set the block_id as the index
 counts_df.set_index('block_id', inplace=True)
-
-print(counts_df.head())
 
 counts_df.to_csv(os.path.join(out_dir, out_csv_name))
 print('DONE!')
