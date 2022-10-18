@@ -1,3 +1,4 @@
+import string
 import click
 import fiona
 import shapely
@@ -118,6 +119,9 @@ counts_df['total'] = counts_df['HIGH'] + counts_df['MEDIUM'] + counts_df['LOW']
 counts_df.sort_values(by='total', inplace=True, ascending=False)
 # Set the block_id as the index
 counts_df.set_index('block_id', inplace=True)
+
+# Create Priority Field
+counts_df['percent_to_check'] = round(((counts_df['MEDIUM'] + counts_df['LOW'])/ counts_df['total']) * 100, 2)
 
 counts_df.to_csv(os.path.join(out_dir, out_csv_name))
 print('DONE!')
