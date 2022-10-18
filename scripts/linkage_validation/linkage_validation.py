@@ -8,7 +8,7 @@ import libpysal
 import pandas as pd
 import sys, os
 from copy import deepcopy
-from itertools import chain
+from itertools import chain, count
 from operator import attrgetter, itemgetter
 from pathlib import Path
 from shapely.geometry import Point
@@ -104,8 +104,15 @@ counts_df = con_type_cnts.to_frame('confidence_type').unstack(fill_value=0, leve
 counts_df.columns=counts_df.columns.droplevel(0)
 counts_df.reset_index(inplace=True)
 
+
+
 counts_df['total'] = counts_df['HIGH'] + counts_df['MEDIUM'] + counts_df['LOW']
 counts_df.sort_values(by='total', inplace=True, ascending=False)
 
-counts_df.to_csv(os.path.join(out_dir, out_csv_name), index=False)
+counts_df = counts_df[['block_id', 'LOW', 'MEDIUM', 'HIGH', 'total']]
+counts_df.set_index('block_id', inplace=True)
+
+print(counts_df.head())
+
+counts_df.to_csv(os.path.join(out_dir, out_csv_name))
 print('DONE!')
