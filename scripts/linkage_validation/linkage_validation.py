@@ -32,24 +32,6 @@ https://james-brennan.github.io/posts/fast_gridding_geopandas/
 
 '''
 # ----------------------------------------------------------------
-# Functions
-
-
-def dissolved_parcel_grid(parcels: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    '''
-    Dissolves boundaries between parcel and returns pseudo basic block which cna then be used for ananlysis. To prevent the return of a single giant polygon ensure that
-    all road polygons are deleted before running this function. Road parcels can often be distinguished in the lot_number field in parcel data (if available)
-    '''
-    # create spatial weights matrix
-    matrix = libpysal.weights.Queen.from_dataframe(parcels)
-
-    # get component labels
-    comps = matrix.component_labels
-
-    return parcels.dissolve(by=comps)
-
-
-# ----------------------------------------------------------------
 # Inputs
 
 matched_points_gpkg = r'C:/projects/point_in_polygon/data/NT_data/qa_qc_files.gpkg'
