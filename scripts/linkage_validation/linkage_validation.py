@@ -34,24 +34,6 @@ https://james-brennan.github.io/posts/fast_gridding_geopandas/
 # ----------------------------------------------------------------
 # Functions
 
-def basic_grid(layer_of_interest: gpd.GeoDataFrame, grid_crs: int = 4326, n_cells: int = 10) -> gpd.GeoDataFrame:
-    '''
-    Creates a basic grid based of the extent of the input layer of interest. n_cells is the number of desired cells on one axis although if the extent is odd then
-    the desired number of cells will not be exact.
-    '''
-    # Calc size of cells
-    xmin, ymin, xmax, ymax = layer_of_interest.total_bounds
-    cell_size = (xmax - xmin) / n_cells
-
-    grid_cells = []
-    for x0 in np.arange(xmin, xmax + cell_size, cell_size):
-        for y0 in np.arange(ymin, ymax + cell_size, cell_size):
-            # bounds
-            x1 = x0 - cell_size
-            y1 = y0 + cell_size
-            grid_cells.append(shapely.geometry.box(x0, y0, x1, y1))
-    return gpd.GeoDataFrame(grid_cells, columns=['geometry'], crs=grid_crs)
-
 
 def dissolved_parcel_grid(parcels: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     '''
@@ -82,7 +64,6 @@ NWT_crs = 26911
 
 # ----------------------------------------------------------------
 # Logic
-
 
 class LinkageValidator:
     ''' Validates the linkages created by the address matching scripts and outputs a table of 'blocks' that assigns a
