@@ -33,6 +33,9 @@ Points:
 # Class
 
 class IssueFlagging:
+    '''
+    The purpose of this class is to highlight the relationships between a parcels layer and a address point layer
+    '''
     def __init__(self, ap_data_path, bf_data_path, linking_data_path, ap_lyr_nme=None, bf_lyr_nme=None, linking_lyr_nme=None, aoi_mask=None, crs= 4326):
         def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts):
             '''Returns the parcel relationship type for the given record based on the counts of the parcel linkages in the bf and ap datasets'''
