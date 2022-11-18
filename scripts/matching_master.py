@@ -197,7 +197,6 @@ footprint = footprint[footprint['shed_flag'] == False]
 print('     creating and grouping linkages')
 merge = addresses[~addresses[join_addresses].isna()].merge(footprint[[join_footprint, "footprint_index"]], how="left", left_on=join_addresses, right_on=join_footprint)
 addresses['footprint_index'] = groupby_to_list(merge, "addresses_index", "footprint_index")
-
 addresses.drop(columns=["addresses_index"], inplace=True)
 
 # Big Parcel (BP) case extraction (remove and match before all other cases)

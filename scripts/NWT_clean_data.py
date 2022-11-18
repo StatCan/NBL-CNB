@@ -426,9 +426,9 @@ addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_gdf)
 print('Cleaning and prepping address points')
 
 addresses = reproject(addresses, proj_crs)
+addresses['a_id'] = range(1, len(addresses.index)+1)
 addresses = gpd.sjoin(addresses, linking_data[['link_field', 'geometry']], op='within', how='left')
 
-addresses['a_id'] = range(1, len(addresses.index)+1)
 grouped = addresses.groupby('a_id', dropna=True)['a_id'].count()
 grouped = grouped[grouped > 1].index.tolist()
 addresses_plural_sj = addresses[addresses['a_id'].isin(grouped)]
