@@ -354,6 +354,20 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
         return stype_ab
 
 
+def cut_buildings(building, parcel_line):
+    '''
+    Cut buildings by the line of the parcel boundary that crosses it.
+    '''
+    for l in parcel_line:
+        split_lines = []
+        if building.intersects(parcel_line):
+            split_lines.append(l)
+    for sl in split_lines:
+        splits =  shapely.ops.split(building, sl)
+        print(splits)
+        sys.exit()
+        
+
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
@@ -400,7 +414,6 @@ rd_crs = os.getenv('RD_CRS')
 # Logic
 
 # Load dataframes.
-aoi_gdf = None
 if aoi_mask != None:
     aoi_gdf = gpd.read_file(aoi_mask)
 
@@ -488,8 +501,24 @@ footprint['geometry'] = footprint['geometry'].buffer(0)
 
 print('Cleaning and prepping footprint data')
 # footprint = explode(footprint) # Remove multipart polygons convert to single polygons
+
+# convert linking data to lines
+line_geom = linking_data['geometry'].apply(lambda p: p.boundary)
+# convert multilinestrings to linestrings
+line_geom = line_geom.explode(index_parts=True)
+
+# convert all the lines into a single line and then cut the buildings from there
+line_geom_list = line_geom.tolist()
+merged_lines = MultiLineString(line_geom_list)
+merged_lines = shapely.ops.linemerge(merged_lines)
+merged_lines = shapely.ops.unary_union(merged_lines)
+
+# cut buildings by the lines when they cross the building
+cut_footprint = footprint['geometry'].apply(lambda b: cut_buildings(b, merged_lines)) 
+# remove all buildings parts that are smaller than 50m2 
+
 footprint['bf_area'] = round(footprint['geometry'].area, 2)
-# footprint = footprint.loc[footprint.area >= 20.0] # Remove all buildings with an area of less than 20m**2
+
 footprint = footprint.reset_index()
 footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])

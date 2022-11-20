@@ -42,6 +42,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'address_matching/data_prep';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 2: Parcel Relationship Calculation" href="parcel_rel_cal.html" />
+    <link rel="prev" title="NBL-CNB: Address Matching Process" href="../address_matching_process.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="docsearch:language" content="en">
   </head>
@@ -114,6 +116,19 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../project_overview.html">
+                        Project Overview
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../address_matching_process.html">
+                        Address Matching Process
+                      </a>
+                    </li>
+                
     </ul>
 </nav>
       </div>
@@ -180,7 +195,7 @@
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
   
   <div class="sidebar-header-items sidebar-primary__section">
@@ -195,6 +210,19 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../project_overview.html">
+                        Project Overview
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../address_matching_process.html">
+                        Address Matching Process
+                      </a>
+                    </li>
+                
     </ul>
 </nav>
       </div>
@@ -235,6 +263,27 @@
   </div>
 
   
+  <div class="sidebar-start-items sidebar-primary__section">
+    <div class="sidebar-start-items__item"><nav class="bd-links" id="bd-docs-nav" aria-label="Section navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">
+    Section Navigation
+  </p>
+  <div class="bd-toc-item navbar-nav">
+    <ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Step 1: Data Preparation</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="parcel_rel_cal.html">Step 2: Parcel Relationship Calculation</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="matching.html">Step 3: Matching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="qa_qc.html">Step 4: Data QA/QC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="confidence.html">Step 5: Match Confidence Calculation</a></li>
+</ul>
+
+  </div>
+</nav>
+    </div>
+  </div>
+  
 
   
   <div class="sidebar-end-items sidebar-primary__section">
@@ -268,6 +317,8 @@
 <li><p><a class="reference internal" href="#overview" id="id2">Overview</a></p>
 <ul>
 <li><p><a class="reference internal" href="#parcel-fabric-cleaning" id="id3">Parcel Fabric Cleaning</a></p></li>
+<li><p><a class="reference internal" href="#address-points-cleaning" id="id4">Address Points Cleaning</a></p></li>
+<li><p><a class="reference internal" href="#building-footprint-cleaning" id="id5">Building Footprint Cleaning</a></p></li>
 </ul>
 </li>
 </ul>
@@ -288,6 +339,26 @@ are:</p>
 current process.</p>
 <section id="parcel-fabric-cleaning">
 <h2><a class="toc-backref" href="#id3" role="doc-backlink">Parcel Fabric Cleaning</a><a class="headerlink" href="#parcel-fabric-cleaning" title="Permalink to this heading">#</a></h2>
+<p>Parcel data is the most variable dataset in terms of what the geometry looks like and what fields are
+available in open data portals. Cleaning this data is the most variable of the three datasets</p>
+</section>
+<section id="address-points-cleaning">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Address Points Cleaning</a><a class="headerlink" href="#address-points-cleaning" title="Permalink to this heading">#</a></h2>
+<p>Address Points are cleaned using the following method</p>
+</section>
+<section id="building-footprint-cleaning">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Building Footprint Cleaning</a><a class="headerlink" href="#building-footprint-cleaning" title="Permalink to this heading">#</a></h2>
+<p>The following  cleaning/preparation processes are applied to the raw building footprint data in order to
+prepare for matching:</p>
+<ul class="simple">
+<li><p>Non-Addressable Outbuilding Detection</p></li>
+<li><p>Parcel Linkage</p></li>
+</ul>
+<p>Non-Addressable outbuilding detection:</p>
+<p>A non Non-Addressable outbuilding is defined as a</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -299,6 +370,20 @@ current process.</p>
             <footer class="bd-footer-article">
                 <!-- Previous / next buttons -->
 <div class='prev-next-area'>
+  <a class='left-prev' id="prev-link" href="../address_matching_process.html" title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+          <p class="prev-next-subtitle">previous</p>
+          <p class="prev-next-title">NBL-CNB: Address Matching Process</p>
+      </div>
+  </a>
+  <a class='right-next' id="next-link" href="parcel_rel_cal.html" title="next page">
+  <div class="prev-next-info">
+      <p class="prev-next-subtitle">next</p>
+      <p class="prev-next-title">Step 2: Parcel Relationship Calculation</p>
+  </div>
+  <i class="fa-solid fa-angle-right"></i>
+  </a>
 </div>
             </footer>
             
@@ -328,6 +413,16 @@ current process.</p>
    <li class="toc-h2 nav-item toc-entry">
     <a class="reference internal nav-link" href="#parcel-fabric-cleaning">
      Parcel Fabric Cleaning
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#address-points-cleaning">
+     Address Points Cleaning
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#building-footprint-cleaning">
+     Building Footprint Cleaning
     </a>
    </li>
   </ul>

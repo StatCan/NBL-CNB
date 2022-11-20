@@ -55,7 +55,6 @@ html_theme = 'pydata_sphinx_theme'
 # documentation.
 html_theme_options = {
     "search_bar_position": "sidebar",
-    "default_mode": "light",
     "icon_links": [
         {
             "name": "GitHub",
