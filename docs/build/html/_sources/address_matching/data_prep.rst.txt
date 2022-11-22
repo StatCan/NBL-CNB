@@ -20,3 +20,28 @@ current process.
 
 Parcel Fabric Cleaning
 ----------------------
+
+Parcel data is the most variable dataset in terms of what the geometry looks like and what fields are 
+available in open data portals. Cleaning this data is the most variable of the three datasets
+
+Address Points Cleaning
+-----------------------
+
+Address Points are cleaned using the following method
+
+Building Footprint Cleaning
+---------------------------
+
+The following  cleaning/preparation processes are applied to the raw building footprint data in order to 
+prepare for matching:
+
+* Non-Addressable Outbuilding Detection
+* Parcel Linkage
+
+
+Non-Addressable outbuilding detection:
+
+A non Non-Addressable outbuilding is defined as a 
+
+..  code-block:: python
+

@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>Step 1: Data Preparation &#8212; NBL-CNB 0.1 documentation</title>
+    <title>Step 5: Match Confidence Calculation &#8212; NBL-CNB 0.1 documentation</title>
   
   
   
@@ -39,11 +39,10 @@
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/sphinx_highlight.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'address_matching/data_prep';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'address_matching/confidence';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Step 2: Parcel Relationship Calculation" href="parcel_rel_cal.html" />
-    <link rel="prev" title="NBL-CNB: Address Matching Process" href="../address_matching_process.html" />
+    <link rel="prev" title="Step 4: Data QA/QC" href="qa_qc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="docsearch:language" content="en">
   </head>
@@ -270,7 +269,7 @@
   </p>
   <div class="bd-toc-item navbar-nav">
     <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Step 1: Data Preparation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_prep.html">Step 1: Data Preparation</a></li>
 
 <li class="toctree-l1 has-children"><a class="reference internal" href="parcel_rel_cal.html">Step 2: Parcel Relationship Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
@@ -282,7 +281,7 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="qa_qc.html">Step 4: Data QA/QC</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="confidence.html">Step 5: Match Confidence Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Step 5: Match Confidence Calculation</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
 </li>
 </ul>
@@ -316,57 +315,152 @@
             
             <article class="bd-article" role="main">
               
-  <section id="step-1-data-preparation">
-<h1><a class="toc-backref" href="#id1" role="doc-backlink">Step 1: Data Preparation</a><a class="headerlink" href="#step-1-data-preparation" title="Permalink to this heading">#</a></h1>
-<nav class="contents" id="contents">
-<p class="topic-title">Contents:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="#step-1-data-preparation" id="id1">Step 1: Data Preparation</a></p></li>
-<li><p><a class="reference internal" href="#overview" id="id2">Overview</a></p>
-<ul>
-<li><p><a class="reference internal" href="#parcel-fabric-cleaning" id="id3">Parcel Fabric Cleaning</a></p></li>
-<li><p><a class="reference internal" href="#address-points-cleaning" id="id4">Address Points Cleaning</a></p></li>
-<li><p><a class="reference internal" href="#building-footprint-cleaning" id="id5">Building Footprint Cleaning</a></p></li>
-</ul>
-</li>
-</ul>
-</nav>
-</section>
-<section id="overview">
-<h1><a class="toc-backref" href="#id2" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h1>
-<p>There are three key layers that must be injested, cleaned, and prepped before matching can begin.
-The composition of these input files varies widely by jurisdiction so to a certain degree this process
-will vary slightly from region to region in order to compensate for these differences. These three layers
-are:</p>
-<ul class="simple">
-<li><p>Building Footprints</p></li>
-<li><p>Address Points</p></li>
-<li><p>Parcel Fabric</p></li>
-</ul>
-<p>All three of these layers must be available in order to to create address to building matches under the
-current process.</p>
-<section id="parcel-fabric-cleaning">
-<h2><a class="toc-backref" href="#id3" role="doc-backlink">Parcel Fabric Cleaning</a><a class="headerlink" href="#parcel-fabric-cleaning" title="Permalink to this heading">#</a></h2>
-<p>Parcel data is the most variable dataset in terms of what the geometry looks like and what fields are
-available in open data portals. Cleaning this data is the most variable of the three datasets</p>
-</section>
-<section id="address-points-cleaning">
-<h2><a class="toc-backref" href="#id4" role="doc-backlink">Address Points Cleaning</a><a class="headerlink" href="#address-points-cleaning" title="Permalink to this heading">#</a></h2>
-<p>Address Points are cleaned using the following method</p>
-</section>
-<section id="building-footprint-cleaning">
-<h2><a class="toc-backref" href="#id5" role="doc-backlink">Building Footprint Cleaning</a><a class="headerlink" href="#building-footprint-cleaning" title="Permalink to this heading">#</a></h2>
-<p>The following  cleaning/preparation processes are applied to the raw building footprint data in order to
-prepare for matching:</p>
-<ul class="simple">
-<li><p>Non-Addressable Outbuilding Detection</p></li>
-<li><p>Parcel Linkage</p></li>
-</ul>
-<p>Non-Addressable outbuilding detection:</p>
-<p>A non Non-Addressable outbuilding is defined as a</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
+  <section id="step-5-match-confidence-calculation">
+<h1>Step 5: Match Confidence Calculation<a class="headerlink" href="#step-5-match-confidence-calculation" title="Permalink to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
 </div>
+<p>The final step of the matching process is the confidence calculation. Confidence is a numeric score
+calculated based off the characteristics of the match. Additionally, secondary sources such as the
+National Address Register (NAR) are brought in to add to the calculation wherever possible. It is
+important to note that the confidence score is an arbitrary number and should not be considered an
+indicator percent confidence.</p>
+<section id="base-scores">
+<h2>Base Scores<a class="headerlink" href="#base-scores" title="Permalink to this heading">#</a></h2>
+<p>The base score is the initial value assigned to a match based on the relationship
+between the number of address points and the number of building polygons in the
+linked parcel (if available). This score is based off the complexity of the relationship,
+or lack of relationship in cases where there is no linked parcel.</p>
+<table class="table" id="id1">
+<caption><span class="caption-text">Base Scores</span><a class="headerlink" href="#id1" title="Permalink to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Relationship Type</p></th>
+<th class="head"><p>Base Score</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>One to One</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-odd"><td><p>One to Many</p></td>
+<td><p>55</p></td>
+</tr>
+<tr class="row-even"><td><p>Many to One</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-odd"><td><p>Many to Many</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-even"><td><p>Unlinked</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>Manual</p></td>
+<td><p>100</p></td>
+</tr>
+<tr class="row-even"><td><p>Other</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="match-method">
+<h2>Match Method<a class="headerlink" href="#match-method" title="Permalink to this heading">#</a></h2>
+<p>The method used to make the match is also taken into account as seen in the table
+below.</p>
+<table class="table" id="id2">
+<caption><span class="caption-text">Match Method</span><a class="headerlink" href="#id2" title="Permalink to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method Type</p></th>
+<th class="head"><p>Score Modifier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Intersect</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>Data Linking</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>20m Buffer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>20m Buffer BP</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>20m_bp</strong> only applies to linkages that fall within the big parcel matching method.</p>
+</section>
+<section id="link-distance">
+<h2>Link Distance<a class="headerlink" href="#link-distance" title="Permalink to this heading">#</a></h2>
+<p>Link distance is a key indicator on the accuracy of a match. The shorter the distance
+between the address point and the building footprint</p>
+<table class="table" id="id3">
+<caption><span class="caption-text">Link Distance</span><a class="headerlink" href="#id3" title="Permalink to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Link Distance</p></th>
+<th class="head"><p>Score Modifier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>5m&gt;</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>5m-20m</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>20m-50m</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>50m-200m</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>200m-400m</p></td>
+<td><p>-10</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="other-secondary-sources">
+<h2>Other Secondary Sources<a class="headerlink" href="#other-secondary-sources" title="Permalink to this heading">#</a></h2>
+<p>Secondary sources from both internal and external data providers are also incorporated
+into the confidence score.</p>
+<p>Internal data sources such as the National Address Register (NAR) and the Statistical Building Register (SBgR)
+are utilized.</p>
+<table class="table" id="id4">
+<caption><span class="caption-text">Internal Data Linkages</span><a class="headerlink" href="#id4" title="Permalink to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Internal Data Linkage</p></th>
+<th class="head"><p>Score Modifier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>NAR Link</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>SBgR Link</p></td>
+<td><p>5</p></td>
+</tr>
+</tbody>
+</table>
+<p>Wherever possible authoritative external sources are used to validate the match. Some examples
+of a secondary source include: a civic address point layer from a city within the AOI, or an address
+field in the parcel data used to make the matches.</p>
+<table class="table" id="id5">
+<caption><span class="caption-text">Secondary Sources</span><a class="headerlink" href="#id5" title="Permalink to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Secondary Sources</p></th>
+<th class="head"><p>Score Modifier</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Municipal Civic Link</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>Parcel Address Match</p></td>
+<td><p>5</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 
@@ -378,19 +472,12 @@ prepare for matching:</p>
             <footer class="bd-footer-article">
                 <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-  <a class='left-prev' id="prev-link" href="../address_matching_process.html" title="previous page">
+  <a class='left-prev' id="prev-link" href="qa_qc.html" title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
           <p class="prev-next-subtitle">previous</p>
-          <p class="prev-next-title">NBL-CNB: Address Matching Process</p>
+          <p class="prev-next-title">Step 4: Data QA/QC</p>
       </div>
-  </a>
-  <a class='right-next' id="next-link" href="parcel_rel_cal.html" title="next page">
-  <div class="prev-next-info">
-      <p class="prev-next-subtitle">next</p>
-      <p class="prev-next-title">Step 2: Parcel Relationship Calculation</p>
-  </div>
-  <i class="fa-solid fa-angle-right"></i>
   </a>
 </div>
             </footer>
@@ -408,32 +495,25 @@ prepare for matching:</p>
 </div>
 <nav id="bd-toc-nav" class="page-toc">
     <ul class="visible nav section-nav flex-column">
- <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#">
-   Step 1: Data Preparation
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#base-scores">
+   Base Scores
   </a>
  </li>
- <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#overview">
-   Overview
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#match-method">
+   Match Method
   </a>
-  <ul class="visible nav section-nav flex-column">
-   <li class="toc-h2 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#parcel-fabric-cleaning">
-     Parcel Fabric Cleaning
-    </a>
-   </li>
-   <li class="toc-h2 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#address-points-cleaning">
-     Address Points Cleaning
-    </a>
-   </li>
-   <li class="toc-h2 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#building-footprint-cleaning">
-     Building Footprint Cleaning
-    </a>
-   </li>
-  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#link-distance">
+   Link Distance
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#other-secondary-sources">
+   Other Secondary Sources
+  </a>
  </li>
 </ul>
 
@@ -452,7 +532,7 @@ prepare for matching:</p>
 <div class="toc-item">
   
 <div class="tocsection sourcelink">
-    <a href="../_sources/address_matching/data_prep.rst.txt">
+    <a href="../_sources/address_matching/confidence.rst.txt">
         <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
 </div>
