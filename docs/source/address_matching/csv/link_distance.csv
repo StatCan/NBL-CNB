@@ -1,0 +1,6 @@
+Link Distance,Score Modifier
+5m>,10
+5m-20m,5
+20m-50m,1
+50m-200m,0
+200m-400m,-10

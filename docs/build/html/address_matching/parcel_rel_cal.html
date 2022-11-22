@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>NBL-CNB: Address Matching Process &#8212; NBL-CNB 0.1 documentation</title>
+    <title>Step 2: Parcel Relationship Calculation &#8212; NBL-CNB 0.1 documentation</title>
   
   
   
@@ -16,34 +16,34 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
-<link href="_static/styles/bootstrap.css?digest=796348d33e8b1d947c94" rel="stylesheet">
-<link href="_static/styles/pydata-sphinx-theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+  <link href="../_static/styles/theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="../_static/styles/bootstrap.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
 
   
-  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=796348d33e8b1d947c94" rel="stylesheet">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
 
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94">
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94">
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94">
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94">
 
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'address_matching_process';</script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Step 1: Data Preparation" href="address_matching/data_prep.html" />
-    <link rel="prev" title="NBL-CNB: Project Overview" href="project_overview.html" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'address_matching/parcel_rel_cal';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 3: Matching" href="matching.html" />
+    <link rel="prev" title="Step 1: Data Preparation" href="data_prep.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="docsearch:language" content="en">
   </head>
@@ -68,7 +68,7 @@
     <div class="search-button__overlay"></div>
     <div class="search-button__search-container">
       
-<form class="bd-search d-flex align-items-center" action="search.html" method="get">
+<form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
@@ -87,7 +87,7 @@
   
 
 
-<a class="navbar-brand logo" href="index.html">
+<a class="navbar-brand logo" href="../index.html">
 
   
   
@@ -117,14 +117,14 @@
     <ul id="navbar-main-elements" class="navbar-nav">
         
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="project_overview.html">
+                      <a class="nav-link nav-internal" href="../project_overview.html">
                         Project Overview
                       </a>
                     </li>
                 
 
                     <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
+                      <a class="nav-link nav-internal" href="../address_matching_process.html">
                         Address Matching Process
                       </a>
                     </li>
@@ -211,14 +211,14 @@
     <ul id="navbar-main-elements" class="navbar-nav">
         
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="project_overview.html">
+                      <a class="nav-link nav-internal" href="../project_overview.html">
                         Project Overview
                       </a>
                     </li>
                 
 
                     <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
+                      <a class="nav-link nav-internal" href="../address_matching_process.html">
                         Address Matching Process
                       </a>
                     </li>
@@ -269,20 +269,20 @@
     Section Navigation
   </p>
   <div class="bd-toc-item navbar-nav">
-    <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="address_matching/data_prep.html">Step 1: Data Preparation</a></li>
+    <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="data_prep.html">Step 1: Data Preparation</a></li>
 
-<li class="toctree-l1 has-children"><a class="reference internal" href="address_matching/parcel_rel_cal.html">Step 2: Parcel Relationship Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Step 2: Parcel Relationship Calculation</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
 </li>
 
-<li class="toctree-l1 has-children"><a class="reference internal" href="address_matching/matching.html">Step 3: Matching</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="matching.html">Step 3: Matching</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="address_matching/qa_qc.html">Step 4: Data QA/QC</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="qa_qc.html">Step 4: Data QA/QC</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="address_matching/confidence.html">Step 5: Match Confidence Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="confidence.html">Step 5: Match Confidence Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
 </ul>
 </li>
 </ul>
@@ -316,58 +316,41 @@
             
             <article class="bd-article" role="main">
               
-  <section id="nbl-cnb-address-matching-process">
-<h1>NBL-CNB: Address Matching Process<a class="headerlink" href="#nbl-cnb-address-matching-process" title="Permalink to this heading">#</a></h1>
+  <section id="step-2-parcel-relationship-calculation">
+<h1>Step 2: Parcel Relationship Calculation<a class="headerlink" href="#step-2-parcel-relationship-calculation" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/data_prep.html">Step 1: Data Preparation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/data_prep.html#overview">Overview</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/data_prep.html#parcel-fabric-cleaning">Parcel Fabric Cleaning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/data_prep.html#address-points-cleaning">Address Points Cleaning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/data_prep.html#building-footprint-cleaning">Building Footprint Cleaning</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/parcel_rel_cal.html">Step 2: Parcel Relationship Calculation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/parcel_rel_cal.html#relationship-types">Relationship Types</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/parcel_rel_cal.html#one-to-one">One to One</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/parcel_rel_cal.html#one-to-many">One to Many</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/parcel_rel_cal.html#many-to-one">Many to One</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/parcel_rel_cal.html#many-to-many">Many to Many</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/parcel_rel_cal.html#code">Code</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/matching.html">Step 3: Matching</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/matching.html#step-1-load-data-and-configure-attributes">Step 1: Load Data and Configure Attributes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/matching.html#step-2-configure-address-to-footprint-linkages">Step 2: Configure Address to Footprint Linkages</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/matching.html#step-3-check-linkages-using-intersects">Step 3: Check Linkages using Intersects</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/matching.html#step-4-check-linkages-using-linking-data">Step 4: Check Linkages using Linking Data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/matching.html#step-5-merge-and-export-results">Step 5: Merge and Export Results</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/qa_qc.html">Step 4: Data QA/QC</a></li>
-<li class="toctree-l1"><a class="reference internal" href="address_matching/confidence.html">Step 5: Match Confidence Calculation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/confidence.html#base-scores">Base Scores</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/confidence.html#match-method">Match Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/confidence.html#link-distance">Link Distance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="address_matching/confidence.html#other-secondary-sources">Other Secondary Sources</a></li>
-</ul>
-</li>
-</ul>
 </div>
-<p>The primary goal of this process is to accuratly match address points to building footprints. In order to
-achieve this three key datasets are required:
-* Address Points
-* Building Footprints
-* A Parcel Fabric</p>
-<p>Of the three the parcel fabric</p>
-<p>The matching process is divided up into several distinct phases described in the pages below.</p>
-<div class="button docutils container">
-<p><a class="reference internal" href="address_matching/data_prep.html"><span class="doc">1. Data Preparation</span></a>
-<a class="reference internal" href="address_matching/parcel_rel_cal.html"><span class="doc">2. Parcel Relationship Calculation</span></a>
-<a class="reference internal" href="address_matching/matching.html"><span class="doc">3. Matching</span></a>
-<a class="reference internal" href="address_matching/qa_qc.html"><span class="doc">4. QA/QC</span></a>
-<a class="reference internal" href="address_matching/confidence.html"><span class="doc">5. Confidence Calculation</span></a></p>
+<p>Once cleaned the data’s relationship to the parcel data must be calculated. This relationship
+is based on the count of address points and building footprints contained in a given parcel.</p>
+</section>
+<section id="relationship-types">
+<h1>Relationship Types<a class="headerlink" href="#relationship-types" title="Permalink to this heading">#</a></h1>
+<section id="one-to-one">
+<h2>One to One<a class="headerlink" href="#one-to-one" title="Permalink to this heading">#</a></h2>
+<p>The most basic relationship type where in a given single parcel there is only one address point
+and one building footprint.</p>
+</section>
+<section id="one-to-many">
+<h2>One to Many<a class="headerlink" href="#one-to-many" title="Permalink to this heading">#</a></h2>
+<p>In this relationship type there is one address point but many building footprints contained in a
+single parcel.</p>
+</section>
+<section id="many-to-one">
+<h2>Many to One<a class="headerlink" href="#many-to-one" title="Permalink to this heading">#</a></h2>
+<p>In this relationship there are many address points and a single building footprint contained in a
+single parcel</p>
+</section>
+<section id="many-to-many">
+<h2>Many to Many<a class="headerlink" href="#many-to-many" title="Permalink to this heading">#</a></h2>
+<p>This is the most complicated relationship type where more than one address point and more than one
+building footprint are contained in a single parcel.</p>
+</section>
+<section id="code">
+<h2>Code<a class="headerlink" href="#code" title="Permalink to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
 </div>
+</section>
 </section>
 
 
@@ -378,17 +361,17 @@ achieve this three key datasets are required:
             <footer class="bd-footer-article">
                 <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-  <a class='left-prev' id="prev-link" href="project_overview.html" title="previous page">
+  <a class='left-prev' id="prev-link" href="data_prep.html" title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
           <p class="prev-next-subtitle">previous</p>
-          <p class="prev-next-title">NBL-CNB: Project Overview</p>
+          <p class="prev-next-title">Step 1: Data Preparation</p>
       </div>
   </a>
-  <a class='right-next' id="next-link" href="address_matching/data_prep.html" title="next page">
+  <a class='right-next' id="next-link" href="matching.html" title="next page">
   <div class="prev-next-info">
       <p class="prev-next-subtitle">next</p>
-      <p class="prev-next-title">Step 1: Data Preparation</p>
+      <p class="prev-next-title">Step 3: Matching</p>
   </div>
   <i class="fa-solid fa-angle-right"></i>
   </a>
@@ -403,6 +386,55 @@ achieve this three key datasets are required:
               
 <div class="toc-item">
   
+<div class="tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#">
+   Step 2: Parcel Relationship Calculation
+  </a>
+ </li>
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#relationship-types">
+   Relationship Types
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#one-to-one">
+     One to One
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#one-to-many">
+     One to Many
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#many-to-one">
+     Many to One
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#many-to-many">
+     Many to Many
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#code">
+     Code
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
 <div id="searchbox"></div>
 </div>
 
@@ -413,7 +445,7 @@ achieve this three key datasets are required:
 <div class="toc-item">
   
 <div class="tocsection sourcelink">
-    <a href="_sources/address_matching_process.rst.txt">
+    <a href="../_sources/address_matching/parcel_rel_cal.rst.txt">
         <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
 </div>
@@ -437,8 +469,8 @@ achieve this three key datasets are required:
   
     
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94"></script>
 
   <footer class="bd-footer"><div class="bd-footer__inner container">
   

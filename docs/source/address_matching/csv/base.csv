@@ -1,0 +1,8 @@
+Relationship Type,Base Score
+One to One,60
+One to Many,55
+Many to One,50
+Many to Many,40
+Unlinked,30
+Manual,100
+Other ,0
