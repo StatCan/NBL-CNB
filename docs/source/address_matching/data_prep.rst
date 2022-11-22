@@ -21,13 +21,23 @@ current process.
 Parcel Fabric Cleaning
 ----------------------
 
-Parcel data is the most variable dataset in terms of what the geometry looks like and what fields are 
-available in open data portals. Cleaning this data is the most variable of the three datasets
+The following  cleaning/preparation processes are applied to the raw parcel data in order to 
+prepare for matching:
+
+* Micro Parcel detection/removal
+* Linkage field selection / calculation
+
+Micro Parcel Detection / Removal
+
+Micro parcels are small parcels with an area smaller than 100m2. These parcels are most often located in 
+trailer parks and condo developments. These only conplicate the matching process when included and are
+therefore removed during the cleaning phase.
 
 Address Points Cleaning
 -----------------------
 
-Address Points are cleaned using the following method
+The following  cleaning/preparation processes are applied to the raw address point data in order to 
+prepare for matching:
 
 Building Footprint Cleaning
 ---------------------------
@@ -35,13 +45,32 @@ Building Footprint Cleaning
 The following  cleaning/preparation processes are applied to the raw building footprint data in order to 
 prepare for matching:
 
-* Non-Addressable Outbuilding Detection
 * Parcel Linkage
+* Non-Addressable Outbuilding Detection
 
+Parcel Linkages are made similar to the way they are made for address points with minor changes in workfolow.
+
+* Building polygons are converted to representative points to allow for the creation of the spatial jurisdiction
+* If a building intersects more than one polygon then the smallest acceptable polygon is taken as the linkage.
+
+**Representative Point** A representative point is an arbitrary points within a polygon. The key feature of this point is 
+that it will always be contained within the bounds of a polygon regardless of complexity. This is different from a centroid
+which is always located at the centre of the polygon regardless of if it actually sits within the bounds of that polygon or not.
 
 Non-Addressable outbuilding detection:
 
-A non Non-Addressable outbuilding is defined as a 
+A building is considered to be a non Non-Addressable outbuilding when one or more of the following criteria are met:
+
+* The footprint has an area of less than 50m2 and there is at least one other building greater than 50m2 in the same parcel,
+* The area of the building is between 50m2 and 100m2 and the number of buildings is greater than the number of address points in the parcel
+* The building is determined exceed the acceptable threshold of roundness. The roundness of the building is determined using the following formula:
+   
+   .. math::
+      
+      (4*pi*building_area)/(building_perimiter*building_perimiter)
+
+   Should a building have a roundness of >= 0.98 then it is considered to be Non-Addressable Outbuilding.
+
 
 ..  code-block:: python
 
