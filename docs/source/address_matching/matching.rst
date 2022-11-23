@@ -5,21 +5,153 @@ Step 3: Matching
    :maxdepth: 2
    :hidden:
 
-The matching stage of the process is broken down into five steps
+Overview
+--------
+
+The matching stage of the process is where the matches are made between the address points and the building polygons.
+This process is broken down and organized by its five component steps. Three methods are used to match the buildings 
+and are listed below in order of assumed accuracy:
+
+1. intersection
+
+2. data linking
+
+3. proximity
+
+There are also special matching sub-methods included in this section. The main sub-method is the big parcel (BP) sub-method
+which is used in special cases where many buildings and many addresses overa certain threshold are found in a single parcel.
+Other sub-methods will be added to this documentation as they are developed.
+
+All code contained within this documentation is for illustrative purposes only and should only be considered an example of 
+the process. The code in reality may be altered based on a region to region bases based on data availability and the needs
+of a given area.  
 
 Step 1: Load Data and Configure Attributes
 ------------------------------------------
+
+The purpose of this phase is to perform the initial load and checks on the data to be matched.
+All inputs are loaded into geodataframes and are projected into the the same geodataframe.
+The fields used to link the building footprints and the address points to the parcel fabric 
+is defined. 
+
+.. code-block:: python
+    
+    addresses = gpd.read_file(project_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
+    footprint = gpd.read_file(project_gpkg, layer=footprints_lyr_nme, crs=proj_crs)
+
+    addresses.to_crs(crs= proj_crs, inplace=True)
+    footprint.to_crs(crs=proj_crs, inplace=True)
+
+    # Define join fields.
+    join_footprint = 'link_field'
+    join_addresses = 'link_field'
 
 
 Step 2: Configure Address to Footprint Linkages
 -----------------------------------------------
 
+1. In this phase the linkages between the building footprints and the building polygons are confirmed.
+Counts are taken of address points and polygons per parcel and any parcel where the big parcel (bp)
+threshold is reached those records are separated and go through a separate matching process.  
+2. If there are areas that meet the bp threshold then the following matching process is performed:
+    
+    *  Buildings within any bp's are checked against a bp building area threshold. This checks to ensure 
+        that the majority of the buildings within the bp fall under the threshold. The threshold is in place
+        as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
+        are excluded as they do not fit this assumption.
+    *  Only buildings that fall under the bp area threshold are kept for matching.
+    * Attempt to find matches using a 20m buffer around the address point.
+    * If there are any plural linkages (more than one link within 20m) then compare the linkages and take only
+        closest one.
+    * All matched made this way are assigned a method value of 20m_bp to signify that they were matched using 
+        this process. 
+
+The code for the above process:
+
+    .. code-block:: python
+        
+        def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
+            'Returns indexes for the bf based on the increasing buffer size'
+            
+            def list_bf_indexes(buffer_geom, bf_gdf):
+                """
+                For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for 
+                intersects based on the buffer geom. Returns a list of all indexes with true values.
+                """
+                intersects = bf_gdf.intersects(buffer_geom)
+                intersects = intersects[intersects == True]
+                intersects = tuple(intersects.index)
+                if len(intersects) > 0:
+                    return intersects
+                else: 
+                    return np.nan
+            addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(buffer_distance)
+            addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
+
+            linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
+            linked_df['method'] = f'{buffer_distance}m buffer'
+            linked_df.drop(columns=["buffer_geom"], inplace=True)
+            addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
+            return linked_df
+
+
+        def building_area_theshold_id(building_gdf, bf_area_threshold , area_field_name='bf_area'):
+            '''
+            Returns a boolean on whether a majority of the buildings in the bp fall under the bp threshold defined in the environments. 
+            Buildings should be filtered to only those in the polygon before being passed into this function
+            '''
+            
+            all_bf_cnt = len(building_gdf)
+
+            bf_u_thresh = building_gdf[building_gdf[area_field_name] <= bf_area_threshold]
+            bf_u_thresh_cnt = len(bf_u_thresh)
+
+            if bf_u_thresh_cnt >= (all_bf_cnt/2):
+                return True
+            else:
+                return False
+
+        
+        def get_nearest_linkage(ap, footprint_indexes):
+            """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
+            # Get footprint geometries.
+            footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
+            # Get footprint distances from address point.
+            footprint_distances = tuple(map(lambda footprint: footprint.distance(ap), footprint_geometries))                                     
+            distance_values = [a[a.index == a.index[0]].values[0] for a in footprint_distances if len(a.index) != 0]
+            distance_indexes = [a.index[0] for a in footprint_distances if len(a.index) != 0]
+
+            if len(distance_indexes) == 0: # If empty then return drop val
+                return np.nan
+
+            footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
+            return footprint_index
+
+        # return all addresses with a majority of the buildings under the area threshold
+        addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
+        addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
+        addresses_bp.drop(columns=['u_areaflag'], inplace=True)
+
+        addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
+        addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
+
+        # Find and reduce plural linkages to the closest linkage
+        ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
+        addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
+        addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
+        addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
+        addresses_bp['method'] = addresses_bp['method'].str.replace(' ','_')
+
+3. All Address Points without a parcel linkage are extracted and set aside to be matched separately. These records are removed from the main addresses geodataframe
 
 Step 3: Check Linkages using Intersects
 ---------------------------------------
 
-The first of the matching stages. This step checks for and any buildings and addresses 
-that directly intersect with each other.
+This step checks for and any buildings and addresses that directly intersect with each other and matches them based on that intersection.
+This step is performed as follows:
+
+1. Identify all address points that directly intersect a building polygon. Assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.
+2. Identified linkages via intersect and are removed from the main addresses geodataframe as they have already been matched.
 
 .. code-block:: python
 
@@ -30,6 +162,7 @@ that directly intersect with each other.
         if True in inter:
             t_index = inter.index(True)
             return int(footprint_geometries[t_index].index[0])
+
 
     addresses['intersect_index'] = addresses[["geometry", "footprint_index"]].apply(lambda row: check_for_intersects(*row), axis=1)
     # Clean footprints remove none values and make sure that the indexes are integers
@@ -51,14 +184,69 @@ that directly intersect with each other.
     intersections['method'] = 'intersect'
 
 
-This step removes the any records that are 
+
 
 Step 4: Check Linkages using Linking Data
 -----------------------------------------
 
+This step checks for linkages using the linking data which in most cases this is the parcel fabric. The majority of matches area made in this section as  it
+two match making methods.
+
+1. All linkages are converted to integer tuples to ensure type consistency across the data.
+2. Explode the addresses field by linkges so that a record is created per linkage in the linkage tuple. Plural linkages will have multiple linkages created for them while singular linkages will remain singular. Assign these records with the method 'data_linking'
+3. Find all records that are yet to be linked to a building and split those into two groups
+    
+    a. Records that intersect a parcel
+    b. Records that do not intersect a parcel
+
+This grouping is necessary because both of these cases have slightly different matching rules to follow. 
+
+4. This step changes depending on the group a record got sorted into in the step above.
+    
+    a. For records that intersect a parcel we will attempt to match with all building polygons whether they have been linked to or not at other phases of the 
+    match making phase.
+    b. For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.
+
+The difference between these two methods makes a significant difference in the overall matched quality from this method as address points with a parcel
+linkage are more likely to be associated with a building that covers two or more parcels and was missed during the linkage creation phase. An address 
+point with no parcel linkage is most often falls in a road polygon or in a condo development without an underlying polygon. In these cases we assume that 
+the building associated with this polygon is yet to be linked to and as such it is safe to exclude those buildings that have already been matched. This 
+reduces the number of erronious matches created during the matching process.  
 
 Step 5: Merge and Export Results
 --------------------------------
 
-The final step of the process
+The final step of the process is to merge the results together and  export the to the output folder defined in the environments. The results are output in a single 
+geopackage. Several products are exported for further analysis such as any non-addressable outbuildings as well as any unlinked records. See the code below further 
+details.
+
+.. code-block:: python
+    
+    outgdf = addresses.append([intersections, addresses_bp, unlinked_aps])
+
+    footprint['centroid_geo'] = footprint['geometry'].apply(lambda bf: bf.representative_point())
+    outgdf['out_geom'] = outgdf['footprint_index'].apply(lambda row: create_centroid_match(row, footprint['centroid_geo']))
+
+    outgdf = outgdf.set_geometry('out_geom')
+
+    outgdf.drop(columns='geometry', inplace=True)
+    outgdf.rename(columns={'out_geom':'geometry'}, inplace=True)
+    outgdf = outgdf.set_geometry('geometry')
+
+    footprint.drop(columns='centroid_geo', inplace=True)
+
+    # Find unlinked building polygons
+    unlinked_footprint = footprint[~footprint['footprint_index'].isin(outgdf['footprint_index'].to_list())]
+
+    # Export unlinked building polygons
+    unlinked_footprint.to_file(output_gpkg, layer=unmatched_poly_lyr_nme, driver='GPKG')
+
+    # Export matched address geometry
+    outgdf.to_file(output_gpkg, layer=matched_lyr_nme,  driver='GPKG')
+
+    # Export unmatched address geometry
+    unmatched_points.to_file(output_gpkg, layer=unmatched_lyr_nme, driver='GPKG')
+
+    # Export non-addressable outbuildings 
+    sheds.to_file(output_gpkg, layer='sheds', driver='GPKG'
 
