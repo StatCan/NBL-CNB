@@ -13,9 +13,7 @@ This process is broken down and organized by its five component steps. Three met
 and are listed below in order of assumed accuracy:
 
 1. intersection
-
 2. data linking
-
 3. proximity
 
 There are also special matching sub-methods included in this section. The main sub-method is the big parcel (BP) sub-method
@@ -56,91 +54,89 @@ threshold is reached those records are separated and go through a separate match
 2. If there are areas that meet the bp threshold then the following matching process is performed:
     
     *  Buildings within any bp's are checked against a bp building area threshold. This checks to ensure 
-        that the majority of the buildings within the bp fall under the threshold. The threshold is in place
-        as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
-        are excluded as they do not fit this assumption.
-    *  Only buildings that fall under the bp area threshold are kept for matching.
+       that the majority of the buildings within the bp fall under the threshold. The threshold is in place
+       as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
+       are excluded as they do not fit this assumption.
+    * Only buildings that fall under the bp area threshold are kept for matching.
     * Attempt to find matches using a 20m buffer around the address point.
-    * If there are any plural linkages (more than one link within 20m) then compare the linkages and take only
-        closest one.
-    * All matched made this way are assigned a method value of 20m_bp to signify that they were matched using 
-        this process. 
+    * If there are any plural linkages (more than one link within 20m) then compare the linkages and take only the closest.
+    * All matched made this way are assigned a method value of 20m_bp to signify that they were matched using this process. 
 
 The code for the above process:
 
-    .. code-block:: python
+.. code-block:: python
+    
+    def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
+        'Returns indexes for the bf based on the increasing buffer size'
         
-        def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
-            'Returns indexes for the bf based on the increasing buffer size'
-            
-            def list_bf_indexes(buffer_geom, bf_gdf):
-                """
-                For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for 
-                intersects based on the buffer geom. Returns a list of all indexes with true values.
-                """
-                intersects = bf_gdf.intersects(buffer_geom)
-                intersects = intersects[intersects == True]
-                intersects = tuple(intersects.index)
-                if len(intersects) > 0:
-                    return intersects
-                else: 
-                    return np.nan
-            addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(buffer_distance)
-            addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
-
-            linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
-            linked_df['method'] = f'{buffer_distance}m buffer'
-            linked_df.drop(columns=["buffer_geom"], inplace=True)
-            addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
-            return linked_df
-
-
-        def building_area_theshold_id(building_gdf, bf_area_threshold , area_field_name='bf_area'):
-            '''
-            Returns a boolean on whether a majority of the buildings in the bp fall under the bp threshold defined in the environments. 
-            Buildings should be filtered to only those in the polygon before being passed into this function
-            '''
-            
-            all_bf_cnt = len(building_gdf)
-
-            bf_u_thresh = building_gdf[building_gdf[area_field_name] <= bf_area_threshold]
-            bf_u_thresh_cnt = len(bf_u_thresh)
-
-            if bf_u_thresh_cnt >= (all_bf_cnt/2):
-                return True
-            else:
-                return False
-
-        
-        def get_nearest_linkage(ap, footprint_indexes):
-            """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
-            # Get footprint geometries.
-            footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
-            # Get footprint distances from address point.
-            footprint_distances = tuple(map(lambda footprint: footprint.distance(ap), footprint_geometries))                                     
-            distance_values = [a[a.index == a.index[0]].values[0] for a in footprint_distances if len(a.index) != 0]
-            distance_indexes = [a.index[0] for a in footprint_distances if len(a.index) != 0]
-
-            if len(distance_indexes) == 0: # If empty then return drop val
+        def list_bf_indexes(buffer_geom, bf_gdf):
+            """
+            For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for 
+            intersects based on the buffer geom. Returns a list of all indexes with true values.
+            """
+            intersects = bf_gdf.intersects(buffer_geom)
+            intersects = intersects[intersects == True]
+            intersects = tuple(intersects.index)
+            if len(intersects) > 0:
+                return intersects
+            else: 
                 return np.nan
+        addresses_gdf['buffer_geom'] = addresses_gdf.geometry.buffer(buffer_distance)
+        addresses_gdf[f'footprint_index'] = addresses_gdf['buffer_geom'].apply(lambda point_buffer: list_bf_indexes(point_buffer, footprint_gdf))
 
-            footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
-            return footprint_index
+        linked_df = addresses_gdf.dropna(axis=0, subset=[f'footprint_index'])
+        linked_df['method'] = f'{buffer_distance}m buffer'
+        linked_df.drop(columns=["buffer_geom"], inplace=True)
+        addresses_gdf = addresses_gdf[~addresses_gdf.index.isin(list(set(linked_df.index.tolist())))]
+        return linked_df
 
-        # return all addresses with a majority of the buildings under the area threshold
-        addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
-        addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
-        addresses_bp.drop(columns=['u_areaflag'], inplace=True)
 
-        addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
-        addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
+    def building_area_theshold_id(building_gdf, bf_area_threshold , area_field_name='bf_area'):
+        '''
+        Returns a boolean on whether a majority of the buildings in the bp fall under the bp threshold defined in the environments. 
+        Buildings should be filtered to only those in the polygon before being passed into this function
+        '''
+        
+        all_bf_cnt = len(building_gdf)
 
-        # Find and reduce plural linkages to the closest linkage
-        ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
-        addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
-        addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
-        addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
-        addresses_bp['method'] = addresses_bp['method'].str.replace(' ','_')
+        bf_u_thresh = building_gdf[building_gdf[area_field_name] <= bf_area_threshold]
+        bf_u_thresh_cnt = len(bf_u_thresh)
+
+        if bf_u_thresh_cnt >= (all_bf_cnt/2):
+            return True
+        else:
+            return False
+
+    
+    def get_nearest_linkage(ap, footprint_indexes):
+        """Returns the footprint index associated with the nearest footprint geometry to the given address point."""  
+        # Get footprint geometries.
+        footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
+        # Get footprint distances from address point.
+        footprint_distances = tuple(map(lambda footprint: footprint.distance(ap), footprint_geometries))                                     
+        distance_values = [a[a.index == a.index[0]].values[0] for a in footprint_distances if len(a.index) != 0]
+        distance_indexes = [a.index[0] for a in footprint_distances if len(a.index) != 0]
+
+        if len(distance_indexes) == 0: # If empty then return drop val
+            return np.nan
+
+        footprint_index =  distance_indexes[distance_values.index(min(distance_values))]
+        return footprint_index
+
+    # return all addresses with a majority of the buildings under the area threshold
+    addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
+    addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
+    addresses_bp.drop(columns=['u_areaflag'], inplace=True)
+
+    addresses =  addresses[~addresses.index.isin(addresses_bp.index.tolist())]
+    addresses_bp = get_unlinked_geometry(addresses_bp, footprint, buffer_distance=buffer_size)
+
+    # Find and reduce plural linkages to the closest linkage
+    ap_bp_plural = addresses_bp['footprint_index'].map(len) > 1
+    addresses_bp.loc[ap_bp_plural, "footprint_index"] = addresses_bp[ap_bp_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
+    addresses_bp.loc[~ap_bp_plural, "footprint_index"] = addresses_bp[~ap_bp_plural]["footprint_index"].map(itemgetter(0))
+    addresses_bp['method'] = addresses_bp['method'].astype(str) + '_bp'
+    addresses_bp['method'] = addresses_bp['method'].str.replace(' ','_')
 
 3. All Address Points without a parcel linkage are extracted and set aside to be matched separately. These records are removed from the main addresses geodataframe
 
@@ -207,11 +203,14 @@ This grouping is necessary because both of these cases have slightly different m
     match making phase.
     b. For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.
 
-The difference between these two methods makes a significant difference in the overall matched quality from this method as address points with a parcel
-linkage are more likely to be associated with a building that covers two or more parcels and was missed during the linkage creation phase. An address 
-point with no parcel linkage is most often falls in a road polygon or in a condo development without an underlying polygon. In these cases we assume that 
-the building associated with this polygon is yet to be linked to and as such it is safe to exclude those buildings that have already been matched. This 
-reduces the number of erronious matches created during the matching process.  
+The difference between these two methods makes a significant difference in the overall matched quality from this method. Address points with a parcel
+linkage are more likely to be associated with a building that intersects two or more parcels. These buildings are likely to already have been matched by a 
+prior process and need to be inluded at this stage in order to make an accurate match. An address point with no parcel linkage is most often falls in a road 
+polygon or in a condo development without an underlying polygon. In these cases we assume that the building associated with this polygon is yet to be linked 
+to and as such it is safe to exclude those buildings that have already been matched. This reduces the number of erronious matches made during this phase. 
+
+
+
 
 Step 5: Merge and Export Results
 --------------------------------
