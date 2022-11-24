@@ -82,7 +82,8 @@ The code that calculates the relationship for each address point and building po
 4. The address data is exported to the project geopackage.
 
 .. code-block:: python
-   def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts):
+  
+  def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts):
       '''Returns the parcel relationship type for the given record based on the counts of the parcel linkages in the bf and ap datasets'''
 
       if isnan(parcel_ident):
