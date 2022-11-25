@@ -28,6 +28,7 @@ prepare for matching:
 * Linkage field selection / calculation
 
 Micro Parcel Detection / Removal
+================================
 
 Micro parcels are small parcels with an area smaller than 100m2. These parcels are most often located in 
 trailer parks and condo developments. These only conplicate the matching process when included and are
@@ -57,7 +58,8 @@ Parcel Linkages are made similar to the way they are made for address points wit
 that it will always be contained within the bounds of a polygon regardless of complexity. This is different from a centroid
 which is always located at the centre of the polygon regardless of if it actually sits within the bounds of that polygon or not.
 
-Non-Addressable outbuilding detection:
+Non-Addressable outbuilding detection
+=====================================
 
 A building is considered to be a non Non-Addressable outbuilding when one or more of the following criteria are met:
 

@@ -32,11 +32,14 @@ single parcel.
    :width: 400
    :alt: One to Many Example
 
+This is considered the ideal scenario and steps are taken to create as many one to one relationships as possible.
+For example, flagging non-addressable outbuildings during the data cleaning phase allows us to exclude those
+building polygons from the parcel relationship calculation.
+
 Many to One
 -----------
 
-In this relationship there are many address points and a single building footprint contained in a
-single parcel
+In this relationship there are many address points and a single building footprint contained in a single parcel
 
 .. image:: img/many_to_one.png
    :width: 400
@@ -68,8 +71,8 @@ This relationship is assigned to address points and building polygons when no un
 does not have a parcel fabric available or data within the extent of a parcel fabric that falls into a gap or area with no polygons.
 
 .. Note:: Note
-   While some methods have been looked at to deal with regions without an available parcel fabric to date none has proven to be as effective at 
-   creating accurate matches as a parcel fabric from an authoritative.
+   While some methods have been looked at to deal with regions without an available parcel fabric to date none has proven to be capable of providing
+   sufficiently accurate results to be flagged for implimented.
 
 Relationship Calculation Process
 --------------------------------

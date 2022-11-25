@@ -52,15 +52,14 @@ Step 2: Configure Address to Footprint Linkages
 Counts are taken of address points and polygons per parcel and any parcel where the big parcel (bp)
 threshold is reached those records are separated and go through a separate matching process.  
 2. If there are areas that meet the bp threshold then the following matching process is performed:
-    
-    *  Buildings within any bp's are checked against a bp building area threshold. This checks to ensure 
-       that the majority of the buildings within the bp fall under the threshold. The threshold is in place
-       as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
-       are excluded as they do not fit this assumption.
-    * Only buildings that fall under the bp area threshold are kept for matching.
-    * Attempt to find matches using a 20m buffer around the address point.
-    * If there are any plural linkages (more than one link within 20m) then compare the linkages and take only the closest.
-    * All matched made this way are assigned a method value of 20m_bp to signify that they were matched using this process. 
+   *  Buildings within any bp's are checked against a bp building area threshold. This checks to ensure 
+      that the majority of the buildings within the bp fall under the threshold. The threshold is in place
+      as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
+      are excluded as they do not fit this assumption.
+   * Only buildings that fall under the bp area threshold are kept for matching.
+   * Attempt to find matches using a 20m buffer around the address point.
+   * If there are any plural linkages (more than one link within 20m) then compare the linkages and take only the closest.
+   * All matched made this way are assigned a method value of 20m_bp to signify that they were matched using this process. 
 
 The code for the above process:
 
