@@ -5,6 +5,9 @@ Step 5: Match Confidence Calculation
     :maxdepth: 2
     :hidden:
 
+Step 5 Overview
+===============
+
 For reference the descriptions on this page cover the code in **match_confidence_calc.py**
 
 The final step of the matching process is the confidence calculation. Confidence is a numeric score
