@@ -5,6 +5,8 @@ Step 2: Parcel Relationship Calculation
    :maxdepth: 2
    :hidden:
 
+For reference the descriptions on this page cover the code in **issue_flagging.py**
+
 Once cleaned the data's relationship to the parcel data must be calculated. This relationship
 is based on the count of address points and building footprints contained in a given parcel.
 This page describes the different relationship types and then shows how they are calculated
@@ -12,6 +14,7 @@ within the matching scripts.
 
 Relationship Types
 ==================
+
 One to One
 ----------
 

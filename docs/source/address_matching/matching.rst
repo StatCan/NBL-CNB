@@ -5,8 +5,10 @@ Step 3: Matching
    :maxdepth: 2
    :hidden:
 
-Overview
---------
+Step 3 Overview
+---------------
+
+For reference the descriptions on this page cover the code in **matching_master.py**
 
 The matching stage of the process is where the matches are made between the address points and the building polygons.
 This process is broken down and organized by its five component steps. Three methods are used to match the buildings 
@@ -52,6 +54,7 @@ Step 2: Configure Address to Footprint Linkages
 Counts are taken of address points and polygons per parcel and any parcel where the big parcel (bp)
 threshold is reached those records are separated and go through a separate matching process.  
 2. If there are areas that meet the bp threshold then the following matching process is performed:
+   
    *  Buildings within any bp's are checked against a bp building area threshold. This checks to ensure 
       that the majority of the buildings within the bp fall under the threshold. The threshold is in place
       as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
@@ -207,8 +210,6 @@ linkage are more likely to be associated with a building that intersects two or 
 prior process and need to be inluded at this stage in order to make an accurate match. An address point with no parcel linkage is most often falls in a road 
 polygon or in a condo development without an underlying polygon. In these cases we assume that the building associated with this polygon is yet to be linked 
 to and as such it is safe to exclude those buildings that have already been matched. This reduces the number of erronious matches made during this phase. 
-
-
 
 
 Step 5: Merge and Export Results
