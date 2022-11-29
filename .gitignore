@@ -1,3 +1,6 @@
 data/
 aprx/
 environments.env
+*.qgz
+*.env
+docs/build/
