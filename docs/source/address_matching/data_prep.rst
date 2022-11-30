@@ -4,8 +4,6 @@ Step 1: Data Preparation
 .. contents:: Contents:
    :depth: 4
 
-Step 1: Overview
-================
 There are three key layers that must be injested, cleaned, and prepped before matching can begin.
 The composition of these input files varies widely by jurisdiction so to a certain degree this process
 will vary slightly from region to region in order to compensate for these differences. These three layers
@@ -16,8 +14,9 @@ are:
 * Parcel Fabric
 
 .. Note::
-   **Building Polygons** is the term used to describe the building data rather than the more coloquial building footprints.
-   this difference is  
+   **Building Polygons** is the term used to describe the building data rather than the more commonly used building footprints.
+   The primary reason for this difference is that a building footprint might only conform to the roof area of a building whereas
+   a building polygon should encompass the entire area of a structure.  
 
 All three of these layers must be available in order to to create address to building matches under the
 current process. Intially all three layers are loaded into geodataframes for cleaning. 
@@ -25,7 +24,7 @@ current process. Intially all three layers are loaded into geodataframes for cle
 .. code-block:: python
    
    # Load the key datasets into geodataframes
-   # linking_data = parcel_fabric
+   # linking_data == parcel_fabric
    linking_data = gpd.read_file(linking_data_path, layer=linking_lyr_nme, linking_ignore_columns=linking_ignore_columns, mask=aoi_gdf)
    addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_gdf)
    footprint = gpd.read_file(footprint_lyr, layer=footprint_lyr_name ,mask=aoi_gdf)
@@ -33,7 +32,7 @@ current process. Intially all three layers are loaded into geodataframes for cle
 The following stections describe the individual processes used to clean the three key datasets.
 
 Parcel Fabric Cleaning
-======================
+----------------------
 
 The following  cleaning/preparation processes are applied to the raw parcel data in order to 
 prepare for matching:
@@ -42,7 +41,7 @@ prepare for matching:
 * Linkage field selection/calculation
 
 Micro Parcel Detection/Removal
-------------------------------
+______________________________
 
 Micro parcels are small parcels with an area smaller than 100m2. These parcels are most often located in 
 trailer parks and condo developments. These only conplicate the matching process when included and are
@@ -61,7 +60,7 @@ area of >100m2 and so can easily be filtered out using the follwing code:
    linking_data = linking_data[linking_data['AREA'] > 101]
 
 Linkage Field Selection/Calculation
------------------------------------
+___________________________________
 
 The linkage field is a field in the parcel fabric that will be used when joining the parcels to the address points
 and the building polygons. If a viable option exists then it is possible to use a pre-existing field from the dataset.
@@ -79,22 +78,32 @@ in this documentation we will be using a simple unique integer for example purpo
    linking_data['link_field'] = range(1, len(linking_data.index)+1)
 
 Address Points Cleaning
-=======================
+-----------------------
 
 The following  cleaning/preparation processes are applied to the raw address point data in order to 
 prepare for matching:
 
 * Parcel Linkage
 
-Parcel Linkage
---------------
+Parcel Linkage for Address Points
+_________________________________
 
 Parcel linkage is the process of adding the linking field for a parcel to the a record if that record intersects that parcel.
-There are couple criteria for this. Firstly, there can only be one linkage between parcel data and the address points. In cases where 
-the address point intersects the  
+There are couple criteria for this. 
+
+1. There can only be one linkage between parcel data and the address points. In cases where 
+   the address point intersects multiple parcels use the polygon with the smaller area. The 
+   polygon with the smaller area is more likely to coorespond to a lot rather than a whole 
+   property. For example there are often cases where a lot for a condo townhouse is within the
+   parcel for the entire development. In that case we want to grab the smaller parcel as the results
+   are more likely to be accurate after matching.
+
+   .. image:: img/
+      :width: 400
+      :alt: Layered Parcels Example
 
 Building Polygon Cleaning
-=========================
+-------------------------
 
 The following  cleaning/preparation processes are applied to the raw building polygon data in order to 
 prepare for matching:
@@ -103,7 +112,7 @@ prepare for matching:
 * Non-Addressable Outbuilding Detection
 
 Parcel Linkage for Building Polygons
-------------------------------------
+____________________________________
 
 Parcel Linkages are made similar to the way they are made for address points with minor changes in workfolow.
 
@@ -115,7 +124,7 @@ that it will always be contained within the bounds of a polygon regardless of co
 which is always located at the centre of the polygon regardless of if it actually sits within the bounds of that polygon or not.
 
 Non-Addressable outbuilding detection
--------------------------------------
+_____________________________________
 
 A building is considered to be a non Non-Addressable outbuilding when one or more of the following criteria are met:
 
@@ -168,7 +177,7 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
    
    .. math::
       
-      (4 * pi * building area) / (building perimiter * building perimiter)
+      (4 * pi * Area) / (Perimiter * Perimiter)
 
    Should a building have a roundness of >= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
 

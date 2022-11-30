@@ -5,9 +5,6 @@ Step 4: Match QA/QC
     :maxdepth: 2
     :hidden:
 
-Step 4 Overview
----------------
-
 For reference the descriptions on this page cover the code in **qa_qc.py**
 
 Once the matching is complete some Quality Assessment (QA) and Quality Control (QC) is performed. Some data products are also produced to aid in manual assessment of the matches.

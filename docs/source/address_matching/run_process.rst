@@ -1,5 +1,5 @@
-How to run the Matching Process
-===============================
+Run the Matching Process
+========================
 
 .. toctree::
    :maxdepth: 2
@@ -23,42 +23,49 @@ experience. The requirement.txt file found in the github repository will allow f
 of the requirements.txt would be as follows:
 
 In order to run the process effectively an environments file needs to be created. This file will contain the key information that the process
-needs to run. The environments file should be made up of the following variables (this list may vary based on data availability. Key variables are bolded for emphasis):
+needs to run. The environments file should be made up of the following variables (this list may vary based on data availability.):
 
 .. code-block:: markdown
    
-   CLEANED_BF_LYR_NAME = footprints_cleaned
+   # Varibles for cleaned layer names 
+   CLEANED_BF_LYR_NAME = footprints_cleaned  
    CLEANED_AP_LYR_NAME = addresses_cleaned
    CLEANED_RD_LYR_NAME = roads_cleaned
    CLEANED_SP_LYR_NAME = parcels_cleaned
    UNLINKED_BF_LYR_NME = unmatched_bfs
    FLAGGED_AP_LYR_NME = ap_full
+   
+   # The layer name in for the civic address field in the civic address data
    AP_CIVIC_ADDRESS_FIELD_NAME = NUMBER
 
+   # The root directory to which all data will be saved
    BASE_PATH = Z:\working\NWT_data
 
+   # The path to the geopackage where the initial cleaned data will be saved
    DATA_GPKG = ${BASE_PATH}\working\data.gpkg
+
+   # The path to the geopackage where the final output will be saved
    OUTPUT_GPKG = C${BASE_PATH}\working\output.gpkg
 
+   # The CRS for the projection to be used for all layers must be projected
    PROJ_CRS = 26911
-
+   
+   # The initial path and layer name for the linking data (parcel data) 
    LINKING_PATH = ${BASE_PATH}\merged_parcels.gpkg
    LINKING_LYR_NME = merged_parcels
 
+   # The initial path where the building polygon data is located
    BF_PATH = ${BASE_PATH}\ATLAS_extract.gdb
    BF_LYR_NME = Building_Footprints
 
+   # The initial path to where the address point data is located
    ADDRESS_PATH = ${BASE_PATH}\yk_ap.gdb
    ADDRESS_LAYER = yk_Address_Points
 
-   SBGR_LINKS = 
-
+   # If subsetting the data by a specific geographic region point these variables to the boundary file here
    AOI_MASK = ${BASE_PATH}\yk_Municipal_Boundary_gdb.gdb
    AOI_LYR_NME = yk_municipal_boundary
 
-   LINKED_BY_DATA_NME = fredericton_inter_linked_merged
-   LINKED_BY_BUFFER_NME = via_buffer_linkage
-   UNLINKED_NME = non_geolinked
 
    MATCHED_OUTPUT_GPKG =  ${BASE_PATH}\working\matched_output.gpkg
    MATCHED_OUTPUT_LYR_NME = point_linkages
@@ -67,6 +74,7 @@ needs to run. The environments file should be made up of the following variables
 
    MATCH_ACC_GPKG = ${BASE_PATH}\working
 
+   # variables for setting the thresholds used by the BP process at the mathcing stage
    BP_THRESHOLD = 10
    BP_AREA_THRESHOLD = 175
 
@@ -78,4 +86,5 @@ needs to run. The environments file should be made up of the following variables
 Initiate Process
 ----------------
 
-Once setup is complete the address matching process can be intiated. To do this
+Once setup above is complete the address matching process can be intiated. To do this we
+will run the files from the command line. 

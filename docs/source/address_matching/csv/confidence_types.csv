@@ -1,0 +1,4 @@
+Confidence Type,Rule
+LOW,<60
+MEDIUM,>=60 and <70
+HIGH,>=70
