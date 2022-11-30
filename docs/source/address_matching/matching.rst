@@ -5,9 +5,6 @@ Step 3: Matching
    :maxdepth: 2
    :hidden:
 
-Step 3 Overview
----------------
-
 For reference the descriptions on this page cover the code in **matching_master.py**
 
 The matching stage of the process is where the matches are made between the address points and the building polygons.
@@ -26,8 +23,8 @@ All code contained within this documentation is for illustrative purposes only a
 the process. The code in reality may be altered based on a region to region bases based on data availability and the needs
 of a given area.  
 
-Step 1: Load Data and Configure Attributes
-------------------------------------------
+Phase 1: Load Data and Configure Attributes
+-------------------------------------------
 
 The purpose of this phase is to perform the initial load and checks on the data to be matched.
 All inputs are loaded into geodataframes and are projected into the the same geodataframe.
@@ -47,8 +44,8 @@ is defined.
     join_addresses = 'link_field'
 
 
-Step 2: Configure Address to Footprint Linkages
------------------------------------------------
+Phase 2: Configure Address to Footprint Linkages
+------------------------------------------------
 
 1. In this phase the linkages between the building footprints and the building polygons are confirmed.
 Counts are taken of address points and polygons per parcel and any parcel where the big parcel (bp)
@@ -142,11 +139,11 @@ The code for the above process:
 
 3. All Address Points without a parcel linkage are extracted and set aside to be matched separately. These records are removed from the main addresses geodataframe
 
-Step 3: Check Linkages using Intersects
----------------------------------------
+Phase 3: Check Linkages using Intersects
+----------------------------------------
 
-This step checks for and any buildings and addresses that directly intersect with each other and matches them based on that intersection.
-This step is performed as follows:
+This phase checks for and any buildings and addresses that directly intersect with each other and matches them based on that intersection.
+This phase is performed as follows:
 
 1. Identify all address points that directly intersect a building polygon. Assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.
 2. Identified linkages via intersect and are removed from the main addresses geodataframe as they have already been matched.
@@ -184,8 +181,8 @@ This step is performed as follows:
 
 
 
-Step 4: Check Linkages using Linking Data
------------------------------------------
+Phase 4: Check Linkages using Linking Data
+------------------------------------------
 
 This step checks for linkages using the linking data which in most cases this is the parcel fabric. The majority of matches area made in this section as  it
 two match making methods.
@@ -212,8 +209,8 @@ polygon or in a condo development without an underlying polygon. In these cases 
 to and as such it is safe to exclude those buildings that have already been matched. This reduces the number of erronious matches made during this phase. 
 
 
-Step 5: Merge and Export Results
---------------------------------
+Phase 5: Merge and Export Results
+---------------------------------
 
 The final step of the process is to merge the results together and  export the to the output folder defined in the environments. The results are output in a single 
 geopackage. Several products are exported for further analysis such as any non-addressable outbuildings as well as any unlinked records. See the code below further 
