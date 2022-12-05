@@ -144,6 +144,7 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
          take the difference from the counts of each type of record in the parcel and flag the number of smallest
          buildings that coorespond with the difference value
          '''
+          
          bf_count = len(bf_data)
          
          # If either is equal to zero this method will not help select out sheds
