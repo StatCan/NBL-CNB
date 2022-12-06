@@ -10,7 +10,7 @@ NBL-CNB: Address Matching Process
    address_matching/matching
    address_matching/qa_qc
    address_matching/confidence
-   appendix/appendix
+   appendix/appendix_doc
 
 The primary goal of this process is to accuratly match address points to building footprints. In order to 
 achieve this three key datasets are required:
@@ -34,5 +34,5 @@ well as an overview on the environments required in order to be able to run the 
     :doc:`3. Matching <address_matching/matching>`
     :doc:`4. QA/QC <address_matching/qa_qc>`
     :doc:`5. Confidence Calculation <address_matching/confidence>`
-    :doc:`Appendix <appendix/appendix>`
+    :doc:`Appendix <appendix/appendix_doc>`
 

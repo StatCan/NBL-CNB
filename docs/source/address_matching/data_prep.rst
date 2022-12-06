@@ -149,16 +149,16 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
          
          # If either is equal to zero this method will not help select out sheds
          if ap_count == 0 or bf_count == 0:
-               return []
+            return []
          if bf_count == 1:
-               return []
+            return []
 
          # Sizing is different in trailer parks so deal with these differently
          if bf_count > bp_threshold:
-               # do just the tiny building check as the min max between home and shed in these areas overlaps
-               sheds = bf_data.loc[bf_data[bf_area_field] < min_adressable_area]
-               shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
-               return shed_indexes
+            # do just the tiny building check as the min max between home and shed in these areas overlaps
+            sheds = bf_data.loc[bf_data[bf_area_field] < min_adressable_area]
+            shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
+            return shed_indexes
 
          # Take out the tiny buildings under 50m2 and prelabel them as sheds then take remainder and test count vs count
          sheds = pd.DataFrame(bf_data.loc[bf_data[bf_area_field] < min_adressable_area])

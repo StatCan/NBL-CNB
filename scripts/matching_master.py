@@ -62,7 +62,7 @@ def as_int(val):
 
 
 def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
-    'Returns indexes for the bf based on the increasing buffer size'
+    'Returns indexes for the bf based on the buffer size'
     
     def list_bf_indexes(buffer_geom, bf_gdf):
         """

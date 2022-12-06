@@ -199,7 +199,7 @@ This grouping is necessary because both of these cases have slightly different m
 4. This step changes depending on the group a record got sorted into in the step above.
     
     a. For records that intersect a parcel we will attempt to match with all building polygons whether they have been linked to or not at other phases of the 
-    match making phase.
+       match making phase.
     b. For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.
 
 The difference between these two methods makes a significant difference in the overall matched quality from this method. Address points with a parcel
@@ -244,5 +244,5 @@ details.
     unmatched_points.to_file(output_gpkg, layer=unmatched_lyr_nme, driver='GPKG')
 
     # Export non-addressable outbuildings 
-    sheds.to_file(output_gpkg, layer='sheds', driver='GPKG'
+    sheds.to_file(output_gpkg, layer='sheds', driver='GPKG')
 
