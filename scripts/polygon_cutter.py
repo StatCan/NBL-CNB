@@ -5,7 +5,6 @@ import pandas as pd
 import sys
 import shapely
 from pathlib import Path
-from dotenv import load_dotenv
 from operator import itemgetter
 from shapely.geometry import MultiLineString, Polygon
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
@@ -21,14 +20,15 @@ Inital flow:
 
 '''
 
-class PolygonCutter():
+
+class PolygonCutter:
     
     '''Process for cutting polygons when they cross an intersect point'''
-    def __init__(self,bld_poly_path:str, cut_geom_path:str, bld_poly_lyr_nme=None, cut_geom_lyr_nme=None, crs=4326) -> None:
+    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326) -> None:
         
-        def check_geom(input_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
             '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''
-            
+            input_gdf.reset_index(inplace=True)
             if input_gdf.geometry[0].geom_type in ['LineString', 'MultiLineString']:
                 # If the geometry is already in line type then just strip attributes 
                 return input_gdf['geometry']
@@ -38,7 +38,6 @@ class PolygonCutter():
                 
                 # Ensure all geometry is valid
                 input_gdf['geometry'] = input_gdf['geometry'].buffer(0)
-                
 
                 # Check if any multipolgyons exists explode them
                 input_gdf['isMulti'] = input_gdf.apply(lambda row: True if row['geometry'].geom_type != 'Polygon' else False, axis=1)
@@ -60,9 +59,8 @@ class PolygonCutter():
             # First check if there are any at all
 
         # Load in the inputs to geodataframes 
-        bp = gpd.read_file(bld_poly_path, layer=bld_poly_lyr_nme)
-        cut_geom = gpd.read_file(cut_geom_path, layer=cut_geom_lyr_nme)
-        
+        bp = bld_poly
+        cut_geom = cut_geom
         # Ensure projection consistency
         bp.to_crs(crs=crs, inplace=True)
         cut_geom.to_crs(crs=crs, inplace=True)
@@ -87,17 +85,26 @@ class PolygonCutter():
         
 
 def main():
+    # setup for testing purposes
+    from dotenv import load_dotenv
 
-    parcel_path = r'C:\projects\point_in_polygon\data\MB_data\Survey Parcel.shp'
-    bld_path = r'C:\projects\point_in_polygon\data\MB_data\Winnipeg_2019.gdb'
-    bld_lyr_nme = 'auto_building_2'
+    load_dotenv(os.path.join(os.path.dirname(__file__), 'cutting.env'))
+    parcel_path = os.getenv('PARCEL_PTH')
+    bld_path = os.getenv('BLD_PTH')
+    bld_lyr_nme = os.getenv('BLD_LYR_NME')
     
-    out_path = r'C:\projects\point_in_polygon\data\MB_data'
-    out_lyr_nme = 'clipped_buildings'
-    
+    out_path = os.getenv('OUT_PTH')
+    out_lyr_nme = os.getenv('OUT_LYR_NME')
+
+    cut_gdf = gpd.read_file(parcel_path)
+    cut_gdf = cut_gdf[cut_gdf.geometry != None]
+    bld_gdf = gpd.read_file(bld_path, layer=bld_lyr_nme)
+
     print('cutting buildings')
-    clipped_polys = PolygonCutter(bld_poly_path=bld_path, bld_poly_lyr_nme=bld_lyr_nme, cut_geom_path=parcel_path)
+    clipped_polys = PolygonCutter(bld_poly=bld_gdf, cut_geom=cut_gdf)
     clipped_polys.clipped.to_file(out_path, layer=out_lyr_nme)
+
+
 if __name__ == '__main__':
     main()
     print('DONE!')
