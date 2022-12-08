@@ -67,10 +67,18 @@ class PolygonCutter:
             input_geom['line_ints'] = input_geom[input_link_field].apply(lambda x: tuple(joined_geom[joined_geom[input_link_field] == x][search_link_field].tolist()))
             return input_geom
 
-        def CutPolygons(poly, cut_geom):
+        def CutPolygon(input_geom, line_geom):
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
             Run the FindIntersects step before calling this function'''
-
+            cut_indexes = input_geom['line_ints']
+            if len(cut_indexes) == 0:
+                return input_geom['geometry']
+            if len(cut_indexes) >= 1:
+                cutters = line_geom[line_geom['cut_index'].isin(cut_indexes)]
+                geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
+                print(geoms)
+                sys.exit()
+ 
         # Load in the inputs to geodataframes
         bp = bld_poly
         cut_geom = cut_geom
@@ -91,21 +99,9 @@ class PolygonCutter:
         #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
 
         bp = FindIntersects(bp, self.line_geom, 'bp_index', 'cut_index')
-        cut_polys = CutPolygons(bp, cut_geom)
+        bp[cut_geom] = bp[['geometry', 'line_ints']].apply(lambda x: CutPolygon(x, self.line_geom[['cut_index', 'geometry']]), axis=1)
+        print(bp.head())
         sys.exit()
-        # Dont use this method its really slow
-        # self.clipped = gpd.clip(bp, cut_geom)
-        # self.clipped = self.clipped['geometry'].explode()
-        
-        # Merge all the lines into one mega line wont work either shapely geometrytypeerror polygon not split by multistring
-
-        # splits = bp.apply(lambda geom: shapely.ops.split(geom['geometry'], merged_lines), axis=1)
-        # print(splits)
-        # sys.exit()
-        # # Gather all intersections per building
-        # inp, res = bp.sindex.query_bulk(cut_geom.geometry, predicate='intersects')
-        # bp['intersects'] = np.isin(np.arrange(0, len(cut_geom)),inp)
-        # print(bp.head())
         
 
 def main():
@@ -123,7 +119,7 @@ def main():
     
     out_gpkg = Path(os.getenv('OUT_GPKG'))
     out_bld_lyr_nme = os.getenv('OUT_BLD_LYR_NME')
-    out_pcl_lines_lyr_nme = os.getenv('OUT_PARCEL_LINES_LYR_NME')
+    out_pcl_lyr_nme = os.getenv('PCL_LYR_NME')
 
     # Load in the data
     aoi_mask = gpd.read_file(aoi_path, layer=aoi_lyr_nme)
