@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 import shapely
 from pathlib import Path
-from shapely.geometry import MultiLineString, Polygon
+from shapely.geometry import MultiLineString, Polygon, MultiPolygon
 from shapely.validation import make_valid
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -74,10 +74,16 @@ class PolygonCutter:
             if len(cut_indexes) == 0:
                 return input_geom['geometry']
             if len(cut_indexes) >= 1:
+                # retrieve the records related to the cut indexes
                 cutters = line_geom[line_geom['cut_index'].isin(cut_indexes)]
+                # For every cut index split the polygon by it. Returns as a list of geometry collections
                 geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
+                # Extract all geometry from the geometry collections
+
+                # geoms = [p for gc in geoms for p in gc.geoms]
+                # Take that list and convert it to a multipolygon. Return that 
                 print(geoms)
-                sys.exit()
+                return MultiPolygon(geoms)
  
         # Load in the inputs to geodataframes
         bp = bld_poly
@@ -103,6 +109,8 @@ class PolygonCutter:
         print(bp.head())
         sys.exit()
         
+    def __call__(self, *args, **kwds):
+        pass
 
 def main():
     # setup for testing purposes
