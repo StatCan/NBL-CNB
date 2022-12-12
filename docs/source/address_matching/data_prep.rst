@@ -120,7 +120,7 @@ Parcel Linkages are made similar to the way they are made for address points wit
 * If a building intersects more than one polygon then the smallest acceptable polygon is taken as the linkage.
 
 **Representative Point** A representative point is an arbitrary points within a polygon. The key feature of this point is 
-that it will always be contained within the bounds of a polygon regardless of complexity. This is different from a centroid
+that it will always be contained within the bounds of a polygon regardless of its complexity. This is different from a centroid
 which is always located at the centre of the polygon regardless of if it actually sits within the bounds of that polygon or not.
 
 Non-Addressable outbuilding detection
@@ -133,7 +133,10 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
    To perform this process the following steps are followed:
    
    * Use groupby to get the counts of address points and building polygons for each parcel
-   * Use 
+   * All building polygons that are in a parcel where there is only one building or only one address point are dropped from this process as Non-Addressable Outbuildings cannot be identified in those cases
+   * If the number of buildings is greater than or equal to the bp threshold for a given parcel then only remove buildings >50m2
+   * Of the remaining buildings flag all those that are below the minimum addressable threshold
+   * Of the remaining cases look at the count of building polygons compared to the count of address points. Flag all building polygons that exceeed the count of address points and are less than 100m2.
 
    The above steps are organized into a function which is then run on groups of buildings organized by the linking parcel. The funtions and the code to properly call it can be seen below.
    .. code-block:: python
@@ -148,9 +151,7 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
          bf_count = len(bf_data)
          
          # If either is equal to zero this method will not help select out sheds
-         if ap_count == 0 or bf_count == 0:
-            return []
-         if bf_count == 1:
+         if (ap_count == 0) or (bf_count in [0,1]):
             return []
 
          # Sizing is different in trailer parks so deal with these differently

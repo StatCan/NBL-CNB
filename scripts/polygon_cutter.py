@@ -43,16 +43,6 @@ class PolygonCutter:
             # If inputs are polygons then convert them to lines and strip attributes
             if input_gdf.geometry[0].geom_type in ['Polygon', 'MultiPolygon']:
                 
-                # Ensure all geometry is valid
-                input_gdf['geometry'] = input_gdf['geometry'].buffer(0)
-
-                # Check if any multi-polgyons exists explode them
-                # input_gdf['isMulti'] = input_gdf.apply(lambda row: True if row['geometry'].geom_type != 'Polygon' else False, axis=1)
-                # multifeatures = input_gdf.loc[input_gdf['isMulti'] == True]
-                # if len(multifeatures) > 0:
-                    # input_gdf = input_gdf.explode(index_parts=True)
-                # input_gdf.drop(columns=['isMulti'], inplace=True)
-                # convert to lines
                 input_gdf['geometry'] = input_gdf['geometry'].apply(lambda p: p.boundary)
                 return input_gdf.explode(index_parts=True)
 

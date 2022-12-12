@@ -159,9 +159,7 @@ def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
         bf_count = len(bf_data)
         
         # If either is equal to zero this method will not help select out sheds
-        if ap_count == 0 or bf_count == 0:
-            return []
-        if bf_count == 1:
+        if (ap_count == 0) or (bf_count in [0,1]):
             return []
 
         # Sizing is different in trailer parks so deal with these differently
