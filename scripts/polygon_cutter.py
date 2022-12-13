@@ -9,7 +9,7 @@ from shapely.geometry import MultiLineString, Polygon, MultiPolygon
 from shapely.validation import make_valid
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
-'''https://stackoverflow.com/questions/3623703/how-can-i-split-a-polygon-by-a-line
+'''
 
 Inital flow:
 
@@ -22,7 +22,12 @@ Inital flow:
 
 class PolygonCutter:
     
-    '''Process for cutting polygons when they cross an intersect point'''
+    '''
+    Splits an input polygon where it intersects the input cut geometry.
+    Cut geometry must be polygon or lines no points accepted.
+    Output geometry is then cleaned to keep only valid splits
+    '''
+
     def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326) -> None:
         
         def ValidateGeometry(input_geometry) -> gpd.GeoSeries:
@@ -70,9 +75,12 @@ class PolygonCutter:
                 geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
                 # Extract all geometry from the geometry collections
 
-                # geoms = [p for gc in geoms for p in gc.geoms]
+                geoms = [p for gc in geoms for p in gc.geoms]
                 # Take that list and convert it to a multipolygon. Return that 
-                print(geoms)
+                if len(geoms) < 1:
+                    print(geoms)
+                    print(MultiPolygon(geoms))
+                    sys.exit()
                 return MultiPolygon(geoms)
  
         # Load in the inputs to geodataframes
