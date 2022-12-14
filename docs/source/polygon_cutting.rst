@@ -36,7 +36,7 @@ below the parcels when overlaid over the building data cuts the buildings at app
    :width: 400
    :alt: Sat image of clumped polygons
 
-We will use the parcel fabric as a guide and cut any buildings that cross the boundary using the following steps.
+The parcel fabric is used as a guide and cut any buildings that cross the boundary using the following steps.
 
 1. Convert parcel fabric from polygons to lines.
 2. If a polygon intersects one or more of these lines then split the polygon along those lines.
@@ -46,7 +46,7 @@ Method
 ------
 
 Step 1: Convert Parcels to lines
-__________________________________
+________________________________
 
 The first step is to convert the parcel fabric from polygons to lines. To do this the following method is used.
 
@@ -95,8 +95,40 @@ To split the polygons the following process is followed:
          input_geom['line_ints'] = input_geom[input_link_field].apply(lambda x: tuple(joined_geom[joined_geom[input_link_field] == x][search_link_field].tolist()))
          return input_geom 
 
-2. Polygons that intersect a line are then split 
+2. Polygons that intersect a line are then split along the lines that they intersect and a new MultiPolygon object is returned.
+   
+   .. code-block:: python
 
+       def CutPolygon(input_geom, line_geom):
+            '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
+            Run the FindIntersects step before calling this function'''
+            cut_indexes = input_geom['line_ints']
+            if len(cut_indexes) == 0:
+                return input_geom['geometry']
+            if len(cut_indexes) >= 1:
+               # retrieve the records related to the cut indexes
+                  cutters = line_geom[line_geom['cut_index'].isin(cut_indexes)]
+                  # For every cut index split the polygon by it. Returns as a list of geometry collections
+                  geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
+                  # Extract all geometry from the geometry collections
+
+                  geoms = [p for gc in geoms for p in gc.geoms]
+                  # Take that list and convert it to a multipolygon. Return that 
+                  if len(geoms) < 1:
+                     print(geoms)
+                     print(MultiPolygon(geoms))
+                     sys.exit()
+                  return MultiPolygon(geoms)
+
+       bp[cut_geom] = bp[['geometry', 'line_ints']].apply(lambda x: CutPolygon(x, self.line_geom[['cut_index', 'geometry']]), axis=1)
+
+3. The returned geometry is then exploded to create a record for each polygon within the multipoloygon.
+   
+   .. code-block:: python
+      
+      bp = bp.explode(index_parts=True)
+
+All valid input polygons have now been split by any lines in the cut geometry that they intersected. The outputs can now be cleaned.      
 
 Step 3: Clean-up and Analysis
 _____________________________
@@ -127,3 +159,17 @@ the dataset and isolated.
    :alt: Example with valid and invalid splits with imagery
 
 The cleaning process looks as follows:
+
+1. The area of each split is calculated and any polygons under 50m2 are removed
+   
+   .. code-block:: python
+      
+      bp['split_area'] = bp.area
+
+2. A spatial join is then created between the polygons and the parcels and any polygons that do not intersect a parcel are removed.
+   
+   .. code-block:: python
+
+      bp = bp.sjoin
+
+3. 

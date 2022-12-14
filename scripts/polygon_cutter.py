@@ -104,6 +104,7 @@ class PolygonCutter:
 
         bp = FindIntersects(bp, self.line_geom, 'bp_index', 'cut_index')
         bp[cut_geom] = bp[['geometry', 'line_ints']].apply(lambda x: CutPolygon(x, self.line_geom[['cut_index', 'geometry']]), axis=1)
+        bp = bp.explode(index_parts=True)
         print(bp.head())
         sys.exit()
         

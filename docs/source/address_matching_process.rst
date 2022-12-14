@@ -4,20 +4,20 @@ NBL-CNB: Address Matching Process
 .. toctree::
    :maxdepth: 2
    
-   address_matching/run_process
-   address_matching/data_prep
-   address_matching/parcel_rel_cal
-   address_matching/matching
-   address_matching/qa_qc
-   address_matching/confidence
-   appendix/appendix_doc
+   Run Process <address_matching/run_process>
+   Data Preparation <address_matching/data_prep>
+   Parcel Relationship Calculation <address_matching/parcel_rel_cal>
+   Matching <address_matching/matching>
+   QA/QC <address_matching/qa_qc>
+   Confidence Calculation <address_matching/confidence>
+   Appendix <appendix/appendix_doc>
 
 The primary goal of this process is to accuratly match address points to building footprints. In order to 
 achieve this three key datasets are required:
 
 * Address Points
 * Building Footprints
-* A Parcel Fabric
+* Parcel Fabric
 
 Of the three the parcel fabric
 
