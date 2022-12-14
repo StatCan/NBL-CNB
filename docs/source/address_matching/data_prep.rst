@@ -102,6 +102,8 @@ There are couple criteria for this.
       :width: 400
       :alt: Layered Parcels Example
 
+2. 
+
 Building Polygon Cleaning
 -------------------------
 
@@ -123,8 +125,8 @@ Parcel Linkages are made similar to the way they are made for address points wit
 that it will always be contained within the bounds of a polygon regardless of its complexity. This is different from a centroid
 which is always located at the centre of the polygon regardless of if it actually sits within the bounds of that polygon or not.
 
-Non-Addressable outbuilding detection
-_____________________________________
+Non-Addressable Out-Building Detection
+______________________________________
 
 A building is considered to be a non Non-Addressable outbuilding when one or more of the following criteria are met:
 
@@ -199,3 +201,5 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
       footprint_gdf = footprint_gdf[footprint_gdf['C'] < 0.98]
       footprint_gdf.drop(columns=['C'], inplace=True)
       round_sheds.drop(columns=['C'], inplace=True)
+
+
