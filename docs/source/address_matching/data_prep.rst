@@ -141,6 +141,7 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
    * Of the remaining cases look at the count of building polygons compared to the count of address points. Flag all building polygons that exceeed the count of address points and are less than 100m2.
 
    The above steps are organized into a function which is then run on groups of buildings organized by the linking parcel. The funtions and the code to properly call it can be seen below.
+   
    .. code-block:: python
       
       def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100):

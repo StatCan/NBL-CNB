@@ -83,7 +83,7 @@ These classifications and the scores required to attain them can be seen below:
     :header-rows: 1
 
 Method
-======
+------
 
 The information described above is put into use in the following way:
 

@@ -25,16 +25,6 @@ and one building footprint.
    :width: 400
    :alt: One to One Example
 
-One to Many
------------
-
-In this relationship type there is one address point but many building footprints contained in a
-single parcel.
-
-.. image:: img/one_to_many.png
-   :width: 400
-   :alt: One to Many Example
-
 This is considered the ideal scenario and steps are taken to create as many one to one relationships as possible.
 For example, flagging non-addressable outbuildings during the data cleaning phase allows us to exclude those
 building polygons from the parcel relationship calculation.
@@ -47,6 +37,16 @@ In this relationship there are many address points and a single building footpri
 .. image:: img/many_to_one.png
    :width: 400
    :alt: Many to One Example
+
+One to Many
+-----------
+
+In this relationship type there is one address point but many building footprints contained in a
+single parcel.
+
+.. image:: img/one_to_many.png
+   :width: 400
+   :alt: One to Many Example 
 
 Many to Many
 ------------
@@ -71,9 +71,10 @@ Unlinked
 --------
 
 This relationship is assigned to address points and building polygons when no underlying parcel is present. This can be data in a region that
-does not have a parcel fabric available or data within the extent of a parcel fabric that falls into a gap or area with no polygons.
+does not have a parcel fabric available or data within the extent of a parcel fabric that falls into a gap or area with no polygons. This is 
+considered to by the least ideal scenario as there is limited information to help inform where is correct linkage is if one exists. 
 
-.. Note:: Note
+.. Note:: 
    While some methods have been looked at to deal with regions without an available parcel fabric to date none has proven to be capable of providing
    sufficiently accurate results to be flagged for implimented.
 

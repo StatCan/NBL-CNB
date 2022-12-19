@@ -17,4 +17,4 @@ The below sections detail specific milestones in the development of the NBL.
 
 .. container:: button
 
-   :doc:`New Brunswick Prototype <project_overview\nb_prototype>`
+   :doc:`New Brunswick Prototype <project_overview/nb_prototype>`
