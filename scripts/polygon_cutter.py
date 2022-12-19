@@ -65,7 +65,12 @@ class PolygonCutter:
         def CutPolygon(input_geom, line_geom):
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
             Run the FindIntersects step before calling this function'''
+            
+            # Select only key vars and set the cut indexes
+            line_geom = line_geom[['cut_index', 'geometry']]
+            input_geom = input_geom[['geometry', 'line_ints']]
             cut_indexes = input_geom['line_ints']
+            
             if len(cut_indexes) == 0:
                 return input_geom['geometry']
             if len(cut_indexes) >= 1:
@@ -82,31 +87,34 @@ class PolygonCutter:
                     print(MultiPolygon(geoms))
                     sys.exit()
                 return MultiPolygon(geoms)
- 
+
         # Load in the inputs to geodataframes
-        bp = bld_poly
+        self.bp = bld_poly
         cut_geom = cut_geom
         # Ensure projection consistency
-        bp.to_crs(crs=crs, inplace=True)
+        self.bp.to_crs(crs=crs, inplace=True)
         cut_geom.to_crs(crs=crs, inplace=True)
 
         # Ensure all valid geometry
-        bp['geometry'] = ValidateGeometry(bp)
+        self.bp['geometry'] = ValidateGeometry(self.bp)
         cut_geom['geometry'] = ValidateGeometry(cut_geom)
 
         # Calc unique values for data to link between datasets
-        bp['bp_index'] = range(1, len(bp.index) + 1)
+        self.bp['bp_index'] = range(1, len(self.bp.index) + 1)
         cut_geom['cut_index'] = range(1, len(cut_geom.index) + 1)
 
         # convert the cut geometry to lines if necessary
         self.line_geom = check_geom(cut_geom)
         #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
 
-        bp = FindIntersects(bp, self.line_geom, 'bp_index', 'cut_index')
-        bp[cut_geom] = bp[['geometry', 'line_ints']].apply(lambda x: CutPolygon(x, self.line_geom[['cut_index', 'geometry']]), axis=1)
-        bp = bp.explode(index_parts=True)
-        print(bp.head())
-        sys.exit()
+        bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'cut_index')
+        cut_geom = bp.apply(lambda x: CutPolygon(x, self.line_geom), axis=1)
+        self.bp['geometry'] = cut_geom
+        self.bp = self.bp.explode(index_parts=True)
+        
+        self.bp['split_area'] = self.bp.geometry.area
+        self.bp = self.bp[self.bp['split_area'] > 50]
+
         
     def __call__(self, *args, **kwds):
         pass
@@ -139,7 +147,7 @@ def main():
 
     print('cutting buildings')
     clipped_polys = PolygonCutter(bld_poly=bld_gdf, cut_geom=cut_gdf)
-    clipped_polys.clipped.to_file(out_gpkg, layer=out_bld_lyr_nme)
+    clipped_polys.bp.to_file(out_gpkg, layer=out_bld_lyr_nme)
 
 
 if __name__ == '__main__':
