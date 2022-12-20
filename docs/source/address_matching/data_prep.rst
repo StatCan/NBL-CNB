@@ -44,8 +44,8 @@ Micro Parcel Detection/Removal
 ______________________________
 
 Micro parcels are small parcels with an area smaller than 100m2. These parcels are most often located in 
-trailer parks and condo developments. These only conplicate the matching process when included and are
-therefore removed during the cleaning phase.
+trailer parks and condo developments. These only complicate the matching process when included and are
+removed during the cleaning phase.
 
 .. image:: img/micro_parcels.png
    :width: 400
@@ -143,7 +143,8 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
    The above steps are organized into a function which is then run on groups of buildings organized by the linking parcel. The funtions and the code to properly call it can be seen below.
    
    .. code-block:: python
-      
+   
+      # Discover all sheds in the data
       def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100):
          '''
          returns a list of all bf_indexes that should be flagged as sheds and should be considered unaddressable.
@@ -184,7 +185,7 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
       
       (4 * pi * Area) / (Perimiter * Perimiter)
 
-   Should a building have a roundness of >= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
+   Should a building have a roundness of <= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
 
    * Caculate the area and perimiter of the building polygon in separate variables within the building polygons geodataframe.
    * Create a new field called 'C' in the buildings geodataframe and calculate circularity using the formula above.

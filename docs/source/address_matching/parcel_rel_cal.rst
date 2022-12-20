@@ -13,10 +13,10 @@ This page describes the different relationship types and then shows how they are
 within the matching scripts.
 
 Relationship Types
-==================
+------------------
 
 One to One
-----------
+__________
 
 The most basic relationship type where in a given single parcel there is only one address point 
 and one building footprint.
@@ -30,7 +30,7 @@ For example, flagging non-addressable outbuildings during the data cleaning phas
 building polygons from the parcel relationship calculation.
 
 Many to One
------------
+___________
 
 In this relationship there are many address points and a single building footprint contained in a single parcel
 
@@ -39,7 +39,7 @@ In this relationship there are many address points and a single building footpri
    :alt: Many to One Example
 
 One to Many
------------
+___________
 
 In this relationship type there is one address point but many building footprints contained in a
 single parcel.
@@ -49,7 +49,7 @@ single parcel.
    :alt: One to Many Example 
 
 Many to Many
-------------
+____________
 
 This is the most complicated relationship type where more than one address point and more than one
 building footprint are contained in a single parcel.
@@ -59,7 +59,7 @@ building footprint are contained in a single parcel.
    :alt: Many to Many Example
 
 No Linked Building
-------------------
+__________________
 
 This relationship is assigned to address points in cases where one or more are present in a parcel but no building footprint is present.
 
@@ -68,7 +68,7 @@ This relationship is assigned to address points in cases where one or more are p
    :alt: No Linked Building Example
 
 Unlinked
---------
+________
 
 This relationship is assigned to address points and building polygons when no underlying parcel is present. This can be data in a region that
 does not have a parcel fabric available or data within the extent of a parcel fabric that falls into a gap or area with no polygons. This is 
