@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 import shapely
 from pathlib import Path
-from shapely.geometry import MultiLineString, Polygon, MultiPolygon
+from shapely.geometry import MultiLineString, Polygon, MultiPolygon, LineString
 from shapely.validation import make_valid
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -40,6 +40,25 @@ class PolygonCutter:
 
         def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
             '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''
+            
+            def ToSingleLines(geom: Polygon) -> MultiLineString:
+                '''Converts polygons into single lines'''
+                
+                # temp measure to remove GeometryCollections and None cases
+                if geom.geom_type not in ['MultiPolygon', 'Polygon']:
+                    return None
+                bounds = geom.boundary # returns the boundary as a linestring of many lines. Need to cut this into individual lines
+                # multilinestrings need to be handled slightly differently
+                if bounds.geom_type == 'MultiLineString':
+                    # inefficient way to do this but need to extract each line from a multilinestring perhaps look at this again later 
+                    bounds = [l for l in bounds.geoms]
+                    bounds = [list(map(LineString, zip(l.coords[:-1], l.coords[1:]))) for l in bounds]
+                    bounds = [ls for l in bounds for ls in l]
+                    return bounds
+                # if its just a single line string then its simple to deconstruct
+                return list(map(LineString, zip(bounds.coords[:-1], bounds.coords[1:])))
+                                                        
+
             input_gdf.reset_index(inplace=True)
             if input_gdf.geometry[0].geom_type in ['LineString', 'MultiLineString']:
                 # If the geometry is already in line type then just strip attributes 
@@ -47,8 +66,9 @@ class PolygonCutter:
             
             # If inputs are polygons then convert them to lines and strip attributes
             if input_gdf.geometry[0].geom_type in ['Polygon', 'MultiPolygon']:
+                input_gdf = input_gdf.explode(index_parts=False)
+                input_gdf['geometry'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
                 
-                input_gdf['geometry'] = input_gdf['geometry'].apply(lambda p: p.boundary)
                 return input_gdf.explode(index_parts=True)
 
             # If the geometry is a point or mutipoint raise an error
@@ -105,15 +125,22 @@ class PolygonCutter:
 
         # convert the cut geometry to lines if necessary
         self.line_geom = check_geom(cut_geom)
+        self.line_geom = self.line_geom[self.line_geom['geometry'] != None]
+        print(self.line_geom.head())
+        sys.exit()
+        if type(self.line_geom) != gpd.GeoDataFrame:
+            self.line_geom = gpd.GeoDataFrame(self.line_geom, geometry='geometry')
+        print(type(self.line_geom))
+        sys.exit()
         #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
 
         bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'cut_index')
         cut_geom = bp.apply(lambda x: CutPolygon(x, self.line_geom), axis=1)
         self.bp['geometry'] = cut_geom
         self.bp = self.bp.explode(index_parts=True)
-        
+        self.bp.drop(columns=['line_ints'], inplace=True)
+        # Clean up results and remove slivers
         self.bp['split_area'] = self.bp.geometry.area
-        self.bp = self.bp[self.bp['split_area'] > 50]
 
         
     def __call__(self, *args, **kwds):
@@ -148,6 +175,7 @@ def main():
     print('cutting buildings')
     clipped_polys = PolygonCutter(bld_poly=bld_gdf, cut_geom=cut_gdf)
     clipped_polys.bp.to_file(out_gpkg, layer=out_bld_lyr_nme)
+    clipped_polys.line_geom.to_file(out_gpkg, layer='poly_lines')
 
 
 if __name__ == '__main__':
