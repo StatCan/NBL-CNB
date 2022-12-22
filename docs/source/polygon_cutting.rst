@@ -62,7 +62,11 @@ The first step is to convert the parcel fabric from polygons to lines. To do thi
                input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
          return input_geometry
 
-2. The geometry is then checked for type and converted into lines if necessary using the below function:
+2. The geometry is then checked for type and converted into lines if necessary using th ebelow process:
+
+   1. If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.
+   2. .boundary return the boundary as a single line. Break this up so that each side is a single record per side.
+   3. 
    
    .. code-block:: python
       

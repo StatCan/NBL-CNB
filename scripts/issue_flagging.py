@@ -32,7 +32,7 @@ Points:
 # -------------------------------------------------------
 # Functions
 
-def as_int(val):
+def as_int(val) -> int:
     "Step 4: Converts linkages to integer tuples, if possible"
     try:
         if isinstance(val, int):
@@ -43,7 +43,7 @@ def as_int(val):
         return val
 
 
-def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts):
+def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts) -> str:
     '''Returns the parcel relationship type for the given record based on the counts of the parcel linkages in the bf and ap datasets'''
 
     if isnan(parcel_ident):

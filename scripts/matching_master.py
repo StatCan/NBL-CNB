@@ -1,5 +1,6 @@
 import geopandas as gpd
 import numpy as np
+import shapely
 import os
 import pandas as pd
 import sys
@@ -25,7 +26,7 @@ Unlinked addresses and buildings will then be output for further analysis.
 # ------------------------------------------------------------------------------------------------------------
 # Functions
 
-def groupby_to_list(df, group_field, list_field):
+def groupby_to_list(df, group_field, list_field) -> pd.Series:
     
     """
     Helper function: faster alternative to pandas groupby.apply/agg(list).
@@ -50,7 +51,7 @@ def groupby_to_list(df, group_field, list_field):
     return pd.Series([list(vals_array) for vals_array in vals_arrays], index=keys_unique).copy(deep=True)
 
 
-def as_int(val):
+def as_int(val) -> int:
     "Step 4: Converts linkages to integer tuples, if possible"
     try:
         if isinstance(val, int):
@@ -61,7 +62,7 @@ def as_int(val):
         return val
 
 
-def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
+def get_unlinked_geometry(addresses_gdf: gpd.GeoDataFrame, footprint_gdf: gpd.GeoDataFrame , buffer_distance:int) ->gpd.GeoDataFrame:
     'Returns indexes for the bf based on the buffer size'
     
     def list_bf_indexes(buffer_geom, bf_gdf):
@@ -87,7 +88,7 @@ def get_unlinked_geometry(addresses_gdf, footprint_gdf , buffer_distance:int):
     return linked_df
 
 
-def check_for_intersects(address_pt, footprint_indexes):
+def check_for_intersects(address_pt: shapely.geometry.Point, footprint_indexes) -> int:
     '''Similar to the get nearest linkage function except this looks for intersects (uses within because its much faster) and spits out the index of any intersect'''
     footprint_geometries = tuple(map(lambda index: footprint["geometry"].loc[footprint.index == index], footprint_indexes))
     inter = tuple(map(lambda bf: address_pt.within(bf.iloc[0]), footprint_geometries))

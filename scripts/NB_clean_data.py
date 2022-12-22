@@ -11,14 +11,14 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from math import pi
-from shapely.geometry import MultiLineString, Polygon
+from shapely.geometry import MultiLineString, Polygon, Point
 
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
 # ------------------------------------------------------------------------------------------------
 # Functions
 
-def reproject(ingdf, output_crs):
+def reproject(ingdf: gpd.GeoDataFrame, output_crs: int) -> gpd.GeoDataFrame:
     ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
     if ingdf.crs == None:
         ingdf.set_crs(epsg=output_crs, inplace=True)    
@@ -27,12 +27,12 @@ def reproject(ingdf, output_crs):
     return ingdf
 
 
-def getXY(pt):
+def getXY(pt: Point) -> tuple:
     return (pt.x, pt.y)
 
 
 def records(filename, usecols, **kwargs):
-    ''' Allows for importation of file with only the desired fields must use from_features for importing output into geodataframe'''
+    ''' Allows for import of file with only the desired fields must use from_features for importing output into geodataframe'''
     with fiona.open(filename, **kwargs) as source:
         for feature in source:
             f = {k: feature[k] for k in ['id', 'geometry']}
@@ -145,12 +145,12 @@ def return_smallest_match(ap_matches, parcel_df, unique_id):
     return ap_matches
     
 
-def shed_flagging(footprint_gdf, address_gdf, linking_gdf):
+def shed_flagging(footprint_gdf, address_gdf, linking_gdf) -> gpd.GeoDataFrame:
     '''
     Methodology for flagging buildings as sheds. Sheds meaning unaddressable outbuildings
     '''
     
-    def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100):
+    def find_sheds( bf_data, ap_count, bf_area_field='bf_area', bf_index_field='bf_index', bp_threshold=20, min_adressable_area=50, max_shed_size=100) -> list:
         '''
         returns a list of all bf_indexes that should be flagged as sheds and should be considered unaddressable.
         take the difference from the counts of each type of record in the parcel and flag the number of smallest
@@ -351,20 +351,6 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
         stype_ab = street_types_dataframe.Abbreviation[street_types_dataframe['Street type'] == street_type].tolist()[0]
         return stype_ab
 
-
-def cut_buildings(building, parcel_line):
-    '''
-    Cut buildings by the line of the parcel boundary that crosses it.
-    '''
-    for l in parcel_line:
-        split_lines = []
-        if building.intersects(parcel_line):
-            split_lines.append(l)
-    for sl in split_lines:
-        splits =  shapely.ops.split(building, sl)
-        print(splits)
-        sys.exit()
-        
 
 # ------------------------------------------------------------------------------------------------
 # Inputs
