@@ -1,4 +1,4 @@
-New Brunswick Implimentation Prototype
+ New Brunswick Implimentation Prototype
 ======================================
 
 .. toctree::

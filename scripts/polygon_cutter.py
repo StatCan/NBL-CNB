@@ -128,11 +128,21 @@ class PolygonCutter:
         print('Converting line geometry')
         self.line_geom = check_geom(cut_geom)
         self.line_geom = self.line_geom[self.line_geom['geometry'] != None]
+        self.line_geom.reset_index(inplace=True)
         if type(self.line_geom) != gpd.GeoDataFrame:
-            self.line_geom = gpd.GeoDataFrame(self.line_geom, geometry='geometry', crs=crs)
+            self.line_geom = gpd.GeoDataFrame(self.line_geom, geometry='geometry')
+            self.line_geom.set_crs(crs=crs, inplace=True)
 
+        # Delete lines that overlap
+        self.line_geom['centroid'] = self.line_geom.geometry.centroid
+        print(len(self.line_geom))
+        self.line_geom.drop_duplicates('centroid')
+        print(len(self.line_geom))
+
+        sys.exit()
+        # For testing purposes export lines here to be deleted later
         #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
-        print('Finding instersects')
+        print('Finding intersects')
         bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'cut_index')
         print('Cutting by intersects')
         cut_geom = bp.swifter.apply(lambda x: CutPolygon(x, self.line_geom), axis=1)
