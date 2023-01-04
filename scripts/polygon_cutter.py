@@ -29,7 +29,16 @@ class PolygonCutter:
     Output geometry is then cleaned to keep only valid splits
     '''
 
-    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326) -> None:
+    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326, proj_crs=32614) -> None:
+        
+        def reproject(ingdf: gpd.GeoDataFrame, output_crs: int) -> gpd.GeoDataFrame:
+            ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
+            if ingdf.crs == None:
+                ingdf.set_crs(epsg=output_crs, inplace=True)    
+            elif ingdf.crs != f'epsg:{output_crs}':
+                ingdf.to_crs(epsg=output_crs, inplace=True)
+            return ingdf
+
         
         def ValidateGeometry(input_geometry) -> gpd.GeoSeries:
             '''Checks if input geometry is valid and if invalid attempts to make it valid accepts Geodataframes and Geoseries'''
@@ -38,6 +47,7 @@ class PolygonCutter:
             if type(input_geometry) == gpd.GeoDataFrame:
                 input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
             return input_geometry
+
 
         def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
             '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''
@@ -76,12 +86,14 @@ class PolygonCutter:
             if input_gdf.geometry[0].geom_type in ['Point', 'MultiPoint']:
                 raise IOError('Shape is not a Polygon or Line')
 
+
         def FindIntersects(input_geom: gpd.GeoDataFrame, search_geometry: gpd.GeoDataFrame, input_link_field: str, search_link_field: str) -> gpd.GeoDataFrame:
             '''finds all intersections between the input geometry and the search geometry'''
 
             joined_geom = gpd.sjoin(input_geom, search_geometry[[search_link_field, 'geometry']], op='intersects')
             input_geom['line_ints'] = input_geom[input_link_field].swifter.apply(lambda x: tuple(joined_geom[joined_geom[input_link_field] == x][search_link_field].tolist()))
             return input_geom
+
 
         def CutPolygon(input_geom, line_geom) -> MultiPolygon:
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
@@ -109,6 +121,7 @@ class PolygonCutter:
                     sys.exit()
                 return MultiPolygon(geoms)
 
+
         # Load in the inputs to geodataframes
         self.bp = bld_poly
         cut_geom = cut_geom
@@ -119,11 +132,16 @@ class PolygonCutter:
         # Ensure all valid geometry
         self.bp['geometry'] = ValidateGeometry(self.bp)
         cut_geom['geometry'] = ValidateGeometry(cut_geom)
-
+        
         # Calc unique values for data to link between datasets
         self.bp['bp_index'] = range(1, len(self.bp.index) + 1)
         cut_geom['cut_index'] = range(1, len(cut_geom.index) + 1)
 
+        # Drop Non-Essential Cut Geometry
+        cut_joined = gpd.sjoin(cut_geom, self.bp[['bp_index', 'geometry']])
+        cut_joined = list(set(cut_joined[~cut_joined['bp_index'].isna()]['cut_index'].tolist()))
+        cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined)]
+               
         # convert the cut geometry to lines if necessary
         print('Converting line geometry')
         self.line_geom = check_geom(cut_geom)
@@ -132,11 +150,20 @@ class PolygonCutter:
         if type(self.line_geom) != gpd.GeoDataFrame:
             self.line_geom = gpd.GeoDataFrame(self.line_geom, geometry='geometry')
             self.line_geom.set_crs(crs=crs, inplace=True)
+        self.line_geom['line_index'] = range(1, len(self.line_geom.index) + 1)
+        
+        # Drop lines that do not intersect a building
+        lines_joined = gpd.sjoin(self.line_geom, self.bp[['bp_index', 'geometry']])
+        self.line_geom = self.line_geom[self.line_geom['line_index'].isin(list(set(lines_joined[~lines_joined['bp_index'].isna()]['line_index'].tolist())))]
+        
+        # Project data for overlap checks
+        self.line_geom = reproject(self.line_geom, proj_crs)
+        self.bp = reproject(self.bp, proj_crs)
 
         # Delete lines that overlap
         self.line_geom['centroid'] = self.line_geom.geometry.centroid
         print(len(self.line_geom))
-        self.line_geom.drop_duplicates('centroid')
+        self.line_geom.drop_duplicates('centroid',  inplace=True)
         print(len(self.line_geom))
 
         sys.exit()
