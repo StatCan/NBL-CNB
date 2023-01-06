@@ -43,7 +43,7 @@ def as_int(val) -> int:
         return val
 
 
-def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts) -> str:
+def RelationshipSetter(parcel_ident, ap_parcel_counts, bf_parcel_counts) -> str:
     '''Returns the parcel relationship type for the given record based on the counts of the parcel linkages in the bf and ap datasets'''
 
     if isnan(parcel_ident):
@@ -123,7 +123,7 @@ def main():
     print('Grouping BFs')
     grouped_bf = footprints[footprints['shed_flag'] == False].groupby('link_field', dropna=True)['link_field'].count()
     print('Determining relationship')
-    addresses['parcel_rel'] = addresses['link_field'].swifter.apply(lambda x: relationship_setter(x, grouped_ap, grouped_bf))
+    addresses['parcel_rel'] = addresses['link_field'].swifter.apply(lambda x: RelationshipSetter(x, grouped_ap, grouped_bf))
 
     print('Creating and exporting metrics doc as spreadsheet')
 

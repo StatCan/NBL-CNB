@@ -95,6 +95,33 @@ class PolygonCutter:
             return input_geom
 
 
+        def DropDuplicates(gdf: gpd.GeoDataFrame, dfield: str) -> gpd.GeoDataFrame:
+            ''' 
+            Alternative to pandas.drop_duplicates for dropping duplicate geometry records in a geodataframe
+            Inputs must be of type point multi geometry not accepted
+            '''
+
+            # Extract x and y values from the points
+            gdf['x'] = gdf[dfield].x
+            gdf['y'] = gdf[dfield].y
+            gdf['xy'] = gdf[['x','y']].to_numpy().tolist()
+            # Group the points by x and y then cound the number of each instance
+            # xygroup = gdf.groupby(['x', 'y']).size() # size returns row count for a group count for single
+            # print(gdf[gdf.xy.isin(xygroup[xygroup > 1].tolist())])
+            print(gdf.columns())
+            sys.exit()
+            gdf = gpd.sjoin(gdf, gdf, how='left')
+            print(gdf.head())
+
+            sys.exit()
+            multigdf = gdf[gdf.index.isin(xygroup[xygroup > 1].index.tolist())]
+            print(len(multigdf))
+            # multigdf.drop_duplicates(subset=dfield, inplace=True)
+            print(len(multigdf))
+            
+            sys.exit()
+
+
         def CutPolygon(input_geom, line_geom) -> MultiPolygon:
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
             Run the FindIntersects step before calling this function'''
@@ -162,8 +189,9 @@ class PolygonCutter:
 
         # Delete lines that overlap
         self.line_geom['centroid'] = self.line_geom.geometry.centroid
+        self.line_geom = DropDuplicates(self.line_geom, 'centroid')
         print(len(self.line_geom))
-        self.line_geom.drop_duplicates('centroid',  inplace=True)
+        self.line_geom.drop_duplicates('centroid',  inplace=True) # Find a different method this is very very slow.
         print(len(self.line_geom))
 
         sys.exit()
