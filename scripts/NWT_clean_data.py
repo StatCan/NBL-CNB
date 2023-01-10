@@ -356,20 +356,6 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
         return stype_ab
 
 
-def cut_buildings(building, parcel_line):
-    '''
-    Cut buildings by the line of the parcel boundary that crosses it.
-    '''
-    for l in parcel_line:
-        split_lines = []
-        if building.intersects(parcel_line):
-            split_lines.append(l)
-    for sl in split_lines:
-        splits =  shapely.ops.split(building, sl)
-        print(splits)
-        sys.exit()
-        
-
 # ------------------------------------------------------------------------------------------------
 # Inputs
 
