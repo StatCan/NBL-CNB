@@ -497,8 +497,6 @@ merged_lines = MultiLineString(line_geom_list)
 merged_lines = shapely.ops.linemerge(merged_lines)
 merged_lines = shapely.ops.unary_union(merged_lines)
 
-# cut buildings by the lines when they cross the building
-cut_footprint = footprint['geometry'].apply(lambda b: cut_buildings(b, merged_lines)) 
 # remove all buildings parts that are smaller than 50m2 
 
 footprint['bf_area'] = round(footprint['geometry'].area, 2)
