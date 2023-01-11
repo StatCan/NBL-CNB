@@ -49,38 +49,76 @@ class PolygonCutter:
             return input_geometry
 
 
-        def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
-            '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''
-            
-            def ToSingleLines(geom: Polygon) -> MultiLineString:
+        def ToSingleLines(geom: shapely.geometry) -> MultiLineString:
                 '''Converts polygons into single lines'''
                 
                 # temp measure to remove GeometryCollections and None cases
-                if geom.geom_type not in ['MultiPolygon', 'Polygon']:
+                if geom.geom_type not in ['MultiPolygon', 'Polygon', 'LineString', 'MultiLineString', 'Point', 'MultiPoint']:
+                    # Temp block in place until a solution is found for GeometryCollections
+                    print(geom)
+                    sys.exit()
                     return None
+
                 bounds = geom.boundary # returns the boundary as a linestring of many lines. Need to cut this into individual lines
+                
                 # multilinestrings need to be handled slightly differently
                 if bounds.geom_type == 'MultiLineString':
+                    # Extract each line from a multilinestring and return as a list of singe line linestrings
                     # inefficient way to do this but need to extract each line from a multilinestring perhaps look at this again later 
                     bounds = [l for l in bounds.geoms]
                     bounds = [list(map(LineString, zip(l.coords[:-1], l.coords[1:]))) for l in bounds]
                     bounds = [ls for l in bounds for ls in l]
                     return bounds
-                # if its just a single line string then its simple to deconstruct
-                return list(map(LineString, zip(bounds.coords[:-1], bounds.coords[1:])))
-                                                        
+                
+                # if its just a single line string then deconstruct to single geometries
+                try:
+                    line_bounds = list(map(LineString, zip(bounds.coords[:-1], bounds.coords[1:])))
+                    return line_bounds
+                
+                except NotImplementedError:
+                    print(bounds)
+                    sys.exit()
 
-            input_gdf.reset_index(inplace=True)
+        def SwapGeometry(ingdf: gpd.GeoDataFrame, orig_geom: str, swap_geom:str) -> gpd.GeoDataFrame:
+            '''Utility function swap from one geometry field to another and drop the original geometries and renames the new geometry column to 'geometry'
+            for the purposes of standardization'''
+            
+            # Swap in the new geometry
+            ingdf = ingdf.set_geometry(swap_geom)
+            # Delete the old geometry
+            ingdf.drop(columns=[orig_geom], inplace=True)
+            # Rename the geometry column to 'geometry'
+            ingdf.rename({swap_geom:'geometry'}, axis='columns', inplace=True)
+            # Ensure the column is set correctly by setting geometry again
+            ingdf = ingdf.set_geometry('geometry')
+            
+            return ingdf
+
+
+        def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
+            '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''                         
+
+            #input_gdf.reset_index(inplace=True)
             if input_gdf.geometry[0].geom_type in ['LineString', 'MultiLineString']:
-                # If the geometry is already in line type then just strip attributes 
+                # If the geometry is already in line type
                 return input_gdf
             
-            # If inputs are polygons then convert them to lines and strip attributes
+            # If inputs are polygons then convert them to lines
             if input_gdf.geometry[0].geom_type in ['Polygon', 'MultiPolygon']:
-                input_gdf = input_gdf.explode(index_parts=False)
-                input_gdf['geometry'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
                 
-                return input_gdf.explode(index_parts=True)
+                # explode to remove multipolygons
+                input_gdf = input_gdf.explode(index_parts=False)
+                
+                # convert linestrings into single linestrings 
+                input_gdf['single_lines'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
+                
+                # explode list output of prior function
+                output_gdf = input_gdf.explode('single_lines')
+
+                # switch geometry to the new geom and drop old geom
+                output_gdf = SwapGeometry(output_gdf, 'geometry', 'single_lines')
+
+                return output_gdf
 
             # If the geometry is a point or mutipoint raise an error
             if input_gdf.geometry[0].geom_type in ['Point', 'MultiPoint']:
@@ -95,37 +133,9 @@ class PolygonCutter:
             return input_geom
 
 
-        def DropDuplicates(gdf: gpd.GeoDataFrame, dfield: str) -> gpd.GeoDataFrame:
-            ''' 
-            Alternative to pandas.drop_duplicates for dropping duplicate geometry records in a geodataframe
-            Inputs must be of type point multi geometry not accepted
-            '''
-
-            # Extract x and y values from the points
-            gdf['x'] = gdf[dfield].x
-            gdf['y'] = gdf[dfield].y
-            gdf['xy'] = gdf[['x','y']].to_numpy().tolist()
-            # Group the points by x and y then cound the number of each instance
-            # xygroup = gdf.groupby(['x', 'y']).size() # size returns row count for a group count for single
-            # print(gdf[gdf.xy.isin(xygroup[xygroup > 1].tolist())])
-            print(gdf.columns())
-            sys.exit()
-            gdf = gpd.sjoin(gdf, gdf, how='left')
-            print(gdf.head())
-
-            sys.exit()
-            multigdf = gdf[gdf.index.isin(xygroup[xygroup > 1].index.tolist())]
-            print(len(multigdf))
-            # multigdf.drop_duplicates(subset=dfield, inplace=True)
-            print(len(multigdf))
-            
-            sys.exit()
-
-
         def CutPolygon(input_geom, line_geom) -> MultiPolygon:
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
             Run the FindIntersects step before calling this function'''
-            
             # Select only key vars and set the cut indexes
             line_geom = line_geom[['cut_index', 'geometry']]
             input_geom = input_geom[['geometry', 'line_ints']]
@@ -172,11 +182,12 @@ class PolygonCutter:
         # convert the cut geometry to lines if necessary
         print('Converting line geometry')
         self.line_geom = check_geom(cut_geom)
-        self.line_geom = self.line_geom[self.line_geom['geometry'] != None]
-        self.line_geom.reset_index(inplace=True)
-        if type(self.line_geom) != gpd.GeoDataFrame:
-            self.line_geom = gpd.GeoDataFrame(self.line_geom, geometry='geometry')
-            self.line_geom.set_crs(crs=crs, inplace=True)
+        # self.line_geom = self.line_geom[self.line_geom['geometry'] != None]
+        # self.line_geom.reset_index(inplace=True)
+        
+        # ensure crs is consistent after the geometry change
+        self.line_geom.set_crs(crs=crs, inplace=True)
+        # Create a new index for the lines
         self.line_geom['line_index'] = range(1, len(self.line_geom.index) + 1)
         
         # Drop lines that do not intersect a building
@@ -188,15 +199,41 @@ class PolygonCutter:
         self.bp = reproject(self.bp, proj_crs)
 
         # Delete lines that overlap
-        self.line_geom['centroid'] = self.line_geom.geometry.centroid
-        self.line_geom = DropDuplicates(self.line_geom, 'centroid')
         print(len(self.line_geom))
-        self.line_geom.drop_duplicates('centroid',  inplace=True) # Find a different method this is very very slow.
-        print(len(self.line_geom))
+        self.line_geom.reset_index(drop=True, inplace=True)
+        print('create intersects')
+        # self join on geodataframe to get all polygon intersections
 
+        intersects = gpd.sjoin(self.line_geom[['line_index', 'geometry']], self.line_geom[['line_index', 'geometry']], how="left", predicate="intersects")
+       
+        print('create diss 1')
+        
+        # dissolve intersections on right index indices using the minimum value
+        intersects_diss = intersects.dissolve("line_index_right",aggfunc="min")
+        print('create diss 2')
+        # dissolve again on left index using minimum
+        intersects_diss = intersects_diss.reset_index().dissolve("line_index_left",aggfunc="min")
+        #self.line_geom = gpd.overlay(self.line_geom, self.line_geom, how='union')
+        print('change var name')
+        self.line_geom = intersects_diss
+        
+        # Check for and exclude non line geometries
+        self.line_geom['geom_type'] = self.line_geom.geometry.geom_type
+        print(self.line_geom.head())
+        print(list(set(self.line_geom.geom_type.values.tolist())))
+
+        self.line_geom = self.line_geom[self.line_geom['geom_type'].isin(['LineString', 'MultiLineString'])]
+
+        # Explode so ensure single geometries are maintained
+        self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda g: ToSingleLines(g))
+        self.line_geom = self.line_geom.explode('singled_lines')
+        self.line_geom = SwapGeometry(self.line_geom, 'geometry', 'singled_geom')
+        self.line_geom['geom_type'] = self.line_geom.geometry.geom_type
+        print(list(set(self.line_geom.geom_type.values.tolist())))
+        print(len(self.line_geom))
         sys.exit()
         # For testing purposes export lines here to be deleted later
-        #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
+        self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
         print('Finding intersects')
         bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'cut_index')
         print('Cutting by intersects')
