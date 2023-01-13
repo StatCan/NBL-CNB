@@ -50,14 +50,37 @@ class PolygonCutter:
 
 
         def ToSingleLines(geom: shapely.geometry) -> MultiLineString:
-                '''Converts polygons into single lines'''
+            '''Converts polygons into single lines'''
                 
-                # temp measure to remove GeometryCollections and None cases
-                if geom.geom_type not in ['MultiPolygon', 'Polygon', 'LineString', 'MultiLineString', 'Point', 'MultiPoint']:
-                    # Temp block in place until a solution is found for GeometryCollections
-                    print(geom)
-                    sys.exit()
-                    return None
+            def MultiLineDevolver(m_line_string: MultiLineString) -> list:
+                '''Converts a multilinestring into a list of its component lines'''
+                m_line_string = [l for l in m_line_string.geoms]
+                m_line_string = [list(map(LineString, zip(l.coords[:-1], l.coords[1:]))) for l in m_line_string]
+                m_line_string = [ls for l in m_line_string for ls in l]
+                return m_line_string
+
+            # temp measure to remove GeometryCollections and None cases
+            if geom.geom_type not in ['MultiPolygon', 'Polygon', 'LineString', 'MultiLineString', 'Point', 'MultiPoint']:
+                # Temp block in place until a solution is found for GeometryCollections
+                print(geom)
+                sys.exit()
+                return None
+                
+
+            if geom.geom_type in ['LineString', 'MultiLineString']:
+                # If linestring type then no need to worry about boundaries
+                if geom.geom_type == 'MultiLineString':
+                    # Extra step for multi line strings need to be devolved first
+                    geom = MultiLineDevolver(geom)
+                    return geom
+                
+                # LineStrings get converted into a list of lines in a single step
+                lines = list(map(LineString, zip(geom.coords[:-1], geom.coords[1:])))
+                return lines
+                
+
+
+            if geom.geom_type in ['Polygon', 'MultiPolygon']:
 
                 bounds = geom.boundary # returns the boundary as a linestring of many lines. Need to cut this into individual lines
                 
@@ -65,17 +88,15 @@ class PolygonCutter:
                 if bounds.geom_type == 'MultiLineString':
                     # Extract each line from a multilinestring and return as a list of singe line linestrings
                     # inefficient way to do this but need to extract each line from a multilinestring perhaps look at this again later 
-                    bounds = [l for l in bounds.geoms]
-                    bounds = [list(map(LineString, zip(l.coords[:-1], l.coords[1:]))) for l in bounds]
-                    bounds = [ls for l in bounds for ls in l]
+                    bounds = MultiLineDevolver(bounds)
                     return bounds
-                
+
                 # if its just a single line string then deconstruct to single geometries
                 try:
                     line_bounds = list(map(LineString, zip(bounds.coords[:-1], bounds.coords[1:])))
                     return line_bounds
                 
-                except NotImplementedError:
+                except NotImplementedError: # Not implimented error can't break down multipart geometry using this method
                     print(bounds)
                     sys.exit()
 
@@ -133,11 +154,11 @@ class PolygonCutter:
             return input_geom
 
 
-        def CutPolygon(input_geom, line_geom) -> MultiPolygon:
+        def CutPolygon(input_geom, line_geom, cut_field) -> MultiPolygon:
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
             Run the FindIntersects step before calling this function'''
             # Select only key vars and set the cut indexes
-            line_geom = line_geom[['cut_index', 'geometry']]
+            line_geom = line_geom[[cut_field, 'geometry']]
             input_geom = input_geom[['geometry', 'line_ints']]
             cut_indexes = input_geom['line_ints']
             
@@ -145,17 +166,17 @@ class PolygonCutter:
                 return input_geom['geometry']
             if len(cut_indexes) >= 1:
                 # retrieve the records related to the cut indexes
-                cutters = line_geom[line_geom['cut_index'].isin(cut_indexes)]
+                cutters = line_geom[line_geom[cut_field].isin(cut_indexes)]
                 # For every cut index split the polygon by it. Returns as a list of geometry collections
                 geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
                 # Extract all geometry from the geometry collections
-
                 geoms = [p for gc in geoms for p in gc.geoms]
                 # Take that list and convert it to a multipolygon. Return that 
                 if len(geoms) < 1:
+                    print('multigeom issue')
                     print(geoms)
                     print(MultiPolygon(geoms))
-                    sys.exit()
+                    # sys.exit()
                 return MultiPolygon(geoms)
 
 
@@ -201,48 +222,53 @@ class PolygonCutter:
         # Delete lines that overlap
         print(len(self.line_geom))
         self.line_geom.reset_index(drop=True, inplace=True)
-        print('create intersects')
         # self join on geodataframe to get all polygon intersections
-
         intersects = gpd.sjoin(self.line_geom[['line_index', 'geometry']], self.line_geom[['line_index', 'geometry']], how="left", predicate="intersects")
-       
-        print('create diss 1')
         
         # dissolve intersections on right index indices using the minimum value
         intersects_diss = intersects.dissolve("line_index_right",aggfunc="min")
-        print('create diss 2')
         # dissolve again on left index using minimum
         intersects_diss = intersects_diss.reset_index().dissolve("line_index_left",aggfunc="min")
-        #self.line_geom = gpd.overlay(self.line_geom, self.line_geom, how='union')
-        print('change var name')
         self.line_geom = intersects_diss
         
         # Check for and exclude non line geometries
         self.line_geom['geom_type'] = self.line_geom.geometry.geom_type
-        print(self.line_geom.head())
-        print(list(set(self.line_geom.geom_type.values.tolist())))
-
         self.line_geom = self.line_geom[self.line_geom['geom_type'].isin(['LineString', 'MultiLineString'])]
+        self.line_geom.drop(columns=['geom_type'], inplace=True)
 
-        # Explode so ensure single geometries are maintained
-        self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda g: ToSingleLines(g))
-        self.line_geom = self.line_geom.explode('singled_lines')
+        # Explode to ensure single geometries are maintained
+        self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda x: shapely.ops.linemerge(x) if x.geom_type == 'MultiLineString' else x)
+        #self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda g: ToSingleLines(g))
+        # self.line_geom = self.line_geom.explode('singled_geom')
         self.line_geom = SwapGeometry(self.line_geom, 'geometry', 'singled_geom')
-        self.line_geom['geom_type'] = self.line_geom.geometry.geom_type
-        print(list(set(self.line_geom.geom_type.values.tolist())))
-        print(len(self.line_geom))
-        sys.exit()
+        
         # For testing purposes export lines here to be deleted later
-        self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
-        print('Finding intersects')
-        bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'cut_index')
+        #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
+        self.line_geom['seg_index'] = range(1, len(self.line_geom.index) + 1)
+        
+        print('Finding intersects') 
+        self.line_geom = reproject(self.line_geom, proj_crs)
+        self.bp = reproject(self.bp, proj_crs)
+
+        self.bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'seg_index')
+
         print('Cutting by intersects')
-        cut_geom = bp.swifter.apply(lambda x: CutPolygon(x, self.line_geom), axis=1)
+        print(self.bp.head())
+        cut_geom = self.bp.swifter.apply(lambda x: CutPolygon(x, self.line_geom, 'seg_index'), axis=1)
+
+        print(len(cut_geom))
         self.bp['geometry'] = cut_geom
         self.bp = self.bp.explode(index_parts=True)
         self.bp.drop(columns=['line_ints'], inplace=True)
+        
+        # Final split buildings crs check
+        self.line_geom = reproject(self.line_geom, proj_crs)
+        self.bp = reproject(self.bp, proj_crs)
+
+        print('cleaning')
         # Clean up results and remove slivers
         self.bp['split_area'] = self.bp.geometry.area
+        
 
         
     def __call__(self, *args, **kwds):
@@ -254,8 +280,8 @@ def main():
 
     load_dotenv(os.path.join(os.path.dirname(__file__), 'cutting.env'))
 
-    aoi_path = Path(os.getenv('AOI_EXTENT'))
-    aoi_lyr_nme = os.getenv('AOI_LYR_NME')
+    aoi_path = Path(os.getenv('AOI_TEST_AREA'))
+    aoi_lyr_nme = os.getenv('AOI_TEST_LYR_NME')
 
     parcel_path = Path(os.getenv('PARCEL_PTH'))
     bld_path = Path(os.getenv('BLD_PTH'))

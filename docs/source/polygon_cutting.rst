@@ -48,7 +48,7 @@ Method
 Step 1: Convert Parcels to lines
 ________________________________
 
-The first step is to convert the parcel fabric from polygons to lines. To do this the following method is used.
+The first step is to convert the parcel fabric from polygons to lines. This is done using the following methodology:
 
 1. Geometry is validated using the below function to repair any invalid geometries.
    
@@ -66,7 +66,7 @@ The first step is to convert the parcel fabric from polygons to lines. To do thi
 
    1. If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.
    2. .boundary return the boundary as a single line. Break this up so that each side is a single record per side.
-   3. The above steps create significant number of duplicated lines filter the duplicated geometries to prevent 
+   3. The above steps create significant number of duplicated lines filter the duplicated geometries to prevent duplication
     
    .. code-block:: python
       
