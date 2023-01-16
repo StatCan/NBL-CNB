@@ -129,13 +129,10 @@ class PolygonCutter:
                 
                 # explode to remove multipolygons
                 input_gdf = input_gdf.explode(index_parts=False)
-                
                 # convert linestrings into single linestrings 
                 input_gdf['single_lines'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
-                
                 # explode list output of prior function
                 output_gdf = input_gdf.explode('single_lines')
-
                 # switch geometry to the new geom and drop old geom
                 output_gdf = SwapGeometry(output_gdf, 'geometry', 'single_lines')
 

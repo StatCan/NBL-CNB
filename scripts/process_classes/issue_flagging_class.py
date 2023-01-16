@@ -8,6 +8,7 @@ from math import isnan
 import shapely.speedups
 import datetime
 import swifter
+import click
 shapely.speedups.enable()
 
 '''
@@ -118,7 +119,12 @@ ap_cases_gpkg = Path(os.getenv('AP_CASES_GPKG'))
 
 # -------------------------------------------------------
 
+@click.command()
+@click.argument()
+
+
 def main():
+
     issues_flagged = IssueFlagging(ap_path, bf_path, linking_data_path, ap_lyr_nme, bf_lyr_nme, linking_lyr_nme, aoi_mask,crs=proj_crs)
     issues_flagged.export_results(output_gpkg, out_lyr_name='ap_full')
     

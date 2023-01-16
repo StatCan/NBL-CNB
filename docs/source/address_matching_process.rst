@@ -12,14 +12,15 @@ NBL-CNB: Address Matching Process
    Confidence Calculation <address_matching/confidence>
    Appendix <appendix/appendix_doc>
 
-The primary goal of this process is to accuratly match address points to building footprints. In order to 
-achieve this three key datasets are required:
+The primary goal of this section was to develop an automated process that would accurately match as many address points 
+to building polygons as possible. In order to achieve this three key datasets are required:
 
 * Address Points
-* Building Footprints
+* Building Footprints/Polygons 
 * Parcel Fabric
 
-Of the three the parcel fabric
+Address Points and Building Footprints/Polygons are components being matched together while the Parcel Fabric acts as a
+scaffolding to guide the mathcing process. Without the parcel fabric the matching process would be significantly less accurate.
 
 The matching process is divided up into several distinct phases described in the pages below.
 Also seen below is a page on how to run the matching process on your own data called 'Run Process'.

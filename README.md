@@ -5,7 +5,7 @@ Canada with associated attributes.
 
 The following components are in development here:
 
-- Address point to Building Polygon matching
+- Address Point to Building Polygon matching
 - Building Polygon Cutting
 
 

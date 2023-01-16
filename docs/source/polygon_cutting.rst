@@ -62,7 +62,7 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
                input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
          return input_geometry
 
-2. The geometry is then checked for type and converted into lines if necessary using the following guidlines:
+2. The geometry is then checked for type and converted into lines if necessary using the following guidelines:
 
    1. If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.
    2. .boundary return the boundary as a single line. Break this up so that each side is a single record per side.
@@ -71,17 +71,30 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
    .. code-block:: python
       
       def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
-         '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''
-         input_gdf.reset_index(inplace=True)
-         if input_gdf.geometry[0].geom_type in ['LineString', 'MultiLineString']:
-               # If the geometry is already in line type then just strip attributes 
-               return input_gdf
-         
-         # If inputs are polygons then convert them to lines and strip attributes
-         if input_gdf.geometry[0].geom_type in ['Polygon', 'MultiPolygon']:
-               
-               input_gdf['geometry'] = input_gdf['geometry'].apply(lambda p: p.boundary)
-               return input_gdf.explode(index_parts=True)
+            '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''                         
+
+            #input_gdf.reset_index(inplace=True)
+            if input_gdf.geometry[0].geom_type in ['LineString', 'MultiLineString']:
+                # If the geometry is already in line type
+                return input_gdf
+            
+            # If inputs are polygons then convert them to lines
+            if input_gdf.geometry[0].geom_type in ['Polygon', 'MultiPolygon']:
+                
+                # explode to remove multipolygons
+                input_gdf = input_gdf.explode(index_parts=False)
+                # convert linestrings into single linestrings 
+                input_gdf['single_lines'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
+                # explode list output of prior function
+                output_gdf = input_gdf.explode('single_lines')
+                # switch geometry to the new geom and drop old geom
+                output_gdf = SwapGeometry(output_gdf, 'geometry', 'single_lines')
+
+                return output_gdf
+
+            # If the geometry is a point or mutipoint raise an error
+            if input_gdf.geometry[0].geom_type in ['Point', 'MultiPoint']:
+                raise IOError('Shape is not a Polygon or Line')
    
 Step 2: Polygon Splitting
 _________________________
@@ -171,6 +184,7 @@ The cleaning process looks as follows:
       bp['split_area'] = bp.area
 
 2. A spatial join is then created between the polygons and the parcels and any polygons that do not intersect a parcel are removed.
+   This removes polygons that overhang into roadways, easements, etc.
    
    .. code-block:: python
 
