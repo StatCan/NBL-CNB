@@ -158,12 +158,16 @@ class PolygonCutter:
             line_geom = line_geom[[cut_field, 'geometry']]
             input_geom = input_geom[['geometry', 'line_ints']]
             cut_indexes = input_geom['line_ints']
+            print('test')
+            print(cut_indexes)
             
             if len(cut_indexes) == 0:
                 return input_geom['geometry']
             if len(cut_indexes) >= 1:
                 # retrieve the records related to the cut indexes
                 cutters = line_geom[line_geom[cut_field].isin(cut_indexes)]
+                print(cutters.geometry)
+                sys.exit()
                 # For every cut index split the polygon by it. Returns as a list of geometry collections
                 geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
                 # Extract all geometry from the geometry collections
@@ -219,25 +223,44 @@ class PolygonCutter:
         # Delete lines that overlap
         print(len(self.line_geom))
         self.line_geom.reset_index(drop=True, inplace=True)
-        # self join on geodataframe to get all polygon intersections
-        intersects = gpd.sjoin(self.line_geom[['line_index', 'geometry']], self.line_geom[['line_index', 'geometry']], how="left", predicate="intersects")
-        
-        # dissolve intersections on right index indices using the minimum value
-        intersects_diss = intersects.dissolve("line_index_right",aggfunc="min")
-        # dissolve again on left index using minimum
-        intersects_diss = intersects_diss.reset_index().dissolve("line_index_left",aggfunc="min")
-        self.line_geom = intersects_diss
-        
+
+        # Calc centroid for duplicate removal (line don't work for this method)
+        self.line_geom['centroid'] = self.line_geom.geometry.centroid
+        # convert to wkb because drop duplicates doesn't work on shapely
+        self.line_geom['centroid'] = self.line_geom['centroid'].apply(lambda geom: geom.wkb)
+
+        self.line_geom = self.line_geom.drop_duplicates(['centroid']) # Drop the cuplicate records
+
+        # convert back to shapely geometry (only necessary when using that geometry)
+        #self.line_geom['centroid'] = self.line_geom['centroid'].apply(lambda geom: shapely.wkb.loads(geom))
+
+        # Drop non essential centroid field
+        self.line_geom.drop(columns=['centroid'], inplace=True)
+        # self.line_geom = reproject(self.line_geom, 26914)
+        # self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
         # Check for and exclude non line geometries
+
         self.line_geom['geom_type'] = self.line_geom.geometry.geom_type
         self.line_geom = self.line_geom[self.line_geom['geom_type'].isin(['LineString', 'MultiLineString'])]
         self.line_geom.drop(columns=['geom_type'], inplace=True)
 
-        # Explode to ensure single geometries are maintained
+        # Remove multilinestrings by merging lines if possible
         self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda x: shapely.ops.linemerge(x) if x.geom_type == 'MultiLineString' else x)
+             
+
         #self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda g: ToSingleLines(g))
         # self.line_geom = self.line_geom.explode('singled_geom')
         self.line_geom = SwapGeometry(self.line_geom, 'geometry', 'singled_geom')
+        
+        # if any multilinestrings remain explode them as split cannot take multi geometry
+        multis = self.line_geom[self.line_geom.geometry.geom_type == 'MultiLineString']
+        
+        # if there are still multipolygons then use the following to remove them
+        if len(multis) > 0:
+            self.line_geom = self.line_geom[self.line_geom.geometry.geom_type != 'MultiLineString']
+            # explode and add the now single linestrings back into the data
+            multis = multis.explode(index_parts=False)
+            self.line_geom = self.line_geom.append(multis)
         
         # For testing purposes export lines here to be deleted later
         #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
@@ -250,8 +273,10 @@ class PolygonCutter:
         self.bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'seg_index')
 
         print('Cutting by intersects')
-        print(self.bp.head())
-        cut_geom = self.bp.swifter.apply(lambda x: CutPolygon(x, self.line_geom, 'seg_index'), axis=1)
+        #print(self.bp.head())
+        #print(self.line_geom.head())
+
+        cut_geom = self.bp.swifter.apply(lambda x: CutPolygon(x, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
 
         print(len(cut_geom))
         self.bp['geometry'] = cut_geom
