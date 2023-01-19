@@ -181,14 +181,14 @@ class PolygonCutter:
                 
                 # MultiLineStrings are more complicated and need to be handled differently
                 if cut_single.geom_type == 'MultiLineString':
+                    print(cutters)
+                    sys.exit()
 
-                    # For every cut index split the polygon by it. Returns as a list of geometry collections
-                    geoms = [shapely.ops.split(in_geom, c) for c in cutters['geometry'].values.tolist()]
-                    
-                    # Extract all geometry from the geometry collections
-                    geoms = [p for gc in geoms for p in gc.geoms]
-                    # # Take that list and return it as a multipolygon. 
-                    return MultiPolygon(geoms)
+                else:
+                    print(cutters)
+                    print(in_geom)
+                    sys.exit()
+
 
         # Load in the inputs to geodataframes
         self.bp = bld_poly
@@ -221,6 +221,7 @@ class PolygonCutter:
         # Create a new index for the lines
         self.line_geom['line_index'] = range(1, len(self.line_geom.index) + 1)
         
+        # Commented out as this leads to complex multiline situations. Keeping these lines in prevents that problem
         # Drop lines that do not intersect a building
         # lines_joined = gpd.sjoin(self.line_geom, self.bp[['bp_index', 'geometry']])
         # self.line_geom = self.line_geom[self.line_geom['line_index'].isin(list(set(lines_joined[~lines_joined['bp_index'].isna()]['line_index'].tolist())))]
