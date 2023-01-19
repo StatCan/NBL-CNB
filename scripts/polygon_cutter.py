@@ -167,13 +167,19 @@ class PolygonCutter:
             if len(cut_indexes) >= 1:
                 # retrieve the records related to the cut indexes
                 cutters = line_geom[line_geom[cut_field].isin(cut_indexes)]
-                # convert to a single lines
+                
+                # convert to a single LineString or MultiLineString
                 cut_single = [shapely.ops.linemerge(cutters.geometry.values.tolist())]
                 
+                # Convert the polygon into its boundary and append it to the cut lines list
                 cut_single.append(in_geom.boundary)
+                # Create a union between all the lines
                 cut_single = shapely.ops.unary_union(cut_single)
+                # merge all the lines into a single LineString or MultiLineString
                 cut_single = shapely.ops.linemerge(cut_single)
+                # Convert the linemerge result back into a polygon
                 polygons = shapely.ops.polygonize(cut_single)
+                # Ensure result is a MultiPolygon and return it
                 return MultiPolygon(polygons)
 
 
