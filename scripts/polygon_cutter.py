@@ -168,26 +168,13 @@ class PolygonCutter:
                 # retrieve the records related to the cut indexes
                 cutters = line_geom[line_geom[cut_field].isin(cut_indexes)]
                 # convert to a single lines
-                cut_single = shapely.ops.linemerge(cutters.geometry.values.tolist())
+                cut_single = [shapely.ops.linemerge(cutters.geometry.values.tolist())]
                 
-                # LineStrings can be cut in one go
-                if cut_single.geom_type == 'LineString':
-                    # For every cut index split the polygon by it. Returns as a list of geometry collections
-                    geoms = [shapely.ops.split(in_geom, cut_single) ]
-                    # Extract all geometry from the geometry collections
-                    geoms = [p for gc in geoms for p in gc.geoms]
-                    # Take that list and return it as a multipolygon.
-                    return MultiPolygon(geoms)
-                
-                # MultiLineStrings are more complicated and need to be handled differently
-                if cut_single.geom_type == 'MultiLineString':
-                    print(cutters)
-                    sys.exit()
-
-                else:
-                    print(cutters)
-                    print(in_geom)
-                    sys.exit()
+                cut_single.append(in_geom.boundary)
+                cut_single = shapely.ops.unary_union(cut_single)
+                cut_single = shapely.ops.linemerge(cut_single)
+                polygons = shapely.ops.polygonize(cut_single)
+                return MultiPolygon(polygons)
 
 
         # Load in the inputs to geodataframes
@@ -286,9 +273,9 @@ class PolygonCutter:
         #print(self.bp[['line_ints', 'geometry']].head())
         #print(self.line_geom.head())
         
+        # Cut the polygons
         cut_geom = self.bp[['line_ints', 'geometry']].apply(lambda x: CutPolygon(x.line_ints, x.geometry, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
 
-        print(len(cut_geom))
         self.bp['geometry'] = cut_geom
         self.bp = self.bp.explode(index_parts=True)
         self.bp.drop(columns=['line_ints'], inplace=True)
