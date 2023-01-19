@@ -18,6 +18,8 @@ Inital flow:
 - then for each line in the linkage split the polygon along the lines
 - create methods for exporting splits, slivers, other geometry subsets
 
+https://gis.stackexchange.com/questions/311536/split-polygon-by-multilinestring-shapely
+
 '''
 
 
@@ -151,35 +153,42 @@ class PolygonCutter:
             return input_geom
 
 
-        def CutPolygon(input_geom, line_geom, cut_field) -> MultiPolygon:
-            '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
-            Run the FindIntersects step before calling this function'''
+        def CutPolygon(intersect_indexes: tuple, in_geom: Polygon, line_geom:gpd.GeoDataFrame, cut_field:str) -> MultiPolygon:
+            '''Cuts the input polygon by the lines linked to it during the FindIntersects Step Run the FindIntersects step before calling this function'''
             # Select only key vars and set the cut indexes
             line_geom = line_geom[[cut_field, 'geometry']]
-            input_geom = input_geom[['geometry', 'line_ints']]
-            cut_indexes = input_geom['line_ints']
-            print('test')
-            print(cut_indexes)
-            
+            cut_indexes = intersect_indexes
+
+            # Polygons with no intersects don't need to be split
             if len(cut_indexes) == 0:
-                return input_geom['geometry']
+                return in_geom
+            
+            # Polygons with intersects need to be split
             if len(cut_indexes) >= 1:
                 # retrieve the records related to the cut indexes
                 cutters = line_geom[line_geom[cut_field].isin(cut_indexes)]
-                print(cutters.geometry)
-                sys.exit()
-                # For every cut index split the polygon by it. Returns as a list of geometry collections
-                geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
-                # Extract all geometry from the geometry collections
-                geoms = [p for gc in geoms for p in gc.geoms]
-                # Take that list and convert it to a multipolygon. Return that 
-                if len(geoms) < 1:
-                    print('multigeom issue')
-                    print(geoms)
-                    print(MultiPolygon(geoms))
-                    # sys.exit()
-                return MultiPolygon(geoms)
+                # convert to a single lines
+                cut_single = shapely.ops.linemerge(cutters.geometry.values.tolist())
+                
+                # LineStrings can be cut in one go
+                if cut_single.geom_type == 'LineString':
+                    # For every cut index split the polygon by it. Returns as a list of geometry collections
+                    geoms = [shapely.ops.split(in_geom, cut_single) ]
+                    # Extract all geometry from the geometry collections
+                    geoms = [p for gc in geoms for p in gc.geoms]
+                    # Take that list and return it as a multipolygon.
+                    return MultiPolygon(geoms)
+                
+                # MultiLineStrings are more complicated and need to be handled differently
+                if cut_single.geom_type == 'MultiLineString':
 
+                    # For every cut index split the polygon by it. Returns as a list of geometry collections
+                    geoms = [shapely.ops.split(in_geom, c) for c in cutters['geometry'].values.tolist()]
+                    
+                    # Extract all geometry from the geometry collections
+                    geoms = [p for gc in geoms for p in gc.geoms]
+                    # # Take that list and return it as a multipolygon. 
+                    return MultiPolygon(geoms)
 
         # Load in the inputs to geodataframes
         self.bp = bld_poly
@@ -213,8 +222,8 @@ class PolygonCutter:
         self.line_geom['line_index'] = range(1, len(self.line_geom.index) + 1)
         
         # Drop lines that do not intersect a building
-        lines_joined = gpd.sjoin(self.line_geom, self.bp[['bp_index', 'geometry']])
-        self.line_geom = self.line_geom[self.line_geom['line_index'].isin(list(set(lines_joined[~lines_joined['bp_index'].isna()]['line_index'].tolist())))]
+        # lines_joined = gpd.sjoin(self.line_geom, self.bp[['bp_index', 'geometry']])
+        # self.line_geom = self.line_geom[self.line_geom['line_index'].isin(list(set(lines_joined[~lines_joined['bp_index'].isna()]['line_index'].tolist())))]
         
         # Project data for overlap checks
         self.line_geom = reproject(self.line_geom, proj_crs)
@@ -273,10 +282,10 @@ class PolygonCutter:
         self.bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'seg_index')
 
         print('Cutting by intersects')
-        #print(self.bp.head())
+        #print(self.bp[['line_ints', 'geometry']].head())
         #print(self.line_geom.head())
-
-        cut_geom = self.bp.swifter.apply(lambda x: CutPolygon(x, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
+        
+        cut_geom = self.bp[['line_ints', 'geometry']].apply(lambda x: CutPolygon(x.line_ints, x.geometry, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
 
         print(len(cut_geom))
         self.bp['geometry'] = cut_geom
