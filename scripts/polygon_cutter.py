@@ -18,8 +18,6 @@ Inital flow:
 - then for each line in the linkage split the polygon along the lines
 - create methods for exporting splits, slivers, other geometry subsets
 
-https://gis.stackexchange.com/questions/311536/split-polygon-by-multilinestring-shapely
-
 '''
 
 
@@ -31,7 +29,7 @@ class PolygonCutter:
     Output geometry is then cleaned to keep only valid splits
     '''
 
-    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326, proj_crs=32614) -> None:
+    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326, proj_crs=32614, sliver_max_area=20) -> None:
         
         def reproject(ingdf: gpd.GeoDataFrame, output_crs: int) -> gpd.GeoDataFrame:
             ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
@@ -42,7 +40,7 @@ class PolygonCutter:
             return ingdf
 
         
-        def ValidateGeometry(input_geometry) -> gpd.GeoSeries:
+        def ValidateGeometry(input_geometry: shapely.geometry) -> gpd.GeoSeries:
             '''Checks if input geometry is valid and if invalid attempts to make it valid accepts Geodataframes and Geoseries'''
             if type(input_geometry) == gpd.GeoSeries:
                 input_geometry = input_geometry.apply(lambda geom: make_valid(geom))
@@ -102,6 +100,7 @@ class PolygonCutter:
                     print(bounds)
                     sys.exit()
 
+
         def SwapGeometry(ingdf: gpd.GeoDataFrame, orig_geom: str, swap_geom:str) -> gpd.GeoDataFrame:
             '''Utility function swap from one geometry field to another and drop the original geometries and renames the new geometry column to 'geometry'
             for the purposes of standardization'''
@@ -132,7 +131,7 @@ class PolygonCutter:
                 # explode to remove multipolygons
                 input_gdf = input_gdf.explode(index_parts=False)
                 # convert linestrings into single linestrings 
-                input_gdf['single_lines'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
+                input_gdf['single_lines'] = input_gdf['geometry'].swifter.apply(lambda p: ToSingleLines(p))
                 # explode list output of prior function
                 output_gdf = input_gdf.explode('single_lines')
                 # switch geometry to the new geom and drop old geom
@@ -155,6 +154,7 @@ class PolygonCutter:
 
         def CutPolygon(intersect_indexes: tuple, in_geom: Polygon, line_geom:gpd.GeoDataFrame, cut_field:str) -> MultiPolygon:
             '''Cuts the input polygon by the lines linked to it during the FindIntersects Step Run the FindIntersects step before calling this function'''
+           
             # Select only key vars and set the cut indexes
             line_geom = line_geom[[cut_field, 'geometry']]
             cut_indexes = intersect_indexes
@@ -224,7 +224,6 @@ class PolygonCutter:
         self.bp = reproject(self.bp, proj_crs)
 
         # Delete lines that overlap
-        print(len(self.line_geom))
         self.line_geom.reset_index(drop=True, inplace=True)
 
         # Calc centroid for duplicate removal (line don't work for this method)
@@ -250,9 +249,6 @@ class PolygonCutter:
         # Remove multilinestrings by merging lines if possible
         self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda x: shapely.ops.linemerge(x) if x.geom_type == 'MultiLineString' else x)
              
-
-        #self.line_geom['singled_geom'] = self.line_geom['geometry'].apply(lambda g: ToSingleLines(g))
-        # self.line_geom = self.line_geom.explode('singled_geom')
         self.line_geom = SwapGeometry(self.line_geom, 'geometry', 'singled_geom')
         
         # if any multilinestrings remain explode them as split cannot take multi geometry
@@ -276,11 +272,9 @@ class PolygonCutter:
         self.bp = FindIntersects(self.bp, self.line_geom, 'bp_index', 'seg_index')
 
         print('Cutting by intersects')
-        #print(self.bp[['line_ints', 'geometry']].head())
-        #print(self.line_geom.head())
         
         # Cut the polygons
-        cut_geom = self.bp[['line_ints', 'geometry']].apply(lambda x: CutPolygon(x.line_ints, x.geometry, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
+        cut_geom = self.bp[['line_ints', 'geometry']].swifter.apply(lambda x: CutPolygon(x.line_ints, x.geometry, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
 
         self.bp['geometry'] = cut_geom
         self.bp = self.bp.explode(index_parts=True)
@@ -290,11 +284,18 @@ class PolygonCutter:
         self.line_geom = reproject(self.line_geom, proj_crs)
         self.bp = reproject(self.bp, proj_crs)
 
-        print('cleaning')
-        # Clean up results and remove slivers
-        self.bp['split_area'] = self.bp.geometry.area
-        
+        # Clean up results and remove slivers polygons with an area < 20m2
+        self.bp['split_area'] = round(self.bp.geometry.area, 2)
+        self.bp = self.bp[self.bp.split_area >= sliver_max_area]
 
+        # Drop temp fields
+        self.bp.drop(columns=['split_area', 'bp_index'], inplace=True)
+        self.line_geom.drop(columns=['cut_index', 'line_index', 'seg_index'], inplace=True)
+        
+        print(self.bp.head())
+        print(self.line_geom.head())
+        sys.exit()
+          
         
     def __call__(self, *args, **kwds):
         pass
@@ -328,7 +329,7 @@ def main():
     print('cutting buildings')
     clipped_polys = PolygonCutter(bld_poly=bld_gdf, cut_geom=cut_gdf)
     clipped_polys.bp.to_file(out_gpkg, layer=out_bld_lyr_nme)
-    clipped_polys.line_geom.to_file(out_gpkg, layer='poly_lines')
+    clipped_polys.line_geom.to_file(out_gpkg, layer=out_pcl_lyr_nme)
 
 
 if __name__ == '__main__':
