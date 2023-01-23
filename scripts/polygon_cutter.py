@@ -24,12 +24,25 @@ Inital flow:
 class PolygonCutter:
     
     '''
-    Splits an input polygon where it intersects the input cut geometry.
-    Cut geometry must be polygon or lines no points accepted.
+    Splits an input polygon where it intersects the input cut geometry. Cut geometry must be polygon or lines no points accepted. 
     Output geometry is then cleaned to keep only valid splits
+
+    Inputs:
+
+    bld_poly: building polygons to be split
+    
+    cut_geom: the geometry (lines or polygons) that will be used to split the bld_poly data
+    
+    point_data: path to point data that can be used to filter the cut_geom via intersection
+
+    crs: geographic crs for the data
+
+    proj_crs: projected crs will be the crs of the output layers
+
+    sliver_max_area: the maximum area of a split polygon that will be defined as a sliver and not included in the output  
     '''
 
-    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, crs=4326, proj_crs=32614, sliver_max_area=20) -> None:
+    def __init__(self, bld_poly: gpd.GeoDataFrame, cut_geom: gpd.GeoDataFrame, point_data=None, crs=4326, proj_crs=32614, sliver_max_area=20) -> None:
         
         def reproject(ingdf: gpd.GeoDataFrame, output_crs: int) -> gpd.GeoDataFrame:
             ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
@@ -202,7 +215,15 @@ class PolygonCutter:
         cut_joined = gpd.sjoin(cut_geom, self.bp[['bp_index', 'geometry']])
         cut_joined = list(set(cut_joined[~cut_joined['bp_index'].isna()]['cut_index'].tolist()))
         cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined)]
-               
+        
+        # if points are available filter out polygons that do not intersect with a point
+        if type(point_data) != None:
+            point_data.to_crs(crs=crs, inplace=True)
+            point_data['ap_index'] = range(1, len(point_data.index) + 1)
+            cut_joined_ap = gpd.sjoin(cut_geom, point_data[['ap_index', 'geometry']])
+            cut_joined_ap = list(set(cut_joined_ap[~cut_joined['ap_index'].isna()]['cut_index'].tolist()))
+            cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined_ap)]
+
         # convert the cut geometry to lines if necessary
         print('Converting line geometry')
         self.line_geom = check_geom(cut_geom)
@@ -215,9 +236,9 @@ class PolygonCutter:
         self.line_geom['line_index'] = range(1, len(self.line_geom.index) + 1)
         
         # Commented out as this leads to complex multiline situations. Keeping these lines in prevents that problem
-        # Drop lines that do not intersect a building
-        # lines_joined = gpd.sjoin(self.line_geom, self.bp[['bp_index', 'geometry']])
-        # self.line_geom = self.line_geom[self.line_geom['line_index'].isin(list(set(lines_joined[~lines_joined['bp_index'].isna()]['line_index'].tolist())))]
+        #Drop lines that do not intersect a building
+        lines_joined = gpd.sjoin(self.line_geom, self.bp[['bp_index', 'geometry']])
+        self.line_geom = self.line_geom[self.line_geom['line_index'].isin(list(set(lines_joined[~lines_joined['bp_index'].isna()]['line_index'].tolist())))]
         
         # Project data for overlap checks
         self.line_geom = reproject(self.line_geom, proj_crs)
@@ -286,6 +307,8 @@ class PolygonCutter:
 
         # Clean up results and remove slivers polygons with an area < 20m2
         self.bp['split_area'] = round(self.bp.geometry.area, 2)
+
+        self.slivers = self.bp[self.bp.split_area <= sliver_max_area] # retain slivers for analysis purposes if needed
         self.bp = self.bp[self.bp.split_area >= sliver_max_area]
 
         # Drop temp fields
@@ -312,6 +335,7 @@ def main():
     parcel_path = Path(os.getenv('PARCEL_PTH'))
     bld_path = Path(os.getenv('BLD_PTH'))
     bld_lyr_nme = os.getenv('BLD_LYR_NME')
+    ap_data = os.getenv('AP_DATA')
     
     out_gpkg = Path(os.getenv('OUT_GPKG'))
     out_bld_lyr_nme = os.getenv('OUT_BLD_LYR_NME')
@@ -326,8 +350,10 @@ def main():
     cut_gdf = gpd.read_file(parcel_path, mask=aoi_mask)
     cut_gdf = cut_gdf[cut_gdf.geometry != None]
 
+    addresses = gpd.read_file(ap_data)
+
     print('cutting buildings')
-    clipped_polys = PolygonCutter(bld_poly=bld_gdf, cut_geom=cut_gdf)
+    clipped_polys = PolygonCutter(bld_poly=bld_gdf, cut_geom=cut_gdf, point_data=addresses)
     clipped_polys.bp.to_file(out_gpkg, layer=out_bld_lyr_nme)
     clipped_polys.line_geom.to_file(out_gpkg, layer=out_pcl_lyr_nme)
 
