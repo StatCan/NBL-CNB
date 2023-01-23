@@ -221,7 +221,7 @@ class PolygonCutter:
             point_data.to_crs(crs=crs, inplace=True)
             point_data['ap_index'] = range(1, len(point_data.index) + 1)
             cut_joined_ap = gpd.sjoin(cut_geom, point_data[['ap_index', 'geometry']])
-            cut_joined_ap = list(set(cut_joined_ap[~cut_joined['ap_index'].isna()]['cut_index'].tolist()))
+            cut_joined_ap = list(set(cut_joined_ap[~cut_joined_ap['ap_index'].isna()]['cut_index'].tolist()))
             cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined_ap)]
 
         # convert the cut geometry to lines if necessary
@@ -314,10 +314,6 @@ class PolygonCutter:
         # Drop temp fields
         self.bp.drop(columns=['split_area', 'bp_index'], inplace=True)
         self.line_geom.drop(columns=['cut_index', 'line_index', 'seg_index'], inplace=True)
-        
-        print(self.bp.head())
-        print(self.line_geom.head())
-        sys.exit()
           
         
     def __call__(self, *args, **kwds):
