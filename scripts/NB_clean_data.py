@@ -12,6 +12,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from math import pi
 from shapely.geometry import MultiLineString, Polygon, Point
+from shapely.validation import make_valid
+from polygon_cutter import PolygonCutter
 
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 
@@ -351,6 +353,13 @@ def address_type_abbreviator(street_type:str, street_types_dataframe: pd.DataFra
         stype_ab = street_types_dataframe.Abbreviation[street_types_dataframe['Street type'] == street_type].tolist()[0]
         return stype_ab
 
+def ValidateGeometry(input_geometry: shapely.geometry) -> gpd.GeoSeries:
+            '''Checks if input geometry is valid and if invalid attempts to make it valid accepts Geodataframes and Geoseries'''
+            if type(input_geometry) == gpd.GeoSeries:
+                input_geometry = input_geometry.apply(lambda geom: make_valid(geom))
+            if type(input_geometry) == gpd.GeoDataFrame:
+                input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
+            return input_geometry
 
 # ------------------------------------------------------------------------------------------------
 # Inputs
@@ -481,23 +490,12 @@ footprint = gpd.read_file(footprint_lyr, layer=footprint_lyr_name ,mask=aoi_gdf)
 
 footprint = reproject(footprint, proj_crs)
 
-footprint['geometry'] = footprint['geometry'].buffer(0)
+footprint['geometry'] = ValidateGeometry(footprint['geometry'])
 
+# Cut polygons by parcels
+cutter = PolygonCutter(footprint, linking_data, proj_crs, proj_crs)
+footprint = cutter.bp
 print('Cleaning and prepping footprint data')
-# footprint = explode(footprint) # Remove multipart polygons convert to single polygons
-
-# convert linking data to lines
-line_geom = linking_data['geometry'].apply(lambda p: p.boundary)
-# convert multilinestrings to linestrings
-line_geom = line_geom.explode(index_parts=True)
-
-# convert all the lines into a single line and then cut the buildings from there
-line_geom_list = line_geom.tolist()
-merged_lines = MultiLineString(line_geom_list)
-merged_lines = shapely.ops.linemerge(merged_lines)
-merged_lines = shapely.ops.unary_union(merged_lines)
-
-# remove all buildings parts that are smaller than 50m2 
 
 footprint['bf_area'] = round(footprint['geometry'].area, 2)
 
@@ -509,7 +507,7 @@ footprint = reproject(footprint, proj_crs)
 footprint['centroid_geo'] = footprint['geometry'].swifter.apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
 footprint = gpd.sjoin(footprint, linking_data[['link_field', 'geometry']], how='left', op='within')
-# footprint.drop(columns=['AREA'], inplace=True)
+
 grouped_bf = footprint.groupby('bf_index', dropna=True)['bf_index'].count()
 grouped_bf = grouped_bf[grouped_bf > 1].index.tolist()
 footprint_plural_sj = footprint[footprint['bf_index'].isin(grouped_bf)]
