@@ -218,7 +218,7 @@ class PolygonCutter:
         cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined)]
         
         # if points are available filter out polygons that do not intersect with a point
-        if type(point_data) != gpd.GeoDataFrame:
+        if type(point_data) == gpd.GeoDataFrame:
 
             point_data.to_crs(crs=crs, inplace=True)
             point_data['ap_index'] = range(1, len(point_data.index) + 1)
