@@ -45,8 +45,8 @@ The parcel fabric is used as a guide and cut any buildings that cross the bounda
 Method
 ------
 
-Step 1: Convert Parcels to lines
-________________________________
+Step 1: Cut Geometry Data Preperation
+_____________________________________
 
 The first step is to convert the parcel fabric from polygons to lines. This is done using the following methodology:
 
@@ -62,7 +62,30 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
                input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
          return input_geometry
 
-2. The geometry is then checked for type and converted into lines if necessary using the following guidelines:
+2. To maintain efficiency all non essential geometry is dropped from the cut_geom at this stage. This is done using two filters the first of which 
+   filters out all cut geometry that does not intersect any of the building polygons.
+
+   .. code-block:: python 
+      
+      # Drop Non-Essential Cut Geometry
+        cut_joined = gpd.sjoin(cut_geom, self.bp[['bp_index', 'geometry']])
+        cut_joined = list(set(cut_joined[~cut_joined['bp_index'].isna()]['cut_index'].tolist()))
+        cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined)]
+   
+   The second filter is only run if the optional point_data input is used and removes all cut geometry that does not intersect a point.
+   
+   .. code-block:: python
+      
+      if type(point_data) != None:
+
+            point_data.to_crs(crs=crs, inplace=True)
+            point_data['ap_index'] = range(1, len(point_data.index) + 1)
+            cut_joined_ap = gpd.sjoin(cut_geom, point_data[['ap_index', 'geometry']])
+            cut_joined_ap = list(set(cut_joined_ap[~cut_joined_ap['ap_index'].isna()]['cut_index'].tolist()))
+            cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined_ap)]
+
+
+3. The geometry is then checked for type and converted into lines if necessary using the following process:
 
    1. If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.
    2. .boundary return the boundary as a single line. Break this up so that each side is a single record per side.
@@ -70,6 +93,23 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
     
    .. code-block:: python
       
+      def ToSingleLines(geom: shapely.geometry) -> MultiLineString:
+            '''Converts polygons into single lines'''
+                
+            def MultiLineDevolver(m_line_string: MultiLineString) -> list:
+                '''Converts a multilinestring into a list of its component lines'''
+                m_line_string = [l for l in m_line_string.geoms]
+                m_line_string = [list(map(LineString, zip(l.coords[:-1], l.coords[1:]))) for l in m_line_string]
+                m_line_string = [ls for l in m_line_string for ls in l]
+                return m_line_string
+
+            # temp measure to remove GeometryCollections and None cases
+            if geom.geom_type not in ['MultiPolygon', 'Polygon', 'LineString', 'MultiLineString', 'Point', 'MultiPoint']:
+                # Temp block in place until a solution is found for GeometryCollections
+                print(geom)
+                sys.exit()
+                return None
+
       def check_geom(input_gdf: gpd.GeoDataFrame, geometry_column= 'geometry') -> gpd.GeoDataFrame:
             '''Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error'''                         
 
@@ -84,7 +124,7 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
                 # explode to remove multipolygons
                 input_gdf = input_gdf.explode(index_parts=False)
                 # convert linestrings into single linestrings 
-                input_gdf['single_lines'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
+                input_gdf['single_lines'] = input_gdf['geometry'].swifter.apply(lambda p: ToSingleLines(p))
                 # explode list output of prior function
                 output_gdf = input_gdf.explode('single_lines')
                 # switch geometry to the new geom and drop old geom
@@ -95,6 +135,8 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
             # If the geometry is a point or mutipoint raise an error
             if input_gdf.geometry[0].geom_type in ['Point', 'MultiPoint']:
                 raise IOError('Shape is not a Polygon or Line')
+
+3.
    
 Step 2: Polygon Splitting
 _________________________
@@ -116,26 +158,36 @@ To split the polygons the following process is followed:
    
    .. code-block:: python
 
-       def CutPolygon(input_geom, line_geom):
-            '''Cuts the input polygon by the lines linked to it during the FindIntersects Step
-            Run the FindIntersects step before calling this function'''
-            cut_indexes = input_geom['line_ints']
-            if len(cut_indexes) == 0:
-                return input_geom['geometry']
-            if len(cut_indexes) >= 1:
-               # retrieve the records related to the cut indexes
-                  cutters = line_geom[line_geom['cut_index'].isin(cut_indexes)]
-                  # For every cut index split the polygon by it. Returns as a list of geometry collections
-                  geoms = [shapely.ops.split(input_geom['geometry'], c) for c in cutters['geometry'].values.tolist()]
-                  # Extract all geometry from the geometry collections
+       def CutPolygon(intersect_indexes: tuple, in_geom: Polygon, line_geom:gpd.GeoDataFrame, cut_field:str) -> MultiPolygon:
+            '''Cuts the input polygon by the lines linked to it during the FindIntersects Step Run the FindIntersects step before calling this function'''
+           
+            # Select only key vars and set the cut indexes
+            line_geom = line_geom[[cut_field, 'geometry']]
+            cut_indexes = intersect_indexes
 
-                  geoms = [p for gc in geoms for p in gc.geoms]
-                  # Take that list and convert it to a multipolygon. Return that 
-                  if len(geoms) < 1:
-                     print(geoms)
-                     print(MultiPolygon(geoms))
-                     sys.exit()
-                  return MultiPolygon(geoms)
+            # Polygons with no intersects don't need to be split
+            if len(cut_indexes) == 0:
+                return in_geom
+            
+            # Polygons with intersects need to be split
+            if len(cut_indexes) >= 1:
+                # retrieve the records related to the cut indexes
+                cutters = line_geom[line_geom[cut_field].isin(cut_indexes)]
+                
+                # convert to a single LineString or MultiLineString
+                cut_single = [shapely.ops.linemerge(cutters.geometry.values.tolist())]
+                
+                # Convert the polygon into its boundary and append it to the cut lines list
+                cut_single.append(in_geom.boundary)
+                # Create a union between all the lines
+                cut_single = shapely.ops.unary_union(cut_single)
+                # merge all the lines into a single LineString or MultiLineString
+                cut_single = shapely.ops.linemerge(cut_single)
+                # Convert the linemerge result back into a polygon
+                polygons = shapely.ops.polygonize(cut_single)
+                # Ensure result is a MultiPolygon and return it
+                return MultiPolygon(polygons)
+
 
        bp[cut_geom] = bp[['geometry', 'line_ints']].apply(lambda x: CutPolygon(x, self.line_geom[['cut_index', 'geometry']]), axis=1)
 
