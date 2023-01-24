@@ -195,13 +195,14 @@ class PolygonCutter:
                 # Ensure result is a MultiPolygon and return it
                 return MultiPolygon(polygons)
 
-
+ 
         # Load in the inputs to geodataframes
         self.bp = bld_poly
         cut_geom = cut_geom
         # Ensure projection consistency
         self.bp.to_crs(crs=crs, inplace=True)
         cut_geom.to_crs(crs=crs, inplace=True)
+
 
         # Ensure all valid geometry
         self.bp['geometry'] = ValidateGeometry(self.bp)
@@ -218,6 +219,7 @@ class PolygonCutter:
         
         # if points are available filter out polygons that do not intersect with a point
         if type(point_data) != None:
+
             point_data.to_crs(crs=crs, inplace=True)
             point_data['ap_index'] = range(1, len(point_data.index) + 1)
             cut_joined_ap = gpd.sjoin(cut_geom, point_data[['ap_index', 'geometry']])
@@ -252,7 +254,7 @@ class PolygonCutter:
         # convert to wkb because drop duplicates doesn't work on shapely
         self.line_geom['centroid'] = self.line_geom['centroid'].apply(lambda geom: geom.wkb)
 
-        self.line_geom = self.line_geom.drop_duplicates(['centroid']) # Drop the cuplicate records
+        self.line_geom = self.line_geom.drop_duplicates(['centroid']) # Drop the duplicate records
 
         # convert back to shapely geometry (only necessary when using that geometry)
         #self.line_geom['centroid'] = self.line_geom['centroid'].apply(lambda geom: shapely.wkb.loads(geom))

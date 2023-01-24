@@ -393,8 +393,6 @@ pcode_geo_path = r'C:\projects\point_in_polygon\data\NB_data\pcode_geo.gdb'
 geo_pan_lyr_nme = 'pan_ncb_to_colb'
 geo_gnb_lyr_nme = 'geonb_to_colb'
 
-# road types txt
-str_types_path = Path(os.getenv('RD_TYPES_TXT_PATH'))
 
 # AOI mask if necessary
 aoi_mask = os.getenv('AOI_MASK')
@@ -409,9 +407,6 @@ rd_crs = os.getenv('RD_CRS')
 # Load dataframes.
 if aoi_mask != None:
     aoi_gdf = gpd.read_file(aoi_mask)
-
-str_types_df = pd.read_csv(str_types_path, delimiter='\t')
-str_types_df['Street type'] = str_types_df['Street type'].str.upper()
 
 print('Loading in linking data')
 linking_data = gpd.read_file(linking_data_path, layer=linking_lyr_nme, linking_ignore_columns=linking_ignore_columns, mask=aoi_gdf)
@@ -493,7 +488,7 @@ footprint = reproject(footprint, proj_crs)
 footprint['geometry'] = ValidateGeometry(footprint['geometry'])
 
 # Cut polygons by parcels
-cutter = PolygonCutter(footprint, linking_data, proj_crs, proj_crs)
+cutter = PolygonCutter(footprint, linking_data, int(proj_crs), int(proj_crs))
 footprint = cutter.bp
 print('Cleaning and prepping footprint data')
 
