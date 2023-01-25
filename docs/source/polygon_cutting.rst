@@ -48,7 +48,8 @@ Process Overview
 Step 1: Cut Geometry Data Preperation
 _____________________________________
 
-The first step is to convert the parcel fabric from polygons to lines. This is done using the following methodology:
+The first step is to convert the parcel fabric from polygons to lines. This is required as in order to split the polygons accurately the smallest common geometry must be used
+This is done using the following process:
 
 1. Geometry is validated using the below function to repair any invalid geometries.
    
@@ -62,7 +63,7 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
                input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
          return input_geometry
 
-2. To maintain efficiency all non essential geometry is dropped from the cut_geom at this stage. This is done using two filters the first of which 
+2. To maintain efficiency all non essential geometry are dropped from the cut_geom at this stage. This is done using two filters the first of which 
    filters out all cut geometry that does not intersect any of the building polygons.
 
    .. code-block:: python 
@@ -72,7 +73,9 @@ The first step is to convert the parcel fabric from polygons to lines. This is d
         cut_joined = list(set(cut_joined[~cut_joined['bp_index'].isna()]['cut_index'].tolist()))
         cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined)]
    
-   The second filter is only run if the optional point_data input is used and removes all cut geometry that does not intersect a point.
+   The second filter is only run if the optional point_data input is used and removes all cut geometry that does not intersect a point. The intended input here is a layer containing
+   civic addresses. Ensure that only data where the location of the point in placed by an authoritiative source (municipality, province) as inaccurate point locations could cause necessary
+   data to be filtered out at this stage.
    
    .. code-block:: python
       
