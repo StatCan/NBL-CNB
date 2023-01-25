@@ -250,7 +250,7 @@ class PolygonCutter:
         # Delete lines that overlap
         self.line_geom.reset_index(drop=True, inplace=True)
 
-        # Calc centroid for duplicate removal (line don't work for this method)
+        # Calc centroid for duplicate removal (lines don't work for this method)
         self.line_geom['centroid'] = self.line_geom.geometry.centroid
         # convert to wkb because drop duplicates doesn't work on shapely
         self.line_geom['centroid'] = self.line_geom['centroid'].apply(lambda geom: geom.wkb)
@@ -262,8 +262,7 @@ class PolygonCutter:
 
         # Drop non essential centroid field
         self.line_geom.drop(columns=['centroid'], inplace=True)
-        # self.line_geom = reproject(self.line_geom, 26914)
-        # self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
+        
         # Check for and exclude non line geometries
 
         self.line_geom['geom_type'] = self.line_geom.geometry.geom_type
@@ -285,8 +284,6 @@ class PolygonCutter:
             multis = multis.explode(index_parts=False)
             self.line_geom = self.line_geom.append(multis)
         
-        # For testing purposes export lines here to be deleted later
-        #self.line_geom.to_file(Path(os.getenv('OUT_GPKG')), layer='parcel_lines')
         self.line_geom['seg_index'] = range(1, len(self.line_geom.index) + 1)
         
         print('Finding intersects') 
@@ -308,7 +305,7 @@ class PolygonCutter:
         self.line_geom = reproject(self.line_geom, proj_crs)
         self.bp = reproject(self.bp, proj_crs)
 
-        # Clean up results and remove slivers polygons with an area < 20m2
+        # Clean up results and remove slivers polygons with an area less than the max sliver area
         self.bp['split_area'] = round(self.bp.geometry.area, 2)
 
         self.slivers = self.bp[self.bp.split_area <= sliver_max_area] # retain slivers for analysis purposes if needed
