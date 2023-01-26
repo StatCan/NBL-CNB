@@ -3,5 +3,5 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pydata-sphinx-theme=0.7.2
+  - pydata-sphinx-theme=0.12.0
   - sphinx=5.3.0
