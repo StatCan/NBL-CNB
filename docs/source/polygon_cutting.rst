@@ -296,3 +296,4 @@ The cleaning process looks as follows:
       self.bp = self.bp[self.bp.split_area >= sliver_max_area]
 
 2. 
+  
