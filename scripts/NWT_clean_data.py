@@ -1,11 +1,8 @@
-from dataclasses import field
 import swifter
 import datetime
 import sys
 import shapely
 import os
-import re
-import string
 from pathlib import Path
 import fiona
 import geopandas as gpd
@@ -13,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from math import pi
-from shapely.geometry import MultiLineString, Polygon
+
 
 pd.options.mode.chained_assignment = None # Gets rid of annoying warning
 

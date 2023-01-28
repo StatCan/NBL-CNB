@@ -5,14 +5,17 @@ NBL-CNB
    :maxdepth: 2
    :hidden:
 
-   Project Overview <project_overview>
-   Address Matching Process <address_matching_process>
+   Address Matching <address_matching_process>
    Polygon Splitting <polygon_cutting>
    
-**NBL-CNB** (National Building Layer) is a project that aims to create a geographic representation for every building in Canada
-with associated attributes. This documentation has several main sections organized below. The first titled 'project overview' is a general project overview that describes the
-intent of the project itself. The button titled 'Address Matching Process' is a breakdown on how the address to building polygon matching process works. Other sections may be
-added to this documentation as the work on the NBL evolves. Finally, the button titles 'Polygon Splitting' links to a breakdown of the polygon splitting methodology.
+The National Building Layer (NBL) project was initiated under the leadership of the Canadian Council of Geomatics (CCOG), whose membership 
+includes representatives from provinces, territories, and federal departments and agencies.
+
+The NBL is the geospatial representation of every building in Canada and associated features (e.g. building use, year built, building height).
+It will serve as a structured, interoperable and authoritative layer. One of the primary goals for the further development of the NBL is to 
+reduce duplication of effort and create a standard for all building data.
+
+In order to acheive is vision the below processes were developed each with a goal of fulfilling a certain aspect of the NBL.
 
 .. note::
 
@@ -20,5 +23,4 @@ added to this documentation as the work on the NBL evolves. Finally, the button 
 
 .. container:: button
 
-   :doc:`Project Overview <project_overview>` :doc:`Address Matching Process <address_matching_process>`
-   :doc:`Polygon Splitting <polygon_cutting>`
+   :doc:`Address Matching <address_matching_process>` :doc:`Polygon Splitting <polygon_cutting>`

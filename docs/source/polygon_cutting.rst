@@ -255,19 +255,14 @@ To split the polygons the following process is followed:
 
 All valid input polygons have now been split by all unique line geometries in the cutting data that they intersected. The outputs can now be cleaned.      
 
-Step 3: Clean-up and Analysis
-_____________________________
+Step 3: Output Cleanup
+______________________
 
-Now that the polygons are split clean-up on the output is done in order to ensure data quality. The following things are 
-checked for during this step:
+Now that the polygons are split clean-up on the output is done in order to ensure data quality. The main concern is the removal of any slivers from the output.
 
-1. If any slivers* have been created.
-2. If the created splits should be considered valid. 
-3. Ensure that the output splits are linkable back to the original polygon for future QA/QC
+**Sliver**: Any polygon that is the result of a split with an area of less an the maximum sliver area (default 20m2).
 
-**Sliver**: Any polygon that is the result of a split with an area of less an the minimum sliver area (default 20m2).
-
-This step is essential as not every split should be considered valid. for example, in the image below the building crosses
+This step is essential as not every split created during the splitting phase should be considered valid. For example, in the image below the building crosses
 two parcel boundaries and will therefore be cut twice.
 
 .. image:: img/complex_ex.png
@@ -283,17 +278,15 @@ the dataset and isolated.
    :width: 400
    :alt: Example with valid and invalid splits with imagery
 
-The cleaning process looks as follows:
-
-1. The area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed
+Do deal withg slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.
    
-   .. code-block:: python
-      
-      # Clean up results and remove slivers polygons with an area < 20m2
-      self.bp['split_area'] = round(self.bp.geometry.area, 2)
+.. code-block:: python
+   
+   # Clean up results and remove slivers polygons with an area < 20m2
+   self.bp['split_area'] = round(self.bp.geometry.area, 2)
 
-      self.slivers = self.bp[self.bp.split_area <= sliver_max_area] # retain slivers for analysis purposes if needed
-      self.bp = self.bp[self.bp.split_area >= sliver_max_area]
+   self.slivers = self.bp[self.bp.split_area <= sliver_max_area] # retain slivers for analysis purposes if needed
+   self.bp = self.bp[self.bp.split_area >= sliver_max_area]
 
-2. 
+ 
   
