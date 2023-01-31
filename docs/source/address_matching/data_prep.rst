@@ -6,7 +6,7 @@ Step 1: Data Preparation
 
 There are three key layers that must be injested, cleaned, and prepped before matching can begin.
 The composition of these input files varies widely by jurisdiction so to a certain degree this process
-will vary slightly from region to region in order to compensate for these differences. These three layers
+will vary slightly from region to region in order to compensate for these differences. The three key layers
 are:
 
 * Building Polygons
@@ -45,7 +45,7 @@ ______________________________
 
 Micro parcels are small parcels with an area smaller than 100m2. These parcels are most often located in 
 trailer parks and condo developments. These only complicate the matching process when included and are
-removed during the cleaning phase.
+removed at this stage.
 
 .. image:: img/micro_parcels.png
    :width: 400
@@ -89,20 +89,19 @@ Parcel Linkage for Address Points
 _________________________________
 
 Parcel linkage is the process of adding the linking field for a parcel to the a record if that record intersects that parcel.
-There are couple criteria for this. 
+The main criteria for this is to link each building with the smallest intersecting00 parcel. 
 
-1. There can only be one linkage between parcel data and the address points. In cases where 
-   the address point intersects multiple parcels use the polygon with the smaller area. The 
-   polygon with the smaller area is more likely to coorespond to a lot rather than a whole 
-   property. For example there are often cases where a lot for a condo townhouse is within the
-   parcel for the entire development. In that case we want to grab the smaller parcel as the results
-   are more likely to be accurate after matching.
+There can only be one linkage between parcel data and the address points. In cases where 
+the address point intersects multiple parcels use the polygon with the smaller area. The 
+polygon with the smaller area is more likely to coorespond to a lot rather than a whole 
+property. For example there are often cases where a lot for a building is within the
+parcel for the building as well as the entire property. In that case we want to grab the 
+smallest parcel possible as matching results are the most likely to be accurate in those cases.
 
-   .. image:: img/
-      :width: 400
-      :alt: Layered Parcels Example
+.. image:: img/layered_parcels.png
+   :width: 400
+   :alt: Layered Parcels Example
 
-2. 
 
 Building Polygon Cleaning
 -------------------------
