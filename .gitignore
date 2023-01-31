@@ -3,5 +3,4 @@ aprx/
 environments.env
 *.qgz
 *.env
-docs/build/
 scripts/__pycache__/polygon_cutter.cpython-310.pyc

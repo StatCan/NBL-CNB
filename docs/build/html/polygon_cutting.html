@@ -1,0 +1,692 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Polygon Splitting &#8212; NBL-CNB 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="_static/styles/bootstrap.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94">
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'polygon_cutting';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Step 5: Match Confidence Calculation" href="address_matching/confidence.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fa-solid fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+    <p class="title logo__title">NBL-CNB 0.1 documentation</p>
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="project_overview.html">
+                        Project Overview
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="address_matching_process.html">
+                        Address Matching Process
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Polygon Splitting
+                      </a>
+                    </li>
+                
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+        <div class="navbar-end-item navbar-persistent--container">
+          
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+        </div>
+      
+      
+      <div class="navbar-end-item">
+        <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/StatCan/NBL-CNB" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-toggle="tooltip"><span><i class="fab fa-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  
+    <div class="navbar-persistent--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+    </div>
+  
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="project_overview.html">
+                        Project Overview
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="address_matching_process.html">
+                        Address Matching Process
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Polygon Splitting
+                      </a>
+                    </li>
+                
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/StatCan/NBL-CNB" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-toggle="tooltip"><span><i class="fab fa-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+  
+  <div id="rtd-footer-container"></div>
+
+      </div>
+      <main id="main-content" class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <section id="polygon-splitting">
+<h1>Polygon Splitting<a class="headerlink" href="#polygon-splitting" title="Permalink to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p>As sources of building data were compiled for the NBL it became appearent that there were significant differnces in the data quality between each source.
+Buildings that were close together in some sources were clumped into a single polygon. This had significant implications for the accuracy of
+matching process. As seen in the first image below out area of interest has a row of single family detached homes
+which while relatively close together should be individual polygons in a building layer.</p>
+<a class="reference internal image-reference" href="_images/clumped_sat_img.png"><img alt="Sat image of clumped area" src="_images/clumped_sat_img.png" style="width: 400px;" /></a>
+<p>However that is not what we see in the data. As seen in the image below this area is clumped into long single polygons
+that are not representative of what exists on the ground.</p>
+<a class="reference internal image-reference" href="_images/clumped_polys.png"><img alt="Sat image of clumped polygons" src="_images/clumped_polys.png" style="width: 400px;" /></a>
+<p>As things stand performing the matching process on this area would produce highly inaccurate results. In order to improve
+the results of the matching process the method described below was developed.</p>
+<section id="method-overview">
+<h2>Method Overview<a class="headerlink" href="#method-overview" title="Permalink to this heading">#</a></h2>
+<p>All code samples in this section are pulled from the scripts/polygon_cutter.py script found in the github repo.</p>
+<p>As we can see below there is a ready made method available for dealing with the clumped buildings. As seen in the image
+below the parcels when overlaid over the building data cuts the buildings at approximately the correct location.</p>
+<a class="reference internal image-reference" href="_images/clumped_w_parcels.png"><img alt="Sat image of clumped polygons" src="_images/clumped_w_parcels.png" style="width: 400px;" /></a>
+<p>The parcel fabric is used as a guide and cut any buildings that cross the boundary using the following steps.</p>
+<ol class="arabic simple">
+<li><p>Convert parcel fabric from polygons to lines.</p></li>
+<li><p>If a polygon intersects one or more of these lines then split the polygon along those lines.</p></li>
+<li><p>Analyze the results and determine if the split results in two or more valid buildings. Remove any slivers.</p></li>
+</ol>
+</section>
+<section id="process-overview">
+<h2>Process Overview<a class="headerlink" href="#process-overview" title="Permalink to this heading">#</a></h2>
+<section id="step-1-cut-geometry-data-preperation">
+<h3>Step 1: Cut Geometry Data Preperation<a class="headerlink" href="#step-1-cut-geometry-data-preperation" title="Permalink to this heading">#</a></h3>
+<p>The first step is to convert the parcel fabric from polygons to lines. This is required as in order to split the polygons accurately the smallest common geometry must be used
+This is done using the following process:</p>
+<ol class="arabic">
+<li><p>Geometry is validated using the below function to repair any invalid geometries.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">ValidateGeometry</span><span class="p">(</span><span class="n">input_geometry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">:</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;Checks if input geometry is valid and if invalid attempts to make it valid accepts Geodataframes and Geoseries&#39;&#39;&#39;</span>
+   <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">input_geometry</span><span class="p">)</span> <span class="o">==</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">:</span>
+         <span class="n">input_geometry</span> <span class="o">=</span> <span class="n">input_geometry</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">geom</span><span class="p">:</span> <span class="n">make_valid</span><span class="p">(</span><span class="n">geom</span><span class="p">))</span>
+   <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">input_geometry</span><span class="p">)</span> <span class="o">==</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+         <span class="n">input_geometry</span> <span class="o">=</span> <span class="n">input_geometry</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">geom</span><span class="p">:</span> <span class="n">make_valid</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">geom</span><span class="o">.</span><span class="n">is_valid</span> <span class="k">else</span> <span class="n">geom</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">input_geometry</span>
+</pre></div>
+</div>
+</li>
+<li><p>To maintain efficiency all non essential geometry are dropped from the cut_geom at this stage. This is done using two filters the first of which
+filters out all cut geometry that does not intersect any of the building polygons.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Drop Non-Essential Cut Geometry</span>
+  <span class="n">cut_joined</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cut_geom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[[</span><span class="s1">&#39;bp_index&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]])</span>
+  <span class="n">cut_joined</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cut_joined</span><span class="p">[</span><span class="o">~</span><span class="n">cut_joined</span><span class="p">[</span><span class="s1">&#39;bp_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()][</span><span class="s1">&#39;cut_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+  <span class="n">cut_geom</span> <span class="o">=</span> <span class="n">cut_geom</span><span class="p">[</span><span class="n">cut_geom</span><span class="p">[</span><span class="s1">&#39;cut_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">cut_joined</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>The second filter is only run if the optional point_data input is used and removes all cut geometry that does not intersect a point. The intended input here is a layer containing
+civic addresses. Ensure that only data where the location of the point in placed by an authoritiative source (municipality, province) as inaccurate point locations could cause necessary
+data to be filtered out at this stage.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">point_data</span><span class="p">)</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+
+      <span class="n">point_data</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+      <span class="n">point_data</span><span class="p">[</span><span class="s1">&#39;ap_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+      <span class="n">cut_joined_ap</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cut_geom</span><span class="p">,</span> <span class="n">point_data</span><span class="p">[[</span><span class="s1">&#39;ap_index&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]])</span>
+      <span class="n">cut_joined_ap</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cut_joined_ap</span><span class="p">[</span><span class="o">~</span><span class="n">cut_joined_ap</span><span class="p">[</span><span class="s1">&#39;ap_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()][</span><span class="s1">&#39;cut_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+      <span class="n">cut_geom</span> <span class="o">=</span> <span class="n">cut_geom</span><span class="p">[</span><span class="n">cut_geom</span><span class="p">[</span><span class="s1">&#39;cut_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">cut_joined_ap</span><span class="p">)]</span>
+</pre></div>
+</div>
+</li>
+<li><p>The geometry is then checked for type and converted into lines if necessary using the following process:</p>
+<ol class="loweralpha simple">
+<li><p>If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.</p></li>
+<li><p>.boundary return the boundary as a single line. Break this up so that each side is a single record per side.</p></li>
+<li><p>The above steps create significant number of duplicated lines filter the duplicated geometries to prevent duplication</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">ToSingleLines</span><span class="p">(</span><span class="n">geom</span><span class="p">:</span> <span class="n">shapely</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MultiLineString</span><span class="p">:</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39;Converts polygons into single lines&#39;&#39;&#39;</span>
+
+      <span class="k">def</span> <span class="nf">MultiLineDevolver</span><span class="p">(</span><span class="n">m_line_string</span><span class="p">:</span> <span class="n">MultiLineString</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">          </span><span class="sd">&#39;&#39;&#39;Converts a multilinestring into a list of its component lines&#39;&#39;&#39;</span>
+          <span class="n">m_line_string</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">m_line_string</span><span class="o">.</span><span class="n">geoms</span><span class="p">]</span>
+          <span class="n">m_line_string</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">LineString</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">coords</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">l</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">:])))</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">m_line_string</span><span class="p">]</span>
+          <span class="n">m_line_string</span> <span class="o">=</span> <span class="p">[</span><span class="n">ls</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">m_line_string</span> <span class="k">for</span> <span class="n">ls</span> <span class="ow">in</span> <span class="n">l</span><span class="p">]</span>
+          <span class="k">return</span> <span class="n">m_line_string</span>
+
+      <span class="c1"># temp measure to remove GeometryCollections and None cases</span>
+      <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">geom_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;MultiPolygon&#39;</span><span class="p">,</span> <span class="s1">&#39;Polygon&#39;</span><span class="p">,</span> <span class="s1">&#39;LineString&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiLineString&#39;</span><span class="p">,</span> <span class="s1">&#39;Point&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiPoint&#39;</span><span class="p">]:</span>
+          <span class="c1"># Temp block in place until a solution is found for GeometryCollections</span>
+          <span class="nb">print</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+          <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+          <span class="k">return</span> <span class="kc">None</span>
+
+<span class="k">def</span> <span class="nf">check_geom</span><span class="p">(</span><span class="n">input_gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">geometry_column</span><span class="o">=</span> <span class="s1">&#39;geometry&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39;Checks to see if the input  geometry is a line. If polygon converts to lines. If points or other returns a geometry error&#39;&#39;&#39;</span>
+
+      <span class="c1">#input_gdf.reset_index(inplace=True)</span>
+      <span class="k">if</span> <span class="n">input_gdf</span><span class="o">.</span><span class="n">geometry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">geom_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;LineString&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiLineString&#39;</span><span class="p">]:</span>
+          <span class="c1"># If the geometry is already in line type</span>
+          <span class="k">return</span> <span class="n">input_gdf</span>
+
+      <span class="c1"># If inputs are polygons then convert them to lines</span>
+      <span class="k">if</span> <span class="n">input_gdf</span><span class="o">.</span><span class="n">geometry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">geom_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Polygon&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiPolygon&#39;</span><span class="p">]:</span>
+
+          <span class="c1"># explode to remove multipolygons</span>
+          <span class="n">input_gdf</span> <span class="o">=</span> <span class="n">input_gdf</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">index_parts</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+          <span class="c1"># convert linestrings into single linestrings</span>
+          <span class="n">input_gdf</span><span class="p">[</span><span class="s1">&#39;single_lines&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_gdf</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">swifter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">ToSingleLines</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+          <span class="c1"># explode list output of prior function</span>
+          <span class="n">output_gdf</span> <span class="o">=</span> <span class="n">input_gdf</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="s1">&#39;single_lines&#39;</span><span class="p">)</span>
+          <span class="c1"># switch geometry to the new geom and drop old geom</span>
+          <span class="n">output_gdf</span> <span class="o">=</span> <span class="n">SwapGeometry</span><span class="p">(</span><span class="n">output_gdf</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="s1">&#39;single_lines&#39;</span><span class="p">)</span>
+
+          <span class="k">return</span> <span class="n">output_gdf</span>
+
+      <span class="c1"># If the geometry is a point or mutipoint raise an error</span>
+      <span class="k">if</span> <span class="n">input_gdf</span><span class="o">.</span><span class="n">geometry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">geom_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Point&#39;</span><span class="p">,</span> <span class="s1">&#39;MultiPoint&#39;</span><span class="p">]:</span>
+          <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;Shape is not a Polygon or Line&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>As each line will be used to split any polygon it intersects it is important to remove any duplicate lines to prevent unnecessary duplication.
+To prevent this the process below is followed in order to check for andremove any duplicates:</p>
+<ol class="loweralpha simple">
+<li><p>Convert all lines to centroids</p></li>
+<li><p>Convert the shapely geometry object to WKB (well known binary)</p></li>
+<li><p>Drop duplicated records by comparing WKB centroids</p></li>
+<li><p>Drop the WKB centroids as they are no longer needed</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calc centroid for duplicate removal (line don&#39;t work for this method)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">[</span><span class="s1">&#39;centroid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">centroid</span>
+
+<span class="c1"># convert to wkb because drop duplicates doesn&#39;t work on shapely</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">[</span><span class="s1">&#39;centroid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">[</span><span class="s1">&#39;centroid&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">geom</span><span class="p">:</span> <span class="n">geom</span><span class="o">.</span><span class="n">wkb</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s1">&#39;centroid&#39;</span><span class="p">])</span> <span class="c1"># Drop the duplicate records</span>
+
+<span class="c1"># Drop non essential centroid field</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;centroid&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The above method was necessary as the built in pandas drop_duplicates method does note work well with shapely geometry objects. Other methods such as
+dissolving geometries caused too much complexity or added significantly to the runtime of the tool. If new built in methods are developed in geopandas</p>
+</section>
+<section id="step-2-polygon-splitting">
+<h3>Step 2: Polygon Splitting<a class="headerlink" href="#step-2-polygon-splitting" title="Permalink to this heading">#</a></h3>
+<p>To split the polygons the following process is followed:</p>
+<ol class="arabic">
+<li><p>A linkage is created between every line and building polygon where they intersect using a spatial join.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">FindIntersects</span><span class="p">(</span><span class="n">input_geom</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">input_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;finds all intersections between the input geometry and the search geometry&#39;&#39;&#39;</span>
+
+   <span class="n">joined_geom</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">input_geom</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">[[</span><span class="n">search_link_field</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]],</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
+   <span class="n">input_geom</span><span class="p">[</span><span class="s1">&#39;line_ints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">][</span><span class="n">search_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+   <span class="k">return</span> <span class="n">input_geom</span>
+</pre></div>
+</div>
+</li>
+<li><p>Polygons that intersect a line are then split along the lines that they intersect and a new MultiPolygon object is returned. To accomplish this the following steps
+are required:</p>
+<ol class="loweralpha simple">
+<li><p>Create a spatial join between the building polygons and the cleaned line geometry.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">FindIntersects</span><span class="p">(</span><span class="n">input_geom</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">input_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;finds all intersections between the input geometry and the search geometry&#39;&#39;&#39;</span>
+
+   <span class="n">joined_geom</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">input_geom</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">[[</span><span class="n">search_link_field</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]],</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
+   <span class="n">input_geom</span><span class="p">[</span><span class="s1">&#39;line_ints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">swifter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">][</span><span class="n">search_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+   <span class="k">return</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="n">FindIntersects</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">,</span> <span class="s1">&#39;bp_index&#39;</span><span class="p">,</span> <span class="s1">&#39;seg_index&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="loweralpha simple" start="2">
+<li><p>For each building polygon if it intersects any lines do the following:</p>
+<ol class="lowerroman simple">
+<li><p>Convert the polygon into a LineString using its boundary geometry</p></li>
+<li><p>Merge the cut geometry and the polygon line boundary using linemerge</p></li>
+<li><p>Convert the result into a series of polygons based on the merged lines</p></li>
+<li><p>Convert the result to a MultiPolygon</p></li>
+</ol>
+</li>
+<li><p>Take the output from the previous step and explode it so that every individual Polygon object
+is in its own record. Delete all non essential fields.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">CutPolygon</span><span class="p">(</span><span class="n">intersect_indexes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">in_geom</span><span class="p">:</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">line_geom</span><span class="p">:</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">cut_field</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MultiPolygon</span><span class="p">:</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;Cuts the input polygon by the lines linked to it during the FindIntersects Step Run the FindIntersects step before calling this function&#39;&#39;&#39;</span>
+
+   <span class="c1"># Select only key vars and set the cut indexes</span>
+   <span class="n">line_geom</span> <span class="o">=</span> <span class="n">line_geom</span><span class="p">[[</span><span class="n">cut_field</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span>
+   <span class="n">cut_indexes</span> <span class="o">=</span> <span class="n">intersect_indexes</span>
+
+   <span class="c1"># Polygons with no intersects don&#39;t need to be split</span>
+   <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cut_indexes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="k">return</span> <span class="n">in_geom</span>
+
+   <span class="c1"># Polygons with intersects need to be split</span>
+   <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cut_indexes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="c1"># retrieve the records related to the cut indexes</span>
+         <span class="n">cutters</span> <span class="o">=</span> <span class="n">line_geom</span><span class="p">[</span><span class="n">line_geom</span><span class="p">[</span><span class="n">cut_field</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">cut_indexes</span><span class="p">)]</span>
+
+         <span class="c1"># convert to a single LineString or MultiLineString</span>
+         <span class="n">cut_single</span> <span class="o">=</span> <span class="p">[</span><span class="n">shapely</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">linemerge</span><span class="p">(</span><span class="n">cutters</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())]</span>
+
+         <span class="c1"># Convert the polygon into its boundary and append it to the cut lines list</span>
+         <span class="n">cut_single</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_geom</span><span class="o">.</span><span class="n">boundary</span><span class="p">)</span>
+         <span class="c1"># Create a union between all the lines</span>
+         <span class="n">cut_single</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">unary_union</span><span class="p">(</span><span class="n">cut_single</span><span class="p">)</span>
+         <span class="c1"># merge all the lines into a single LineString or MultiLineString</span>
+         <span class="n">cut_single</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">linemerge</span><span class="p">(</span><span class="n">cut_single</span><span class="p">)</span>
+         <span class="c1"># Convert the linemerge result back into a polygon</span>
+         <span class="n">polygons</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">polygonize</span><span class="p">(</span><span class="n">cut_single</span><span class="p">)</span>
+         <span class="c1"># Ensure result is a MultiPolygon and return it</span>
+         <span class="k">return</span> <span class="n">MultiPolygon</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span>
+
+
+<span class="n">cut_geom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[[</span><span class="s1">&#39;line_ints&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">swifter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">CutPolygon</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">line_ints</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">[[</span><span class="s1">&#39;seg_index&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]],</span> <span class="s1">&#39;seg_index&#39;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cut_geom</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">index_parts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;line_ints&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>The returned geometry is then exploded to create a record for each polygon within the multipoloygon.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bp</span> <span class="o">=</span> <span class="n">bp</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">index_parts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>All valid input polygons have now been split by all unique line geometries in the cutting data that they intersected. The outputs can now be cleaned.</p>
+</section>
+<section id="step-3-output-cleanup">
+<h3>Step 3: Output Cleanup<a class="headerlink" href="#step-3-output-cleanup" title="Permalink to this heading">#</a></h3>
+<p>Now that the polygons are split clean-up on the output is done in order to ensure data quality. The main concern is the removal of any slivers from the output.</p>
+<p><strong>Sliver</strong>: Any polygon that is the result of a split with an area of less an the maximum sliver area (default 20m2).</p>
+<p>This step is essential as not every split created during the splitting phase should be considered valid. For example, in the image below the building crosses
+two parcel boundaries and will therefore be cut twice.</p>
+<a class="reference internal image-reference" href="_images/complex_ex.png"><img alt="Example with valid and invalid splits" src="_images/complex_ex.png" style="width: 400px;" /></a>
+<p>There are two cuts that will occur when this building is split. One around the mid-point of the structure and one in the bottom
+corner of the polygon. Looking at the underlying imagery (see below) we can see the the split at the mid-point is most likely a
+valid split. The second smaller split is most likely a sliver based off its size and the imagery. It can safely be removed from
+the dataset and isolated.</p>
+<a class="reference internal image-reference" href="_images/complex_img.png"><img alt="Example with valid and invalid splits with imagery" src="_images/complex_img.png" style="width: 400px;" /></a>
+<p>Do deal withg slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clean up results and remove slivers polygons with an area &lt; 20m2</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[</span><span class="s1">&#39;split_area&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">area</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">slivers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">split_area</span> <span class="o">&lt;=</span> <span class="n">sliver_max_area</span><span class="p">]</span> <span class="c1"># retain slivers for analysis purposes if needed</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">split_area</span> <span class="o">&gt;=</span> <span class="n">sliver_max_area</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+            </article>
+            
+            
+            
+            <footer class="bd-footer-article">
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+  <a class='left-prev' id="prev-link" href="address_matching/confidence.html" title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+          <p class="prev-next-subtitle">previous</p>
+          <p class="prev-next-title">Step 5: Match Confidence Calculation</p>
+      </div>
+  </a>
+</div>
+            </footer>
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div class="tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#method-overview">
+   Method Overview
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#process-overview">
+   Process Overview
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-1-cut-geometry-data-preperation">
+     Step 1: Cut Geometry Data Preperation
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-2-polygon-splitting">
+     Step 2: Polygon Splitting
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-3-output-cleanup">
+     Step 3: Output Cleanup
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
+<div id="searchbox"></div>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+<div class="tocsection sourcelink">
+    <a href="_sources/polygon_cutting.rst.txt">
+        <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+</div>
+
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2023, Statistics Canada.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="theme-version">
+    Built with the
+    <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">
+        PyData Sphinx Theme
+    </a>
+    0.12.0.
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>

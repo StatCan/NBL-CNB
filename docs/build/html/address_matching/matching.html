@@ -1,0 +1,716 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Step 3: Matching &#8212; NBL-CNB 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="../_static/styles/bootstrap.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=796348d33e8b1d947c94" rel="stylesheet">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94">
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'address_matching/matching';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 4: Match QA/QC" href="qa_qc.html" />
+    <link rel="prev" title="Step 2: Parcel Relationship Calculation" href="parcel_rel_cal.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fa-solid fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+    <p class="title logo__title">NBL-CNB 0.1 documentation</p>
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../project_overview.html">
+                        Project Overview
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../address_matching_process.html">
+                        Address Matching Process
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../polygon_cutting.html">
+                        Polygon Splitting
+                      </a>
+                    </li>
+                
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+        <div class="navbar-end-item navbar-persistent--container">
+          
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+        </div>
+      
+      
+      <div class="navbar-end-item">
+        <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/StatCan/NBL-CNB" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-toggle="tooltip"><span><i class="fab fa-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  
+    <div class="navbar-persistent--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-toggle="tooltip">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+    </div>
+  
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../project_overview.html">
+                        Project Overview
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../address_matching_process.html">
+                        Address Matching Process
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../polygon_cutting.html">
+                        Polygon Splitting
+                      </a>
+                    </li>
+                
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/StatCan/NBL-CNB" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-toggle="tooltip"><span><i class="fab fa-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="sidebar-start-items sidebar-primary__section">
+    <div class="sidebar-start-items__item"><nav class="bd-links" id="bd-docs-nav" aria-label="Section navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">
+    Section Navigation
+  </p>
+  <div class="bd-toc-item navbar-nav">
+    <ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="run_process.html">Run Process</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_prep.html">Data Preparation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="parcel_rel_cal.html">Parcel Relationship Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Matching</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="qa_qc.html">QA/QC</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="confidence.html">Confidence Calculation</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul class="simple">
+</ul>
+</li>
+</ul>
+
+  </div>
+</nav>
+    </div>
+  </div>
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+  
+  <div id="rtd-footer-container"></div>
+
+      </div>
+      <main id="main-content" class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <section id="step-3-matching">
+<h1>Step 3: Matching<a class="headerlink" href="#step-3-matching" title="Permalink to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p>For reference the descriptions on this page cover the code in <strong>matching_master.py</strong></p>
+<p>The matching stage of the process is where the matches are made between the address points and the building polygons.
+This process is broken down and organized by its five component steps. Three methods are used to match the buildings
+and are listed below in order of assumed accuracy:</p>
+<ol class="arabic simple">
+<li><p>intersection</p></li>
+<li><p>data linking</p></li>
+<li><p>proximity</p></li>
+</ol>
+<p>There are also special matching sub-methods included in this section. The main sub-method is the big parcel (BP) sub-method
+which is used in special cases where many buildings and many addresses overa certain threshold are found in a single parcel.
+Other sub-methods will be added to this documentation as they are developed.</p>
+<p>All code contained within this documentation is for illustrative purposes only and should only be considered an example of
+the process. The code in reality may be altered based on a region to region bases based on data availability and the needs
+of a given area.</p>
+<section id="phase-1-load-data-and-configure-attributes">
+<h2>Phase 1: Load Data and Configure Attributes<a class="headerlink" href="#phase-1-load-data-and-configure-attributes" title="Permalink to this heading">#</a></h2>
+<p>The purpose of this phase is to perform the initial load and checks on the data to be matched.
+All inputs are loaded into geodataframes and are projected into the the same geodataframe.
+The fields used to link the building footprints and the address points to the parcel fabric
+is defined.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">addresses</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">project_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">addresses_lyr_nme</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">proj_crs</span><span class="p">)</span>
+<span class="n">footprint</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">project_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">footprints_lyr_nme</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">proj_crs</span><span class="p">)</span>
+
+<span class="n">addresses</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span> <span class="n">proj_crs</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">footprint</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span><span class="n">proj_crs</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Define join fields.</span>
+<span class="n">join_footprint</span> <span class="o">=</span> <span class="s1">&#39;link_field&#39;</span>
+<span class="n">join_addresses</span> <span class="o">=</span> <span class="s1">&#39;link_field&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="phase-2-configure-address-to-footprint-linkages">
+<h2>Phase 2: Configure Address to Footprint Linkages<a class="headerlink" href="#phase-2-configure-address-to-footprint-linkages" title="Permalink to this heading">#</a></h2>
+<p>1. In this phase the linkages between the building footprints and the building polygons are confirmed.
+Counts are taken of address points and polygons per parcel and any parcel where the big parcel (bp)
+threshold is reached those records are separated and go through a separate matching process.
+2. If there are areas that meet the bp threshold then the following matching process is performed:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Buildings within any bp’s are checked against a bp building area threshold. This checks to ensure
+that the majority of the buildings within the bp fall under the threshold. The threshold is in place
+as it is assumed that the majority of bp areas are dense areas with many small houses. Larger buildings
+are excluded as they do not fit this assumption.</p></li>
+<li><p>Only buildings that fall under the bp area threshold are kept for matching.</p></li>
+<li><p>Attempt to find matches using a 20m buffer around the address point.</p></li>
+<li><p>If there are any plural linkages (more than one link within 20m) then compare the linkages and take only the closest.</p></li>
+<li><p>All matched made this way are assigned a method value of 20m_bp to signify that they were matched using this process.</p></li>
+</ul>
+</div></blockquote>
+<p>The code for the above process:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_unlinked_geometry</span><span class="p">(</span><span class="n">addresses_gdf</span><span class="p">,</span> <span class="n">footprint_gdf</span> <span class="p">,</span> <span class="n">buffer_distance</span><span class="p">:</span><span class="nb">int</span><span class="p">):</span>
+    <span class="s1">&#39;Returns indexes for the bf based on the increasing buffer size&#39;</span>
+
+    <span class="k">def</span> <span class="nf">list_bf_indexes</span><span class="p">(</span><span class="n">buffer_geom</span><span class="p">,</span> <span class="n">bf_gdf</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For parcel-less bf geometry takes the buffer from the buffer_geom field and looks for</span>
+<span class="sd">        intersects based on the buffer geom. Returns a list of all indexes with true values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">intersects</span> <span class="o">=</span> <span class="n">bf_gdf</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">buffer_geom</span><span class="p">)</span>
+        <span class="n">intersects</span> <span class="o">=</span> <span class="n">intersects</span><span class="p">[</span><span class="n">intersects</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+        <span class="n">intersects</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">intersects</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersects</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">intersects</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">addresses_gdf</span><span class="p">[</span><span class="s1">&#39;buffer_geom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_gdf</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">buffer_distance</span><span class="p">)</span>
+    <span class="n">addresses_gdf</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_gdf</span><span class="p">[</span><span class="s1">&#39;buffer_geom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">point_buffer</span><span class="p">:</span> <span class="n">list_bf_indexes</span><span class="p">(</span><span class="n">point_buffer</span><span class="p">,</span> <span class="n">footprint_gdf</span><span class="p">))</span>
+
+    <span class="n">linked_df</span> <span class="o">=</span> <span class="n">addresses_gdf</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">])</span>
+    <span class="n">linked_df</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">buffer_distance</span><span class="si">}</span><span class="s1">m buffer&#39;</span>
+    <span class="n">linked_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;buffer_geom&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">addresses_gdf</span> <span class="o">=</span> <span class="n">addresses_gdf</span><span class="p">[</span><span class="o">~</span><span class="n">addresses_gdf</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">linked_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">())))]</span>
+    <span class="k">return</span> <span class="n">linked_df</span>
+
+
+<span class="k">def</span> <span class="nf">building_area_theshold_id</span><span class="p">(</span><span class="n">building_gdf</span><span class="p">,</span> <span class="n">bf_area_threshold</span> <span class="p">,</span> <span class="n">area_field_name</span><span class="o">=</span><span class="s1">&#39;bf_area&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Returns a boolean on whether a majority of the buildings in the bp fall under the bp threshold defined in the environments.</span>
+<span class="sd">    Buildings should be filtered to only those in the polygon before being passed into this function</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">all_bf_cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">building_gdf</span><span class="p">)</span>
+
+    <span class="n">bf_u_thresh</span> <span class="o">=</span> <span class="n">building_gdf</span><span class="p">[</span><span class="n">building_gdf</span><span class="p">[</span><span class="n">area_field_name</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">bf_area_threshold</span><span class="p">]</span>
+    <span class="n">bf_u_thresh_cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bf_u_thresh</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">bf_u_thresh_cnt</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">all_bf_cnt</span><span class="o">/</span><span class="mi">2</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">get_nearest_linkage</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">footprint_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the footprint index associated with the nearest footprint geometry to the given address point.&quot;&quot;&quot;</span>
+    <span class="c1"># Get footprint geometries.</span>
+    <span class="n">footprint_geometries</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">index</span><span class="p">:</span> <span class="n">footprint</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">footprint</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">index</span><span class="p">],</span> <span class="n">footprint_indexes</span><span class="p">))</span>
+    <span class="c1"># Get footprint distances from address point.</span>
+    <span class="n">footprint_distances</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">footprint</span><span class="p">:</span> <span class="n">footprint</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">ap</span><span class="p">),</span> <span class="n">footprint_geometries</span><span class="p">))</span>
+    <span class="n">distance_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">footprint_distances</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">distance_indexes</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">footprint_distances</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">distance_indexes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># If empty then return drop val</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">footprint_index</span> <span class="o">=</span>  <span class="n">distance_indexes</span><span class="p">[</span><span class="n">distance_values</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">distance_values</span><span class="p">))]</span>
+    <span class="k">return</span> <span class="n">footprint_index</span>
+
+<span class="c1"># return all addresses with a majority of the buildings under the area threshold</span>
+<span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;u_areaflag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">building_area_theshold_id</span><span class="p">(</span><span class="n">footprint</span><span class="p">[</span><span class="n">footprint</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="n">bp_area_threshold</span><span class="p">))</span>
+<span class="n">addresses_bp</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;u_areaflag&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+<span class="n">addresses_bp</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;u_areaflag&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">addresses</span> <span class="o">=</span>  <span class="n">addresses</span><span class="p">[</span><span class="o">~</span><span class="n">addresses</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">addresses_bp</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">())]</span>
+<span class="n">addresses_bp</span> <span class="o">=</span> <span class="n">get_unlinked_geometry</span><span class="p">(</span><span class="n">addresses_bp</span><span class="p">,</span> <span class="n">footprint</span><span class="p">,</span> <span class="n">buffer_distance</span><span class="o">=</span><span class="n">buffer_size</span><span class="p">)</span>
+
+<span class="c1"># Find and reduce plural linkages to the closest linkage</span>
+<span class="n">ap_bp_plural</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">len</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+<span class="n">addresses_bp</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ap_bp_plural</span><span class="p">,</span> <span class="s2">&quot;footprint_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="p">[</span><span class="n">ap_bp_plural</span><span class="p">][[</span><span class="s2">&quot;geometry&quot;</span><span class="p">,</span> <span class="s2">&quot;footprint_index&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">get_nearest_linkage</span><span class="p">(</span><span class="o">*</span><span class="n">row</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">addresses_bp</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">ap_bp_plural</span><span class="p">,</span> <span class="s2">&quot;footprint_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="p">[</span><span class="o">~</span><span class="n">ap_bp_plural</span><span class="p">][</span><span class="s2">&quot;footprint_index&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_bp&#39;</span>
+<span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses_bp</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>All Address Points without a parcel linkage are extracted and set aside to be matched separately. These records are removed from the main addresses geodataframe</p></li>
+</ol>
+</section>
+<section id="phase-3-check-linkages-using-intersects">
+<h2>Phase 3: Check Linkages using Intersects<a class="headerlink" href="#phase-3-check-linkages-using-intersects" title="Permalink to this heading">#</a></h2>
+<p>This phase checks for and any buildings and addresses that directly intersect with each other and matches them based on that intersection.
+This phase is performed as follows:</p>
+<ol class="arabic simple">
+<li><p>Identify all address points that directly intersect a building polygon. Assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.</p></li>
+<li><p>Identified linkages via intersect and are removed from the main addresses geodataframe as they have already been matched.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">check_for_intersects</span><span class="p">(</span><span class="n">address_pt</span><span class="p">,</span> <span class="n">footprint_indexes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Similar to the get nearest linkage function except this looks for intersects (uses within because its much faster) and spits out the index of any intersect&#39;&#39;&#39;</span>
+    <span class="n">footprint_geometries</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">index</span><span class="p">:</span> <span class="n">footprint</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">footprint</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">index</span><span class="p">],</span> <span class="n">footprint_indexes</span><span class="p">))</span>
+    <span class="n">inter</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">bf</span><span class="p">:</span> <span class="n">address_pt</span><span class="o">.</span><span class="n">within</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">footprint_geometries</span><span class="p">))</span>
+    <span class="k">if</span> <span class="kc">True</span> <span class="ow">in</span> <span class="n">inter</span><span class="p">:</span>
+        <span class="n">t_index</span> <span class="o">=</span> <span class="n">inter</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">footprint_geometries</span><span class="p">[</span><span class="n">t_index</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+
+<span class="n">addresses</span><span class="p">[</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">addresses</span><span class="p">[[</span><span class="s2">&quot;geometry&quot;</span><span class="p">,</span> <span class="s2">&quot;footprint_index&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">check_for_intersects</span><span class="p">(</span><span class="o">*</span><span class="n">row</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># Clean footprints remove none values and make sure that the indexes are integers</span>
+<span class="n">intersections</span> <span class="o">=</span> <span class="n">addresses</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">])</span>
+
+<span class="n">addresses</span> <span class="o">=</span> <span class="n">addresses</span><span class="p">[</span><span class="n">addresses</span><span class="o">.</span><span class="n">intersect_index</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span> <span class="c1"># Keep only address points that were not intersects</span>
+<span class="n">addresses</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># Now drop the now useless intersects_index column</span>
+
+<span class="n">intersect_a_points</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">intersections</span><span class="o">.</span><span class="n">intersect_index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+
+<span class="n">addresses</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">intersections</span><span class="p">[</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersections</span><span class="p">[</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="n">intersect_indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">intersections</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+
+<span class="n">intersections</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersections</span><span class="p">[</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">]</span>
+<span class="n">intersections</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;intersect_index&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">intersections</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;intersect&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="phase-4-check-linkages-using-linking-data">
+<h2>Phase 4: Check Linkages using Linking Data<a class="headerlink" href="#phase-4-check-linkages-using-linking-data" title="Permalink to this heading">#</a></h2>
+<p>This step checks for linkages using the linking data which in most cases this is the parcel fabric. The majority of matches area made in this section as  it
+two match making methods.</p>
+<ol class="arabic">
+<li><p>All linkages are converted to integer tuples to ensure type consistency across the data.</p></li>
+<li><p>Explode the addresses field by linkges so that a record is created per linkage in the linkage tuple. Plural linkages will have multiple linkages created for them while singular linkages will remain singular. Assign these records with the method ‘data_linking’</p></li>
+<li><p>Find all records that are yet to be linked to a building and split those into two groups</p>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li><p>Records that intersect a parcel</p></li>
+<li><p>Records that do not intersect a parcel</p></li>
+</ol>
+</div></blockquote>
+</li>
+</ol>
+<p>This grouping is necessary because both of these cases have slightly different matching rules to follow.</p>
+<ol class="arabic" start="4">
+<li><p>This step changes depending on the group a record got sorted into in the step above.</p>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li><p>For records that intersect a parcel we will attempt to match with all building polygons whether they have been linked to or not at other phases of the
+match making phase.</p></li>
+<li><p>For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.</p></li>
+</ol>
+</div></blockquote>
+</li>
+</ol>
+<p>The difference between these two methods makes a significant difference in the overall matched quality from this method. Address points with a parcel
+linkage are more likely to be associated with a building that intersects two or more parcels. These buildings are likely to already have been matched by a
+prior process and need to be inluded at this stage in order to make an accurate match. An address point with no parcel linkage is most often falls in a road
+polygon or in a condo development without an underlying polygon. In these cases we assume that the building associated with this polygon is yet to be linked
+to and as such it is safe to exclude those buildings that have already been matched. This reduces the number of erronious matches made during this phase.</p>
+</section>
+<section id="phase-5-merge-and-export-results">
+<h2>Phase 5: Merge and Export Results<a class="headerlink" href="#phase-5-merge-and-export-results" title="Permalink to this heading">#</a></h2>
+<p>The final step of the process is to merge the results together and  export the to the output folder defined in the environments. The results are output in a single
+geopackage. Several products are exported for further analysis such as any non-addressable outbuildings as well as any unlinked records. See the code below further
+details.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">outgdf</span> <span class="o">=</span> <span class="n">addresses</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">intersections</span><span class="p">,</span> <span class="n">addresses_bp</span><span class="p">,</span> <span class="n">unlinked_aps</span><span class="p">])</span>
+
+<span class="n">footprint</span><span class="p">[</span><span class="s1">&#39;centroid_geo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">footprint</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">bf</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">representative_point</span><span class="p">())</span>
+<span class="n">outgdf</span><span class="p">[</span><span class="s1">&#39;out_geom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outgdf</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">create_centroid_match</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">footprint</span><span class="p">[</span><span class="s1">&#39;centroid_geo&#39;</span><span class="p">]))</span>
+
+<span class="n">outgdf</span> <span class="o">=</span> <span class="n">outgdf</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;out_geom&#39;</span><span class="p">)</span>
+
+<span class="n">outgdf</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">outgdf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;out_geom&#39;</span><span class="p">:</span><span class="s1">&#39;geometry&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">outgdf</span> <span class="o">=</span> <span class="n">outgdf</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;geometry&#39;</span><span class="p">)</span>
+
+<span class="n">footprint</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;centroid_geo&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Find unlinked building polygons</span>
+<span class="n">unlinked_footprint</span> <span class="o">=</span> <span class="n">footprint</span><span class="p">[</span><span class="o">~</span><span class="n">footprint</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">outgdf</span><span class="p">[</span><span class="s1">&#39;footprint_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">())]</span>
+
+<span class="c1"># Export unlinked building polygons</span>
+<span class="n">unlinked_footprint</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">output_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">unmatched_poly_lyr_nme</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GPKG&#39;</span><span class="p">)</span>
+
+<span class="c1"># Export matched address geometry</span>
+<span class="n">outgdf</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">output_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">matched_lyr_nme</span><span class="p">,</span>  <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GPKG&#39;</span><span class="p">)</span>
+
+<span class="c1"># Export unmatched address geometry</span>
+<span class="n">unmatched_points</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">output_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">unmatched_lyr_nme</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GPKG&#39;</span><span class="p">)</span>
+
+<span class="c1"># Export non-addressable outbuildings</span>
+<span class="n">sheds</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">output_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;sheds&#39;</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;GPKG&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            </article>
+            
+            
+            
+            <footer class="bd-footer-article">
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+  <a class='left-prev' id="prev-link" href="parcel_rel_cal.html" title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+          <p class="prev-next-subtitle">previous</p>
+          <p class="prev-next-title">Step 2: Parcel Relationship Calculation</p>
+      </div>
+  </a>
+  <a class='right-next' id="next-link" href="qa_qc.html" title="next page">
+  <div class="prev-next-info">
+      <p class="prev-next-subtitle">next</p>
+      <p class="prev-next-title">Step 4: Match QA/QC</p>
+  </div>
+  <i class="fa-solid fa-angle-right"></i>
+  </a>
+</div>
+            </footer>
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div class="tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#phase-1-load-data-and-configure-attributes">
+   Phase 1: Load Data and Configure Attributes
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#phase-2-configure-address-to-footprint-linkages">
+   Phase 2: Configure Address to Footprint Linkages
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#phase-3-check-linkages-using-intersects">
+   Phase 3: Check Linkages using Intersects
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#phase-4-check-linkages-using-linking-data">
+   Phase 4: Check Linkages using Linking Data
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#phase-5-merge-and-export-results">
+   Phase 5: Merge and Export Results
+  </a>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
+<div id="searchbox"></div>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+<div class="tocsection sourcelink">
+    <a href="../_sources/address_matching/matching.rst.txt">
+        <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+</div>
+
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=796348d33e8b1d947c94"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=796348d33e8b1d947c94"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2023, Statistics Canada.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="theme-version">
+    Built with the
+    <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">
+        PyData Sphinx Theme
+    </a>
+    0.12.0.
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>
