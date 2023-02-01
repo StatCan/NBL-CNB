@@ -247,7 +247,8 @@ ______________________
 
 Now that the polygons are split clean-up on the output is done in order to improve the quality of the output data. Of particular concern is the removal of all sliver polygons.
 
-**Sliver Polygon**: Any polygon that is the result of a split with an area of less an the maximum sliver area (default 20m2).
+.. Note::
+   **Sliver Polygon**: Any polygon that is the result of a split with an area of less an the maximum sliver area (default 20m2).
 
 This step is essential as not every split created during the splitting phase should be considered valid. For example, in the image below the building crosses
 two parcel boundaries and will therefore be cut twice.
