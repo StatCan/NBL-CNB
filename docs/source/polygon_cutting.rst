@@ -265,7 +265,7 @@ the dataset and isolated.
    :width: 400
    :alt: Example with valid and invalid splits with imagery
 
-Do deal withg slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.
+Do deal with slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.
    
 .. code-block:: python
    
@@ -275,6 +275,6 @@ Do deal withg slivers the area of each split is calculated and any polygons unde
    self.slivers = self.bp[self.bp.split_area <= sliver_max_area] # retain slivers for analysis purposes if needed
    self.bp = self.bp[self.bp.split_area >= sliver_max_area]
 
-Further cleaning methods will be developed on an as needed basis.
+**Further cleaning methods will be developed on an as needed basis.**
  
   
