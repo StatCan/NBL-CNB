@@ -1,7 +1,6 @@
 import geopandas as gpd
 import numpy as np
 import os
-import swifter
 import pandas as pd
 import sys
 import shapely
@@ -144,7 +143,7 @@ class PolygonCutter:
                 # explode to remove multipolygons
                 input_gdf = input_gdf.explode(index_parts=False)
                 # convert linestrings into single linestrings 
-                input_gdf['single_lines'] = input_gdf['geometry'].swifter.apply(lambda p: ToSingleLines(p))
+                input_gdf['single_lines'] = input_gdf['geometry'].apply(lambda p: ToSingleLines(p))
                 # explode list output of prior function
                 output_gdf = input_gdf.explode('single_lines')
                 # switch geometry to the new geom and drop old geom
@@ -161,7 +160,7 @@ class PolygonCutter:
             '''finds all intersections between the input geometry and the search geometry'''
 
             joined_geom = gpd.sjoin(input_geom, search_geometry[[search_link_field, 'geometry']], op='intersects')
-            input_geom['line_ints'] = input_geom[input_link_field].swifter.apply(lambda x: tuple(joined_geom[joined_geom[input_link_field] == x][search_link_field].tolist()))
+            input_geom['line_ints'] = input_geom[input_link_field].apply(lambda x: tuple(joined_geom[joined_geom[input_link_field] == x][search_link_field].tolist()))
             return input_geom
 
 
@@ -295,7 +294,7 @@ class PolygonCutter:
         print('Cutting by intersects')
         
         # Cut the polygons
-        cut_geom = self.bp[['line_ints', 'geometry']].swifter.apply(lambda x: CutPolygon(x.line_ints, x.geometry, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
+        cut_geom = self.bp[['line_ints', 'geometry']].apply(lambda x: CutPolygon(x.line_ints, x.geometry, self.line_geom[['seg_index', 'geometry']], 'seg_index'), axis=1)
 
         self.bp['geometry'] = cut_geom
         self.bp = self.bp.explode(index_parts=True)
