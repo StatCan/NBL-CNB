@@ -89,7 +89,7 @@ Parcel Linkage for Address Points
 _________________________________
 
 Parcel linkage is the process of adding the linking field for a parcel to the a record if that record intersects that parcel.
-The main criteria for this is to link each building with the smallest intersecting parcel. 
+The main criteria for this is to link each building with the smallest intersecting00 parcel. 
 
 There can only be one linkage between parcel data and the address points. In cases where 
 the address point intersects multiple parcels use the polygon with the smaller area. The 

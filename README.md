@@ -9,7 +9,9 @@ The following components are in development here:
 - Building Polygon Cutting
 
 
-***Detailed documentation for this project is in development and will be made available shortly*** 
+Detailed documentation for this project and its component processes can be found under the doc directory for this project at the following file location:
+
+docs/build/html/index.html
 
 
 
