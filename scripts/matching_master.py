@@ -142,7 +142,7 @@ def building_area_theshold_id(building_gdf, bf_area_threshold , area_field_name=
 start_time = datetime.datetime.now()
 print(f'Start Time {start_time}')
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
 output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))

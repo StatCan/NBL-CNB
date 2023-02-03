@@ -300,6 +300,14 @@ class PolygonCutter:
         self.bp = self.bp.explode(index_parts=True)
         self.bp.drop(columns=['line_ints'], inplace=True)
         
+        # Reset indexes
+        self.bp.reset_index(level=[0,1], inplace=True)
+
+        # Drop the additional index columns if they exist
+        for f in ['level_0', 'level_1']:
+            if f in self.bp.columns.tolist():
+                self.bp.drop(columns=[f], inplace=True)
+
         # Final split buildings crs check
         self.line_geom = reproject(self.line_geom, proj_crs)
         self.bp = reproject(self.bp, proj_crs)

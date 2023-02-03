@@ -219,7 +219,7 @@ def determine_confidence_type(con_score):
 # --------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
 match_gpkg = os.getenv('MATCHED_OUTPUT_GPKG')

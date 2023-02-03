@@ -34,7 +34,7 @@ def point_line_maker(matched_geometry, orig_geometry):
 # ---------------------------------------------------------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
 
