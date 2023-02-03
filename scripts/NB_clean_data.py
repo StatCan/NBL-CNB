@@ -250,7 +250,7 @@ footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])
 footprint = reproject(footprint, proj_crs)
 
-footprint['centroid_geo'] = footprint['geometry'].swifter.apply(lambda pt: pt.centroid)
+footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
 footprint = gpd.sjoin(footprint, linking_data[['link_field', 'geometry']], how='left', op='within')
 
