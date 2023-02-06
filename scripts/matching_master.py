@@ -26,6 +26,14 @@ Unlinked addresses and buildings will then be output for further analysis.
 # ------------------------------------------------------------------------------------------------------------
 # Functions
 
+def reproject(ingdf: gpd.GeoDataFrame, output_crs: int) -> gpd.GeoDataFrame:
+    ''' Takes a gdf and tests to see if it is in the projects crs if it is not the funtions will reproject '''
+    if ingdf.crs == None:
+        ingdf.set_crs(epsg=output_crs, inplace=True)    
+    elif ingdf.crs != f'epsg:{output_crs}':
+        ingdf.to_crs(epsg=output_crs, inplace=True)
+    return ingdf
+
 def groupby_to_list(df, group_field, list_field) -> pd.Series:
     
     """
@@ -142,7 +150,7 @@ def building_area_theshold_id(building_gdf, bf_area_threshold , area_field_name=
 start_time = datetime.datetime.now()
 print(f'Start Time {start_time}')
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 
 output_path = os.getcwd()
 output_gpkg = Path(os.getenv('MATCHED_OUTPUT_GPKG'))
@@ -208,6 +216,7 @@ ap_counts = addresses.groupby('link_field', dropna=True)['link_field'].count()
 addresses_bp = addresses.loc[(addresses['link_field'].isin(bf_counts[bf_counts > bp_threshold].index.tolist())) & (addresses['link_field'].isin(ap_counts[ap_counts > bp_threshold].index.tolist()))]
 
 if len(addresses_bp) > 0:
+    print(f'BP Count: {len(addresses_bp)}')
     # return all addresses with a majority of the buildings under the area threshold
     addresses_bp['u_areaflag'] = addresses_bp['footprint_index'].apply(lambda x: building_area_theshold_id(footprint[footprint['footprint_index'].isin(x)], bp_area_threshold)) 
     addresses_bp = addresses_bp.loc[addresses_bp['u_areaflag'] == True]
@@ -256,7 +265,7 @@ intersect_indexes = list(set(intersections.index.tolist()))
 intersections['footprint_index'] = intersections['intersect_index']
 intersections.drop(columns='intersect_index', inplace=True)
 intersections['method'] = 'intersect'
-
+print(f'Number of Intersect Matches: {len(intersections)}')
 # footprint = footprint[~footprint.index.isin(list(set(intersections.footprint_index.tolist())))] # remove all footprints that were matched in the intersection stage
 print('Running Step 4. Creating address linkages using linking data')
 
@@ -274,7 +283,7 @@ addresses = addresses.explode('footprint_index') # Convert the lists into unique
 
 addresses = addresses[addresses['footprint_index'] != np.nan]
 addresses['method'] = 'data_linking'
-
+print(f'Number of Linking Matches: {len(addresses)}')
 # Get linkages via buffer if any unlinked data is present
 print('     get linkages via buffer')
 if len(unlinked_aps) > 0:
@@ -308,11 +317,12 @@ if len(unlinked_aps) > 0:
     unlinked_aps.loc[unlinked_plural, "footprint_index"] = unlinked_aps[unlinked_plural][["geometry", "footprint_index"]].apply(lambda row: get_nearest_linkage(*row), axis=1)
     unlinked_aps = unlinked_aps.explode('footprint_index')
     unlinked_aps['method'] = f'{buffer_size}m_buffer'
+    print(f'Number of Proximity Matches: {len(unlinked_aps)}')
 
 print("Running Step 5. Merge and Export Results")
 
 outgdf = addresses.append([intersections, addresses_bp, unlinked_aps])
-
+print(f'Total Match Count: {len(outgdf)}')
 print("Running Step 6: Change Point Location to Building Centroid")
 print('     Creating footprint centroids')
 footprint['centroid_geo'] = footprint['geometry'].apply(lambda bf: bf.representative_point())
@@ -333,6 +343,8 @@ unlinked_footprint = footprint[~footprint['footprint_index'].isin(outgdf['footpr
 # Export unlinked building polygons
 unlinked_footprint.to_file(output_gpkg, layer=unmatched_poly_lyr_nme, driver='GPKG')
 
+# One final crs check for safety
+outgdf = reproject(outgdf, proj_crs)
 # Export matched address geometry
 outgdf.to_file(output_gpkg, layer=matched_lyr_nme,  driver='GPKG')
 

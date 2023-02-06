@@ -170,7 +170,6 @@ aoi_mask = os.getenv('AOI_MASK')
 
 # output gpkg
 project_gpkg = Path(os.getenv('DATA_GPKG'))
-rd_crs = os.getenv('RD_CRS')
 
 # ------------------------------------------------------------------------------------------------
 # Logic
@@ -239,16 +238,20 @@ footprint = reproject(footprint, proj_crs)
 footprint['geometry'] = ValidateGeometry(footprint['geometry'])
 
 # Cut polygons by parcels
-cutter = PolygonCutter(footprint, linking_data, int(proj_crs), int(proj_crs))
+cutter = PolygonCutter(footprint, linking_data, crs=4326, proj_crs=int(proj_crs))
 footprint = cutter.bp
+
 print('Cleaning and prepping footprint data')
 
 footprint['bf_area'] = round(footprint['geometry'].area, 2)
 
 footprint = footprint.reset_index()
-footprint['bf_index'] = footprint.index
+
+# Ensure field and projection consistency
+footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])
 footprint = reproject(footprint, proj_crs)
+linking_data = reproject(linking_data, proj_crs)
 
 footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')

@@ -75,7 +75,7 @@ def RelationshipSetter(parcel_ident, ap_parcel_counts, bf_parcel_counts) -> str:
 # -------------------------------------------------------
 # Inputs
 
-load_dotenv(os.path.join(os.path.dirname(__file__), 'NWT_environments.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
 bf_path =  Path(os.getenv('DATA_GPKG'))
 bf_lyr_nme = 'footprints_cleaned'
 # bf_lyr_nme = 'footprint_linkages'
