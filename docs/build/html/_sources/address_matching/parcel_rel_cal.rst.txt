@@ -41,7 +41,8 @@ In this relationship there are many address points and a single building footpri
 One to Many
 ___________
 
-In this relationship type there is one address point but many building footprints contained in a single parcel.
+In this relationship type there is one address point but many building footprints contained in a
+single parcel.
 
 .. image:: img/one_to_many.png
    :width: 400

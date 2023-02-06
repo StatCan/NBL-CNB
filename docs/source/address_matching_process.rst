@@ -24,8 +24,8 @@ matching process. Without the parcel fabric the matching process would be signif
 
 The matching process is organized into several phases each with thier own page listed below. The information contained on each page gives a 
 run through of the process as it currently exists supplimented with code snippets and relelvant images. Also contained below is a page on how 
-to run the matching process on your own data called 'Run Process'. The information contained on this page gives a detailed description on how to 
-run the matching process.
+to run the matching process on your own data called 'Run Process'. The information contained on this page gives a description on the ways to 
+run the matching process as well as an overview on the environments required in order to be able to run the process.
 
 .. container:: button
 

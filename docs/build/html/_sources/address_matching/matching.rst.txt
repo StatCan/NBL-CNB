@@ -19,15 +19,17 @@ There are also special matching sub-methods included in this section. The main s
 which is used in special cases where many buildings and many addresses overa certain threshold are found in a single parcel.
 Other sub-methods will be added to this documentation as they are developed.
 
-All code contained within this documentation is for illustrative purposes and should only be considered an example of 
-the process. The code may be altered on a region to region bases based on data availability and the needs of a given area.  
+All code contained within this documentation is for illustrative purposes only and should only be considered an example of 
+the process. The code in reality may be altered based on a region to region bases based on data availability and the needs
+of a given area.  
 
 Phase 1: Load Data and Configure Attributes
 -------------------------------------------
 
 The purpose of this phase is to perform the initial load and checks on the data to be matched.
-All inputs are loaded into geodataframes and check to ensure that they are all in the same projection.
-The fields used to link the building footprints and the address points to the parcel fabric are also defined at this step. 
+All inputs are loaded into geodataframes and are projected into the the same geodataframe.
+The fields used to link the building footprints and the address points to the parcel fabric 
+is defined. 
 
 .. code-block:: python
     

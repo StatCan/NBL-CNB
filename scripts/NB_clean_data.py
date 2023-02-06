@@ -250,7 +250,8 @@ footprint = footprint.reset_index()
 # Ensure field and projection consistency
 footprint.rename(columns={'index':'bf_index'}, inplace=True)
 footprint.set_index(footprint['bf_index'])
-footprint = reproject(footprint, 4326)
+footprint = reproject(footprint, proj_crs)
+linking_data = reproject(linking_data, proj_crs)
 
 footprint['centroid_geo'] = footprint['geometry'].apply(lambda pt: pt.centroid)
 footprint = footprint.set_geometry('centroid_geo')
