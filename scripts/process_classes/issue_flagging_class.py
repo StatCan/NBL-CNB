@@ -37,8 +37,27 @@ class IssueFlagging:
     '''
     The purpose of this class is to highlight the relationships between a parcels layer and a address point layer
     '''
-    def __init__(self, ap_data_path, bf_data_path, linking_data_path, ap_lyr_nme=None, bf_lyr_nme=None, linking_lyr_nme=None, aoi_mask=None, crs= 4326):
-        def relationship_setter(parcel_ident, ap_parcel_counts, bf_parcel_counts):
+    def __init__(self, ap_data: gpd.GeoDataFrame, bp_data:gpd.GeoDataFrame, crs= 4326):
+       
+        # Core data import
+        self.addresses = ap_data
+        self.footprints = bp_data    
+    
+    def __call__():
+
+        self.footprints.to_crs(crs=proj_crs, inplace=True)
+        self.addresses.to_crs(crs=proj_crs, inplace=True)
+
+        # produce basic layers
+        print('Grouping APs')
+        grouped_ap = self.addresses.groupby('link_field', dropna=True)['link_field'].count()
+        print('Grouping BFs')
+        grouped_bf = self.footprints[self.footprints['shed_flag'] == False].groupby('link_field', dropna=True)['link_field'].count()
+        print('Determining Relationships')
+        self.addresses['parcel_rel'] = self.addresses['link_field'].apply(lambda x: self.relationship_setter(x, grouped_ap, grouped_bf))
+
+
+    def relationship_setter(self, parcel_ident, ap_parcel_counts, bf_parcel_counts):
             '''Returns the parcel relationship type for the given record based on the counts of the parcel linkages in the bf and ap datasets'''
             from math import isnan
             if isnan(parcel_ident):
@@ -67,63 +86,36 @@ class IssueFlagging:
             print(bf_count)
             sys.exit()
 
-        
-        if aoi_mask != None:
-            self.aoi_gdf = gpd.read_file(aoi_mask)
-        else: self.aoi_gdf = None
-
-        self.addresses = gpd.read_file(ap_data_path, layer=ap_lyr_nme, mask=self.aoi_gdf)
-        footprints = gpd.read_file(bf_data_path, layer=bf_lyr_nme, mask=self.aoi_gdf)
-        parcels = gpd.read_file(linking_data_path, layer=linking_lyr_nme, mask=self.aoi_gdf)
-        footprints.to_crs(crs=proj_crs, inplace=True)
-        parcels.to_crs(crs=proj_crs, inplace=True)
-        self.addresses.to_crs(crs=proj_crs, inplace=True)
-
-        # produce basic layers
-        print('Grouping APs')
-        grouped_ap = self.addresses.groupby('link_field', dropna=True)['link_field'].count()
-        print('Grouping BFs')
-        grouped_bf = footprints[footprints['shed_flag'] == False].groupby('link_field', dropna=True)['link_field'].count()
-        print('Determining Relationships')
-        self.addresses['parcel_rel'] = self.addresses['link_field'].apply(lambda x: relationship_setter(x, grouped_ap, grouped_bf))
 
     def export_results(self, out_path:str, out_lyr_name='ap_full'):
         '''outputs results to '''
         self.addresses.to_file(out_path, layer=out_lyr_name)
    
-# -------------------------------------------------------
-# Inputs
-
-load_dotenv(os.path.join(r'C:\projects\point_in_polygon\scripts', 'NB_environments.env'))
-bf_path =  Path(os.getenv('DATA_GPKG'))
-bf_lyr_nme = 'footprints_cleaned'
-# bf_lyr_nme = 'footprint_linkages'
-
-ap_path = Path(os.getenv('DATA_GPKG'))
-ap_lyr_nme = 'addresses_cleaned'
-# ap_path = Path(os.getenv('ADDRESS_PATH'))
-# ap_lyr_nme = os.getenv('ADDRESS_LAYER')
-
-linking_data_path = Path(os.getenv('DATA_GPKG'))
-linking_lyr_nme = 'parcels_cleaned'
-
-output_gpkg = Path(os.getenv('DATA_GPKG'))
-
-proj_crs = int(os.getenv('PROJ_CRS'))
-
-aoi_mask = os.getenv('AOI_MASK')
-
-metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
-
-ap_cases_gpkg = Path(os.getenv('AP_CASES_GPKG'))
-
-# -------------------------------------------------------
-
-@click.command()
-@click.argument()
-
 
 def main():
+
+    load_dotenv(os.path.join(r'C:\projects\point_in_polygon\scripts', 'NB_environments.env'))
+    bf_path =  Path(os.getenv('DATA_GPKG'))
+    bf_lyr_nme = 'footprints_cleaned'
+    # bf_lyr_nme = 'footprint_linkages'
+    
+    ap_path = Path(os.getenv('DATA_GPKG'))
+    ap_lyr_nme = 'addresses_cleaned'
+    # ap_path = Path(os.getenv('ADDRESS_PATH'))
+    # ap_lyr_nme = os.getenv('ADDRESS_LAYER')
+
+    linking_data_path = Path(os.getenv('DATA_GPKG'))
+    linking_lyr_nme = 'parcels_cleaned'
+
+    output_gpkg = Path(os.getenv('DATA_GPKG'))
+
+    proj_crs = int(os.getenv('PROJ_CRS'))
+
+    aoi_mask = os.getenv('AOI_MASK')
+
+    metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
+
+    ap_cases_gpkg = Path(os.getenv('AP_CASES_GPKG'))
 
     issues_flagged = IssueFlagging(ap_path, bf_path, linking_data_path, ap_lyr_nme, bf_lyr_nme, linking_lyr_nme, aoi_mask,crs=proj_crs)
     issues_flagged.export_results(output_gpkg, out_lyr_name='ap_full')
