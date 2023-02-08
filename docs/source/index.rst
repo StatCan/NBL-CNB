@@ -15,7 +15,7 @@ The NBL is the geospatial representation of every building in Canada and associa
 It will serve as a structured, interoperable and authoritative layer. One of the primary goals for the further development of the NBL is to 
 reduce duplication of effort and create a standard for all building data.
 
-In order to acheive is vision the below processes were developed each with a goal of fulfilling a certain aspect of the NBL.
+In order to achieve is vision the below processes were developed each with a goal of fulfilling a certain aspect of the NBL.
 
 .. note::
 

@@ -15,6 +15,7 @@ In order to run the matching process a python 3 environment is required with the
 * Shapely
 * Fiona
 * Geopandas
+* Swifter
 * python-dotenv
 * pathlib
 
@@ -88,3 +89,6 @@ Initiate Process
 
 Once setup above is complete the address matching process can be intiated. To do this we
 will run the files from the command line. 
+
+1. Open the command prompt and ensure that you python environment is setup correctly with all of the list packages installed.
+2. Navigate to the directory that contains the data 
