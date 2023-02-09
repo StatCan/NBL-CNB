@@ -1,3 +1,4 @@
+import click
 import geopandas as gpd
 import pandas as pd
 import sys
@@ -11,6 +12,7 @@ from issue_flagging_class import IssueFlagging
 from matching_master_class import Matcher
 from qa_qc_classes import MatchQaQC
 
+pd.options.mode.chained_assignment = None
 
 class AddressMatcher:
     '''
@@ -51,7 +53,8 @@ class AddressMatcher:
         
         # On call run each process class in order
         # Step 1: Data Cleaning
-        clean = CleanData(self.adp, self.bp, self.pcl)
+        clean = CleanData(self.adp, self.bp, self.pcl, self.proj_crs)
+        clean()
         # Step 2: Parcel Relationship Calculation
         flagged = IssueFlagging(clean.adp, clean.bp, clean.parcels, crs= self.proj_crs)
         # Step 3: Matching 
@@ -67,12 +70,13 @@ class AddressMatcher:
         # Key output vars
         out_gpkg_pth = os.path.join(export_directory, 'match_results')
 
-
-def main():
+@ click.command()
+@ click.argument('env_directory', type=click.STRING)
+def main(env_directory:str):
     
-    env_directory = os.path.join(os.path.dirname(__file__), 'NB_environments.env')
+    # env_directory = os.path.join(os.path.dirname(__file__), 'NB_environments.env')
     matching = AddressMatcher(env_directory)
-    
+    matching()    
     
 
 if __name__ == "__main__":

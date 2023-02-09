@@ -1,20 +1,18 @@
-import datetime
 import sys
 import shapely
 import os
-import re
-import string
 from pathlib import Path
 import fiona
 import geopandas as gpd
-import numpy as np
 import pandas as pd
+import click
 from dotenv import load_dotenv
 from math import pi
 from shapely.geometry import MultiLineString, Polygon, Point
 from shapely.validation import make_valid
 from polygon_cutter import PolygonCutter
 
+pd.options.mode.chained_assignment = None
 
 class CleanData:
 
@@ -222,10 +220,38 @@ class CleanData:
             input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
         return input_geometry
 
+@ click.command()
+@ click.argument('env_file_path', type=click.STRING)
+def main(env_file_path: str) -> None:
+   
+    #env_directory = os.path.join(os.path.dirname(__file__), 'NB_environments.env')
+    load_dotenv(env_file_path)
 
-def main():
+    proj_crs = os.getenv('PROJ_CRS')
     
-    cleaned = CleanData()
+    footprint_lyr = Path(os.getenv('BF_PATH'))
+    footprint_lyr_name = os.getenv('BF_LYR_NME')
+
+    ap_path = Path(os.getenv('ADDRESS_PATH'))
+    ap_lyr_nme = os.getenv('ADDRESS_LAYER')
+    
+    linking_data_path = Path(os.getenv('LINKING_PATH'))
+    linking_lyr_nme = os.getenv('LINKING_LYR_NME')
+
+    # AOI mask if necessary
+    aoi_mask = os.getenv('AOI_MASK')
+    
+    if aoi_mask != None:
+        aoi_mask = gpd.read_file(aoi_mask)
+        
+    # GDB creation
+    addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_mask)
+    bp = gpd.read_file(footprint_lyr, layer=footprint_lyr_name, mask=aoi_mask)
+    parcels = gpd.read_file(linking_data_path, layer=linking_lyr_nme, mask=aoi_mask)
+
+    cleaned = CleanData(addresses, bp, parcels, proj_crs=proj_crs)
+    cleaned()
 
 if __name__ == '__main__':
     main()
+    print('DONE!')
