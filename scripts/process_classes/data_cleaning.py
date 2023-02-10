@@ -27,7 +27,7 @@ class CleanData:
 
     def __call__(self,):
         
-        print('Loading in linking data')
+        click.echo('Loading in linking data')
         self.parcels = self._reproject(self.parcels, self.proj_crs)
         linking_cols_drop = self.parcels.columns.tolist()
         self.parcels['link_field'] = range(1, len(self.parcels.index)+1)
@@ -40,7 +40,7 @@ class CleanData:
 
         self.parcels.drop(columns=linking_cols_drop, inplace=True)
 
-        print('Cleaning and prepping address points')
+        click.echo('Cleaning and prepping address points')
 
         # addresses = addresses[ap_add_fields]
         self.adp = self._reproject(self.adp, self.proj_crs)
@@ -66,7 +66,7 @@ class CleanData:
         cutter = PolygonCutter(self.bp, self.parcels, crs=4326, proj_crs=int(self.proj_crs))
         self.bp = cutter.bp
 
-        print('Cleaning and prepping footprint data')
+        click.echo('Cleaning and prepping footprint data')
 
         self.bp['bf_area'] = round(self.bp['geometry'].area, 2)
 
@@ -254,4 +254,4 @@ def main(env_file_path: str) -> None:
 
 if __name__ == '__main__':
     main()
-    print('DONE!')
+    click.echo('DONE!')

@@ -71,12 +71,13 @@ class AddressMatcher:
         out_gpkg_pth = os.path.join(export_directory, 'match_results')
 
 @ click.command()
-@ click.argument('env_directory', type=click.STRING)
-def main(env_directory:str):
+@ click.argument('env_path', type=click.STRING)
+def main(env_path:str):
     
     # env_directory = os.path.join(os.path.dirname(__file__), 'NB_environments.env')
-    matching = AddressMatcher(env_directory)
-    matching()    
+    matching = AddressMatcher(env_path)
+    matching()
+    matching.export_data()    
     
 
 if __name__ == "__main__":

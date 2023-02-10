@@ -37,27 +37,29 @@ class IssueFlagging:
     '''
     The purpose of this class is to highlight the relationships between a parcels layer and a address point layer
     '''
-    def __init__(self, ap_data: gpd.GeoDataFrame, bp_data:gpd.GeoDataFrame, crs= 4326):
+    def __init__(self, ap_data: gpd.GeoDataFrame, bp_data:gpd.GeoDataFrame, crs):
        
         # Core data import
         self.addresses = ap_data
-        self.footprints = bp_data    
+        self.footprints = bp_data
+
+        self.proj_crs = crs    
     
-    def __call__():
+    def __call__(self):
 
-        self.footprints.to_crs(crs=proj_crs, inplace=True)
-        self.addresses.to_crs(crs=proj_crs, inplace=True)
-
+        self.footprints.to_crs(crs=self.proj_crs, inplace=True)
+        self.addresses.to_crs(crs=self.proj_crs, inplace=True)
+        
         # produce basic layers
-        print('Grouping APs')
+        click.echo('Grouping APs')
         grouped_ap = self.addresses.groupby('link_field', dropna=True)['link_field'].count()
-        print('Grouping BFs')
+        click.echo('Grouping BFs')
         grouped_bf = self.footprints[self.footprints['shed_flag'] == False].groupby('link_field', dropna=True)['link_field'].count()
-        print('Determining Relationships')
-        self.addresses['parcel_rel'] = self.addresses['link_field'].apply(lambda x: self.relationship_setter(x, grouped_ap, grouped_bf))
+        click.echo('Determining Relationships')
+        self.addresses['parcel_rel'] = self.addresses['link_field'].apply(lambda x: self._relationship_setter(x, grouped_ap, grouped_bf))
 
 
-    def relationship_setter(self, parcel_ident, ap_parcel_counts, bf_parcel_counts):
+    def _relationship_setter(self, parcel_ident, ap_parcel_counts, bf_parcel_counts):
             '''Returns the parcel relationship type for the given record based on the counts of the parcel linkages in the bf and ap datasets'''
             from math import isnan
             if isnan(parcel_ident):
@@ -88,40 +90,51 @@ class IssueFlagging:
 
 
     def export_results(self, out_path:str, out_lyr_name='ap_full'):
-        '''outputs results to '''
+        '''outputs results to a given gpkg'''
         self.addresses.to_file(out_path, layer=out_lyr_name)
    
+@click.command()
+@click.argument('env_path', type=click.STRING)
+@click.option("--out_name", default="ap_full", show_default=True, help="Name of output layer")
+def main(env_path:str, out_name:str):
+    '''
+    Creates the parcel relationship field in the address points data set. Assumes the inputs have already been cleaned and linkages created.
 
-def main():
+    env_path: the path to the environments file containing the information needed to setup the data
+    '''
 
-    load_dotenv(os.path.join(r'C:\projects\point_in_polygon\scripts', 'NB_environments.env'))
+    load_dotenv(env_path)
+
     bf_path =  Path(os.getenv('DATA_GPKG'))
     bf_lyr_nme = 'footprints_cleaned'
-    # bf_lyr_nme = 'footprint_linkages'
     
     ap_path = Path(os.getenv('DATA_GPKG'))
     ap_lyr_nme = 'addresses_cleaned'
     # ap_path = Path(os.getenv('ADDRESS_PATH'))
     # ap_lyr_nme = os.getenv('ADDRESS_LAYER')
 
-    linking_data_path = Path(os.getenv('DATA_GPKG'))
-    linking_lyr_nme = 'parcels_cleaned'
-
     output_gpkg = Path(os.getenv('DATA_GPKG'))
 
     proj_crs = int(os.getenv('PROJ_CRS'))
 
+    # AOI mask if necessary
     aoi_mask = os.getenv('AOI_MASK')
+    
+    if aoi_mask != None:
+        aoi_mask = gpd.read_file(aoi_mask)
 
-    metrics_out_path = Path(os.getenv('METRICS_CSV_OUT_PATH'))
+    # data gpkg creation
+    ap = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_mask)
+    bf = gpd.read_file(bf_path, layer=bf_lyr_nme, mask=aoi_mask)
 
-    ap_cases_gpkg = Path(os.getenv('AP_CASES_GPKG'))
+    issues_flagged = IssueFlagging(ap, bf, crs=proj_crs)
+    issues_flagged()
 
-    issues_flagged = IssueFlagging(ap_path, bf_path, linking_data_path, ap_lyr_nme, bf_lyr_nme, linking_lyr_nme, aoi_mask,crs=proj_crs)
-    issues_flagged.export_results(output_gpkg, out_lyr_name='ap_full')
+    issues_flagged.export_results(output_gpkg, out_name)
+
     
     
 if __name__ == "__main__":
     main()
-    print('DONE!')
+    click.echo('DONE!')
 
