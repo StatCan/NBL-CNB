@@ -10,10 +10,10 @@ For reference the descriptions on this page cover the code in **match_confidence
 The final step of the matching process is the confidence calculation. Confidence is a numeric score
 calculated based off the characteristics of the match. Additionally, secondary sources such as the
 National Address Register (NAR) are brought in to add to the calculation wherever possible. It is 
-important to note that the confidence score is an arbitrary number and should not be considered an
-indicator percent confidence.
+important to note that the confidence score is an arbitrary number and should not be considered a 
+percentage.
 
-As the number of available sources can vary wildly depending on the region of work the below score
+As the number of available sources can vary widely depending on the region of work the below score
 breakdown should be considered an example and the number of sources included in the initial score 
 caculation will vary from region to region. 
 

@@ -8,7 +8,7 @@ Run the Matching Process
 Setup
 -----
 
-In order to run the matching process a python 3 environment is required with the following packages (as well as their dependancies) installed:
+In order to run the matching process a python 3  environment is required with the following packages (as well as their dependancies) installed:
 
 * Pandas
 * GDAL
