@@ -11,6 +11,7 @@ from data_cleaning import CleanData
 from issue_flagging_class import IssueFlagging
 from matching_master_class import Matcher
 from qa_qc_classes import MatchQaQC
+from confidence_calc import ConfidenceCalculator
 
 pd.options.mode.chained_assignment = None
 
@@ -58,10 +59,11 @@ class AddressMatcher:
         # Step 2: Parcel Relationship Calculation
         flagged = IssueFlagging(clean.adp, clean.bp, clean.parcels, crs= self.proj_crs)
         # Step 3: Matching 
-        matched = AddressMatcher(flagged.addresses, clean.bp, clean.parcels)
+        matched = Matcher(flagged.addresses, clean.bp, clean.parcels)
         # Step 4: QA/QC
         qa_qc = MatchQaQC(matched.out_gdf,)
         # Step 5: Confidence Calculation
+        confident = ConfidenceCalculator()
         
     def export_data(export_directory: str) -> None: 
 
