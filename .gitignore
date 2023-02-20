@@ -4,3 +4,4 @@ environments.env
 *.qgz
 *.env
 scripts/__pycache__/polygon_cutter.cpython-310.pyc
+docs/source/img/Thumbs.db
