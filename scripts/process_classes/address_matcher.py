@@ -60,8 +60,10 @@ class AddressMatcher:
         flagged = IssueFlagging(clean.adp, clean.bp, clean.parcels, crs= self.proj_crs)
         # Step 3: Matching 
         matched = Matcher(flagged.addresses, clean.bp, clean.parcels)
+        matched()
         # Step 4: QA/QC
-        qa_qc = MatchQaQC(matched.out_gdf,)
+        qa_qc = MatchQaQC(matched.out_gdf,clean.adp, proj_crs=self.proj_crs)
+        qa_qc()
         # Step 5: Confidence Calculation
         confident = ConfidenceCalculator()
         
