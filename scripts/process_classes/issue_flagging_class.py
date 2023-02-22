@@ -10,7 +10,7 @@ import datetime
 import swifter
 import click
 shapely.speedups.enable()
-
+pd.options.mode.chained_assignment = None
 '''
 The purpose of this script is to highlight potentially problematic building footprints as they relate to associated parcel fabrics and building points.
 Generates a report of counts based on known potentially problematic situations

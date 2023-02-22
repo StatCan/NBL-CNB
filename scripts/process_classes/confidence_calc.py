@@ -8,76 +8,73 @@ import geopandas as gpd
 from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
+import click
 
 class ConfidenceCalculator():
     '''Calculates the confidence of any given matches based off of various match charateristics and secondary sources'''
     
-    def __init__(self) -> None:
-        pass
-    
-    
-    def __call__(self) -> None:
-        print('Loading in data')
-        addresses = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
+    def __init__(self, matched_adp, parcels_gdf, lines_gdf, proj_crs, civic_data_gpkg=None, civic_data_lyr_nme=None) -> None:
+        
+        self.addresses = matched_adp
+        self.parcels_gdf = parcels_gdf
+        self.civic_data_gpkg = civic_data_gpkg
+        self.civic_data_lyr_nme = civic_data_lyr_nme
+        self.lines_gdf = lines_gdf
 
-        parcels = gpd.read_file(project_gpkg, layer=parcel_lyr_nme, crs=proj_crs)
+        self.proj_crs = proj_crs
+
+        self.confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length', 'method', 'nar_link_flag', 'sbgr_link_flag']
+    
+
+    def __call__(self) -> None:
 
         # Create flags for secondary address sources
-
-        if mun_civic_lyr_nme not in fiona.listlayers(mun_civic_gpkg):
-            print('No municipal civics data available')
-            addresses['mun_civic_flag'] = np.NaN
+        if self.civic_data_gpkg == None:
+            click.echo('No municipal civics data available')
+            self.addresses['mun_civic_flag'] = np.NaN
         else:
-            mun_civics = gpd.read_file(mun_civic_gpkg, layer=mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
-            print('Prepping municipal civic fields')
+            mun_civics = gpd.read_file(self.mun_civic_gpkg, layer=self.mun_civic_lyr_nme, crs=proj_crs, driver='GPKG')
+            click.echo('Prepping municipal civic fields')
             mun_civics['st_nme'] = mun_civics['st_nme'].str.upper().str.replace(' ', '')
-            print('Creating municipal civics flag')
-            addresses['mun_civic_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
+            click.echo('Creating municipal civics flag')
+            self.addresses['mun_civic_flag'] = self.addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: self._civics_flag_builder(row[1],row[2],row[3],mun_civics[mun_civics['link_field'] == row[0]]), axis=1) 
 
-        print('Creating parcel location field flags')
-        #addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
-        addresses['parcel_loc_flag'] = np.NaN
+        click.echo('Creating parcel location field flags')
+        #self.addresses['parcel_loc_flag'] = addresses[['link_field', 'number', 'street', 'stype_en']].apply(lambda row: parcel_location_flag_builder(row, parcels[parcels['link_field'] == row[0]][['link_field', 'address_min', 'address_max', 'street_name', 'street_type']]), axis=1)
+        self.addresses['parcel_loc_flag'] = np.NaN
 
-        if 'nar_addr_guid' in addresses.columns.tolist():
-            print('Creating NAR linkage flag')
-            addresses['nar_link_flag'] = addresses['nar_addr_guid'].apply(lambda x: 1 if type(x) == str else 0)
-
-        else:
-            print('No NAR linkage available to check')
-            addresses['nar_link_flag'] = np.NaN
-
-        if 'sbgr_bg_sn' in addresses.columns.tolist():
-            print('Creating SBgR SN linkage flag')
-            addresses['sbgr_link_flag'] = addresses['sbgr_bg_sn'].apply(lambda x: 1 if type(x) == str else 0)
+        if 'nar_addr_guid' in self.addresses.columns.tolist():
+            click.echo('Creating NAR linkage flag')
+            self.addresses['nar_link_flag'] = self.addresses['nar_addr_guid'].apply(lambda x: 1 if type(x) == str else 0)
 
         else:
-            print('No SBgR SN linkage available to check')
-            addresses['sbgr_link_flag'] = np.NaN
+            click.echo('No NAR linkage available to check')
+            self.addresses['nar_link_flag'] = np.NaN
+
+        if 'sbgr_bg_sn' in self.addresses.columns.tolist():
+            click.echo('Creating SBgR SN linkage flag')
+            self.addresses['sbgr_link_flag'] = self.addresses['sbgr_bg_sn'].apply(lambda x: 1 if type(x) == str else 0)
+
+        else:
+            click.echo('No SBgR SN linkage available to check')
+            self.addresses['sbgr_link_flag'] = np.NaN
 
         # Calculate confidence score and associated fields
-        confidence_vars = ['parcel_rel', 'mun_civic_flag', 'parcel_loc_flag', 'link_length', 'method', 'nar_link_flag', 'sbgr_link_flag']
+        click.echo('Calculating Confidence')
 
-        print('Calculating Confidence')
+        self.addresses['confidence'] = self.addresses[self.confidence_vars].apply(lambda row: self._confidence_score_calculator(*row), axis=1)
 
-        addresses['confidence'] = addresses[confidence_vars].apply(lambda row: confidence_score_calculator(*row), axis=1)
+        self.addresses['con_valid_inputs'] = self.addresses[self.confidence_vars[1:]].apply(lambda row: self._valid_confidence_input_counter(*row), axis=1)
+        self.addresses['con_total_inputs'] = self.addresses[self.confidence_vars[1:]].apply(lambda row: self._total_confidence_input_counter(*row), axis=1)
 
-        addresses['con_valid_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: valid_confidence_input_counter(*row), axis=1)
-        addresses['con_total_inputs'] = addresses[confidence_vars[1:]].apply(lambda row: total_confidence_input_counter(*row), axis=1)
-
-        addresses['confidence_type'] = addresses['confidence'].apply(lambda c: determine_confidence_type(c))
+        self.addresses['confidence_type'] = self.addresses['confidence'].apply(lambda c: self._determine_confidence_type(c))
 
         # Add confidence to line links
-        lines_gdf = gpd.read_file(qa_qc_gpkg, layer=line_link_lyr_nme)
-        lines_gdf = lines_gdf.merge(addresses[['link_id', 'confidence', 'confidence_type']], on='link_id')
-
-        # Export data with confidence
-        addresses.to_file(qa_qc_gpkg, layer=out_name, driver='GPKG')
-        lines_gdf.to_file(qa_qc_gpkg, layer= out_line_links_name)
+        self.lines_gdf = self.lines_gdf.merge(self.addresses[['link_id', 'confidence', 'confidence_type']], on='link_id')
 
 
     def data_export():
         '''method to export the data after processing is complete'''
-
 
 
     def _confidence_score_calculator(self, parcel_rel, mun_civ_flag, parcel_loc_flag, link_len, method, nar_link, sbgr_link) -> int:
@@ -194,12 +191,11 @@ class ConfidenceCalculator():
             return 'LOW'
 
 
-# --------------------------------------------------
-# Inputs
+@click.command()
+@click.argument('env_path', type=click.STRING)
+def main(env_path:str) -> None:
 
-def main() -> None:
-
-    load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
+    load_dotenv(env_path)
 
     output_path = os.getcwd()
     match_gpkg = os.getenv('MATCHED_OUTPUT_GPKG')
@@ -218,9 +214,18 @@ def main() -> None:
 
     proj_crs = os.getenv('PROJ_CRS')
 
-    out_gpkg = Path(os.getenv('QA_GPKG'))
-    out_name = 'matches_w_confidence'
-    out_line_links_name = f"line_link_{datetime.datetime.now().strftime('%d_%m_%Y')}"
+    matched_gdf = gpd.read_file(qa_qc_gpkg, layer=addresses_lyr_nme, crs=proj_crs)
+    parcels_gdf = gpd.read_file(project_gpkg, layer=parcel_lyr_nme, crs=proj_crs)
+    lines_gdf = gpd.read_file(qa_qc_gpkg, layer=line_link_lyr_nme, crs=proj_crs)
+
+    confidence = ConfidenceCalculator(matched_gdf, parcels_gdf, lines_gdf, proj_crs)
+    confidence()
+
+    click.echo('DONE!')
+
+if __name__ == '__main__':
+    main()
+
 
 
     
