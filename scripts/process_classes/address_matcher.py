@@ -53,19 +53,20 @@ class AddressMatcher:
     def __call__(self):
         
         # On call run each process class in order
-        # Step 1: Data Cleaning
+        click.echo('Step 1: Data Cleaning')
         clean = CleanData(self.adp, self.bp, self.pcl, self.proj_crs)
         clean()
-        # Step 2: Parcel Relationship Calculation
-        flagged = IssueFlagging(clean.adp, clean.bp, clean.parcels, crs= self.proj_crs)
-        # Step 3: Matching 
+        click.echo('Step 2: Parcel Relationship Calculation')
+        flagged = IssueFlagging(clean.adp, clean.bp, crs= self.proj_crs)
+        click.echo('Step 3: Matching') 
         matched = Matcher(flagged.addresses, clean.bp, clean.parcels)
         matched()
-        # Step 4: QA/QC
+        click.echo('Step 4: QA/QC')
         qa_qc = MatchQaQC(matched.out_gdf,clean.adp, proj_crs=self.proj_crs)
         qa_qc()
-        # Step 5: Confidence Calculation
-        confident = ConfidenceCalculator()
+        click.echo('Step 5: Confidence Calculation')
+        confident = ConfidenceCalculator(qa_qc.match_adp, clean.parcels, qa_qc.line_links, proj_crs)
+        confident()
         
     def export_data(export_directory: str) -> None: 
 
@@ -79,6 +80,7 @@ class AddressMatcher:
 def main(env_path:str):
     
     # env_directory = os.path.join(os.path.dirname(__file__), 'NB_environments.env')
+    click.echo('Starting Matching Process')
     matching = AddressMatcher(env_path)
     matching()
     matching.export_data()    
@@ -86,4 +88,4 @@ def main(env_path:str):
 
 if __name__ == "__main__":
     main()
-    print('DONE!')
+    click.echo('DONE!')
