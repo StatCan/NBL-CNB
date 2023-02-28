@@ -5,7 +5,7 @@ Step 3: Matching
    :maxdepth: 2
    :hidden:
 
-For reference the descriptions on this page cover the code in **matching_master.py**
+For reference, the descriptions on this page cover the code in **matching_master.py**
 
 The matching stage of the process is where the matches are made between the address points and the building polygons.
 This process is broken down and organized by its five component steps. Three methods are used to match the buildings 
@@ -16,20 +16,20 @@ and are listed below in order of assumed accuracy:
 3. proximity
 
 There are also special matching sub-methods included in this section. The main sub-method is the big parcel (BP) sub-method
-which is used in special cases where many buildings and many addresses overa certain threshold are found in a single parcel.
+which is used in special cases where many buildings and many addresses over a certain threshold are found in a single parcel.
 Other sub-methods will be added to this documentation as they are developed.
 
-All code contained within this documentation is for illustrative purposes only and should only be considered an example of 
+All code contained within this document is for illustrative purposes only and should only be considered an example of 
 the process. The code in reality may be altered based on a region to region bases based on data availability and the needs
-of a given area.  
+of a given area.   
 
 Phase 1: Load Data and Configure Attributes
 -------------------------------------------
 
 The purpose of this phase is to perform the initial load and checks on the data to be matched.
-All inputs are loaded into geodataframes and are projected into the the same geodataframe.
+All inputs are loaded into geodataframes and are projected into the same geodataframe.
 The fields used to link the building footprints and the address points to the parcel fabric 
-is defined. 
+are defined.  
 
 .. code-block:: python
     
@@ -59,7 +59,7 @@ threshold is reached those records are separated and go through a separate match
    * Only buildings that fall under the bp area threshold are kept for matching.
    * Attempt to find matches using a 20m buffer around the address point.
    * If there are any plural linkages (more than one link within 20m) then compare the linkages and take only the closest.
-   * All matched made this way are assigned a method value of 20m_bp to signify that they were matched using this process. 
+   * All matches made this way are assigned a method value of 20m_bp to signify that they were matched using this process. 
 
 The code for the above process:
 
@@ -142,10 +142,10 @@ The code for the above process:
 Phase 3: Check Linkages using Intersects
 ----------------------------------------
 
-This phase checks for and any buildings and addresses that directly intersect with each other and matches them based on that intersection.
+This phase checks for any buildings and addresses that directly intersect with each other and matches them based on that intersection.
 This phase is performed as follows:
 
-1. Identify all address points that directly intersect a building polygon. Assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.
+1. Identify all address points that directly intersect a building polygon. The assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.
 2. Identified linkages via intersect and are removed from the main addresses geodataframe as they have already been matched.
 
 .. code-block:: python

@@ -4,7 +4,7 @@ Step 1: Data Preparation
 .. contents:: Contents:
    :depth: 4
 
-There are three key layers that must be injested, cleaned, and prepped before matching can begin.
+There are three key layers that must be ingested, cleaned, and prepped before matching can begin.
 The composition of these input files varies widely by jurisdiction so to a certain degree this process
 will vary slightly from region to region in order to compensate for these differences. The three key layers
 are:
@@ -14,12 +14,12 @@ are:
 * Parcel Fabric
 
 .. Note::
-   **Building Polygons** is the term used to describe the building data rather than the more commonly used building footprints.
+   **Building Polygon** is the term used to describe building data rather than the more commonly used building footprints.
    The primary reason for this difference is that a building footprint might only conform to the roof area of a building whereas
-   a building polygon should encompass the entire area of a structure.  
+   a building polygon should encompass the entire area of a structure. 
 
-All three of these layers must be available in order to to create address to building matches under the
-current process. Intially all three layers are loaded into geodataframes for cleaning. 
+All three of these layers must be available in order to create address to building matches under the
+current process. Initially all three layers are loaded into geodataframes for cleaning. 
 
 .. code-block:: python
    
@@ -29,7 +29,7 @@ current process. Intially all three layers are loaded into geodataframes for cle
    addresses = gpd.read_file(ap_path, layer=ap_lyr_nme, mask=aoi_gdf)
    footprint = gpd.read_file(footprint_lyr, layer=footprint_lyr_name ,mask=aoi_gdf)
 
-The following stections describe the individual processes used to clean the three key datasets.
+The following sections describe the individual processes used to clean the three key datasets.
 
 Parcel Fabric Cleaning
 ----------------------
@@ -51,8 +51,8 @@ removed at this stage.
    :width: 400
    :alt: Micro Parcels Example
 
-In the image above the there are many micro parcels in a single much larger parcel. In general these parcels have an
-area of >100m2 and so can easily be filtered out using the follwing code:
+In the image above there are many micro parcels in a single much larger parcel. In general, these parcels have an
+area of >100m2 and so can easily be filtered out using the following code:
 
 .. code-block:: python
 
@@ -67,7 +67,7 @@ and the building polygons. If a viable option exists then it is possible to use 
 However, it needs to meet certain criteria:
 
 * There must be no NULL values 
-* There must be a unqiue value for every record with no repetitions
+* There must be a unique value for every record with no repetitions
 
 If no viable field exists in the base data then a new field can be calculated. This in its simplest form is a unique 
 integer value for each parcel. More complex processes are available if retaining the value for use after matching however, 
@@ -80,22 +80,21 @@ in this documentation we will be using a simple unique integer for example purpo
 Address Points Cleaning
 -----------------------
 
-The following  cleaning/preparation processes are applied to the raw address point data in order to 
-prepare for matching:
+The following processes are applied to the raw address point data in preparation for matching:
 
 * Parcel Linkage
 
 Parcel Linkage for Address Points
 _________________________________
 
-Parcel linkage is the process of adding the linking field for a parcel to the a record if that record intersects that parcel.
-The main criteria for this is to link each building with the smallest intersecting00 parcel. 
+Parcel linkage is the process of adding the linking field for a parcel to a building polygon if it intersects a parcel.
+The main criterion for this is to link each building with the smallest intersecting parcel. 
 
 There can only be one linkage between parcel data and the address points. In cases where 
 the address point intersects multiple parcels use the polygon with the smaller area. The 
-polygon with the smaller area is more likely to coorespond to a lot rather than a whole 
-property. For example there are often cases where a lot for a building is within the
-parcel for the building as well as the entire property. In that case we want to grab the 
+polygon with the smaller area is more likely to correspond to a lot rather than a whole 
+property. For example, there are often cases where a lot for a building is within the
+parcel for the building as well as the entire property. In that case, we want to grab the 
 smallest parcel possible as matching results are the most likely to be accurate in those cases.
 
 .. image:: img/layered_parcels.png
@@ -115,32 +114,32 @@ prepare for matching:
 Parcel Linkage for Building Polygons
 ____________________________________
 
-Parcel Linkages are made similar to the way they are made for address points with minor changes in workfolow.
+Parcel Linkages are made similarly to the way they are made for address points with minor changes in workflow.
 
 * Building polygons are converted to representative points to allow for the creation of the spatial jurisdiction
 * If a building intersects more than one polygon then the smallest acceptable polygon is taken as the linkage.
 
-**Representative Point** A representative point is an arbitrary points within a polygon. The key feature of this point is 
+**Representative Point** A representative point is an arbitrary point within a polygon. The key feature of this point is 
 that it will always be contained within the bounds of a polygon regardless of its complexity. This is different from a centroid
 which is always located at the centre of the polygon regardless of if it actually sits within the bounds of that polygon or not.
 
-Non-Addressable Out-Building Detection
+Unaddressable Out-Building Detection
 ______________________________________
 
-A building is considered to be a non Non-Addressable outbuilding when one or more of the following criteria are met:
+A building is considered to be an unaddressable outbuilding when one or more of the following criteria are met:
 
 1. The footprint has an area of less than 50m2 and there is at least one other building greater than 50m2 in the same parcel,
 2. The area of the building is between 50m2 and 100m2 and the number of buildings is greater than the number of address points in the parcel
    To perform this process the following steps are followed:
    
    * Use groupby to get the counts of address points and building polygons for each parcel
-   * All building polygons that are in a parcel where there is only one building or only one address point are dropped from this process as Non-Addressable Outbuildings cannot be identified in those cases
+   * All building polygons that are in a parcel where there is only one building or only one address point are dropped from this process as unaddressable outbuildings cannot be identified in those cases
    * If the number of buildings is greater than or equal to the bp threshold for a given parcel then only remove buildings >50m2
    * Of the remaining buildings flag all those that are below the minimum addressable threshold
-   * Of the remaining cases look at the count of building polygons compared to the count of address points. Flag all building polygons that exceeed the count of address points and are less than 100m2.
+   * Of the remaining cases look at the count of building polygons compared to the count of address points. Flag all building polygons that exceed the count of address points and are less than 100m2.
 
-   The above steps are organized into a function which is then run on groups of buildings organized by the linking parcel. The funtions and the code to properly call it can be seen below.
-   
+   The above steps are organized into a function which is then run on groups of buildings organized by the linking parcel. The functions and the code to properly call it can be seen below.
+
    .. code-block:: python
    
       # Discover all sheds in the data
@@ -178,16 +177,16 @@ A building is considered to be a non Non-Addressable outbuilding when one or mor
          shed_indexes = sheds[bf_index_field].values.tolist() # convert to list of indexes
          return shed_indexes
 
-3. The building is determined exceed the acceptable threshold of roundness. The roundness of the building is determined using the following formula:
+3. The building is determined to exceed the acceptable threshold of roundness. The roundness of the building is determined using the following formula:
    
    .. math::
       
       (4 * pi * Area) / (Perimiter * Perimiter)
 
-   Should a building have a roundness of <= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
+    Should a building have a roundness of <= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
 
-   * Caculate the area and perimiter of the building polygon in separate variables within the building polygons geodataframe.
-   * Create a new field called 'C' in the buildings geodataframe and calculate circularity using the formula above.
+   * Calculate the area and perimeter of the building polygon in separate variables within the building polygon geodataframe.
+   * Create a new field called 'C' in the building geodataframe and calculate circularity using the formula above.
    * Flag and extract all records that exceed the threshold for roundness. Remove them from the main building polygon geodataframe.
    
    An example of how this process is conducted in the code can be seen below:

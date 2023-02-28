@@ -116,16 +116,9 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="../address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -217,16 +210,9 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="../address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -335,20 +321,20 @@
 <h1>Step 5: Match Confidence Calculation<a class="headerlink" href="#step-5-match-confidence-calculation" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<p>For reference the descriptions on this page cover the code in <strong>match_confidence_calc.py</strong></p>
+<p>For reference, the descriptions on this page cover the code in <strong>match_confidence_calc.py</strong></p>
 <p>The final step of the matching process is the confidence calculation. Confidence is a numeric score
-calculated based off the characteristics of the match. Additionally, secondary sources such as the
+calculated based on the characteristics of the match. Additionally, secondary sources such as the
 National Address Register (NAR) are brought in to add to the calculation wherever possible. It is
-important to note that the confidence score is an arbitrary number and should not be considered an
-indicator percent confidence.</p>
-<p>As the number of available sources can vary wildly depending on the region of work the below score
-breakdown should be considered an example and the number of sources included in the initial score
-caculation will vary from region to region.</p>
+important to note that the confidence score is an arbitrary number and should not be considered a
+percentage.</p>
+<p>As the number of available sources can vary widely depending on the region of work the below score each
+breakdown should be considered an example and the number of sources included in the initial score. The
+final score will vary from region to region.</p>
 <section id="base-scores">
 <h2>Base Scores<a class="headerlink" href="#base-scores" title="Permalink to this heading">#</a></h2>
 <p>The base score is the initial value assigned to a match based on the relationship
 between the number of address points and the number of building polygons in the
-linked parcel (if available). This score is based off the complexity of the relationship,
+linked parcel (if available). This score is based on the complexity of the relationship
 or lack of relationship in cases where there is no linked parcel.</p>
 <table class="table">
 <thead>
@@ -410,7 +396,7 @@ below.</p>
 </section>
 <section id="link-distance">
 <h2>Link Distance<a class="headerlink" href="#link-distance" title="Permalink to this heading">#</a></h2>
-<p>Link distance is a key indicator on the accuracy of a match. The shorter the distance
+<p>Link distance is a key indicator for the accuracy of a match. The shorter the distance
 between the address point and the building footprint</p>
 <table class="table">
 <thead>
@@ -479,7 +465,7 @@ field in the parcel data used to make the matches.</p>
 </section>
 <section id="final-classification">
 <h2>Final Classification<a class="headerlink" href="#final-classification" title="Permalink to this heading">#</a></h2>
-<p>Once all available confidence modifiers are added to the score the value is then classified into comfidence types.
+<p>Once all available confidence modifiers are added to the score the value is classified into confidence types.
 These classifications and the scores required to attain them can be seen below:</p>
 <table class="table">
 <thead>
@@ -504,16 +490,16 @@ These classifications and the scores required to attain them can be seen below:<
 <h2>Method<a class="headerlink" href="#method" title="Permalink to this heading">#</a></h2>
 <p>The information described above is put into use in the following way:</p>
 <ol class="arabic simple">
-<li><p>In cases are checking the address data against a secondary source (NAR, municipal level civic address sources) a True/False flag system is used to
-indicate whether or not the address associated with the address point appear in that secondary source. Then during the main confidence calculation the
+<li><p>Where possible the address data is checked against available secondary sources (NAR, municipal-level civic address sources, etc). A boolean flag system is used to
+indicate whether or not the address appears in a given secondary source. Then during the main confidence calculation, the
 score is changed based on whether the value returned was True or False.</p></li>
-<li><p>In cases where we are classifying a value into a cateogry (link distance, etc) the value in question is compared against the table and the
+<li><p>In cases where we are classifying a value into a category (link distance, etc) the value in question is compared against the table and the
 appropriate value is added or subtracted from the score as needed.</p></li>
 <li><p>The total score is then classified into a confidence type LOW, MEDIUM, or HIGH based on the result of the score calculation.</p></li>
-<li><p>The results are then then added to the line link values from the qa/qc step for easier visualization.</p></li>
+<li><p>The results are then added to the line link values from the qa/qc step for easier visualisation.</p></li>
 <li><p>All results are exported to the project geopackage.</p></li>
 </ol>
-<p>The code for the above process:</p>
+<p>The code for the above process can be seen below:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">civics_flag_builder</span><span class="p">(</span><span class="n">civic_num</span><span class="p">,</span> <span class="n">str_nme</span><span class="p">,</span> <span class="n">str_type</span><span class="p">,</span> <span class="n">mun_civics</span><span class="p">,</span> <span class="n">civics_number_field</span><span class="o">=</span><span class="s1">&#39;civic_num&#39;</span><span class="p">,</span> <span class="n">civics_sname_field</span><span class="o">=</span><span class="s1">&#39;st_nme&#39;</span><span class="p">,</span> <span class="n">civics_stype_field</span><span class="o">=</span><span class="s1">&#39;st_type&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Creates the confidence flags for a match and returns the following output:</span>
 

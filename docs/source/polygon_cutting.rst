@@ -5,35 +5,35 @@ Polygon Splitting
    :maxdepth: 2
    :hidden:
 
-As sources of building data were compiled for the NBL it became appearent that there were significant differnces in the data quality between each source. 
+As sources of building data were compiled for the NBL it became apparent that there were significant differences in the data quality between each source. 
 Buildings that were close together in some sources were clumped into a single polygon. This had significant implications for the accuracy of
-matching process. As seen in the first image below out area of interest has a row of single family detached homes
+the matching process. As seen in the first image below our area of interest has a row of single-family detached homes
 which while relatively close together should be individual polygons in a building layer.
 
 .. image:: img/clumped_sat_img.png
    :width: 400
    :alt: Sat image of clumped area
 
-However that is not what we see in the data. As seen in the image below this area is clumped into long single polygons
-that are not representative of what exists on the ground. 
+However, that is not what we see in the data. As seen in the image below this area is clumped into long single polygons
+which is not representative of what exists on the ground. 
 
 .. image:: img/clumped_polys.png
    :width: 400
    :alt: Sat image of clumped polygons
 
-Another existing issue is that during the address matching process buildings that cross a parcel boundary with a valid match on either side of that boudary would
+Another existing issue is that during the address-matching process buildings that cross a parcel boundary with a valid match on either side of that boundary would
 return wildly different confidence results depending on the where
 
-As things stand performing the matching process on clumped building polygons and cross boundary polygons  would produce inaccurate results. In order to 
+As things stand performing the matching process on clumped building polygons and cross-boundary polygons would produce inaccurate results. In order to 
 improve these results an additional method had to be developed.
 
 Method Overview
 ---------------
 
-All code samples in this section are pulled from the scripts/polygon_cutter.py script found in the github repo. All samples are subject to change as this project is in
+All code samples in this section are pulled from the scripts/polygon_cutter.py script found in the GitHub repository. All samples are subject to change as this project is in
 active development.
 
-As seen below there is a ready made geometry available for dealing with the clumped buildings. A parcel fabric when placed over the building polygons appears to intersect 
+As seen below there is a ready-made geometry available for dealing with the clumped buildings. A parcel fabric when placed over the building polygons appears to intersect 
 the underlying geometry close to where the gap should exist between the buildings. While not perfect using the parcel fabric to split the building polygons offers a
 significant improvement over what exists now. 
 
@@ -68,7 +68,7 @@ This is done using the following process:
                input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
          return input_geometry
 
-2. To maintain efficiency all non essential geometry are dropped from the cut_geom at this stage. This is done using two filters the first of which 
+2. To maintain efficiency all non-essential geometry is dropped from the cut_geom at this stage. This is done using two filters the first of which 
    filters out all cut geometry that does not intersect any of the building polygons.
 
    .. code-block:: python 
@@ -79,7 +79,7 @@ This is done using the following process:
         cut_geom = cut_geom[cut_geom['cut_index'].isin(cut_joined)]
    
    The second filter is only run if the optional point_data input is used and removes all cut geometry that does not intersect a point. The intended input here is a layer containing
-   civic addresses. Ensure that only data where the location of the point in placed by an authoritiative source (municipality, province) as inaccurate point locations could cause necessary
+   civic addresses. Ensure that only data from an authoritative source  (municipality, province) is used as inaccurate point locations could cause necessary
    data to be filtered out at this stage.
    
    .. code-block:: python
@@ -96,8 +96,8 @@ This is done using the following process:
 3. The geometry is then checked for type and converted into lines if necessary using the following process:
 
    a. If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.
-   b. .boundary return the boundary as a single line. Break this up so that each side is a single record per side.
-   c. The above steps create significant number of duplicated lines filter the duplicated geometries to prevent duplication
+   b. .boundary returns the boundary as a single line. Break this up so that each side is a single record per side.
+   c. The above steps create a significant number of duplicated lines. Filter the duplicated geometries to prevent duplication
     
    .. code-block:: python
       
@@ -146,10 +146,10 @@ This is done using the following process:
 
 
 4. As each line will be used to split any polygon it intersects it is important to remove any duplicate lines to prevent unnecessary duplication.
-   To prevent this the process below is followed in order to check for andremove any duplicates:
+   To prevent this the process below is followed in order to check for and remove any duplicates:
 
    a. Convert all lines to centroids
-   b. Convert the shapely geometry object to WKB (well known binary)
+   b. Convert the shapely geometry object to WKB (well-known binary)
    c. Drop duplicated records by comparing WKB centroids
    d. Drop the WKB centroids as they are no longer needed
 
@@ -166,9 +166,8 @@ This is done using the following process:
       # Drop non essential centroid field
       self.line_geom.drop(columns=['centroid'], inplace=True)
 
-The above method was necessary as the built in pandas drop_duplicates method does note work well with shapely geometry objects. Other methods such as 
-dissolving geometries caused too much complexity or added significantly to the runtime of the tool. If new built in methods are developed in geopandas
-
+The above method was necessary as the built-in pandas drop_duplicates method does note work well with shapely geometry objects. Other methods such as 
+dissolving geometries caused too much complexity or added significantly to the runtime of the tool. If new built-in methods are developed in geopandas
 
 Step 2: Polygon Splitting
 _________________________
@@ -191,15 +190,16 @@ Once the cutting geometry is prepared the next step is to split all intersecting
 2. Polygons that intersect a line are then split along the lines that they intersect and a new MultiPolygon object is returned. To accomplish this the following steps 
    are required:
 
-   A. For a given building polygon if it intersects one or more the cut geometries do the following:
+   a. For a given building polygon if it intersects one or more of the cut geometries do the following:
 
       i. Convert the polygon into a LineString using its boundary geometry
       ii. Merge the cut geometry and the polygon line boundary using linemerge
       iii. Convert the result into a series of polygons based on the merged lines
       iv. Convert the result to a MultiPolygon       
 
-   B. Take the output from the previous step and explode it so that every individual Polygon object
-      gets its own record. Delete all non essential fields.
+   b. Take the output from the previous step and explode it so that every individual Polygon object
+      gets its own record. Delete all non-essential fields.
+
 
    .. code-block:: python
 
@@ -248,7 +248,7 @@ ______________________
 Now that the polygons are split clean-up on the output is done in order to improve the quality of the output data. Of particular concern is the removal of all sliver polygons.
 
 .. Note::
-   **Sliver Polygon**: Any polygon that is the result of a split with an area of less an the maximum sliver area (default 20m2).
+   **Sliver Polygon**: Any polygon that is the result of a split with an area of less than the maximum sliver area (default 20m2).
 
 This step is essential as not every split created during the splitting phase should be considered valid. For example, in the image below the building crosses
 two parcel boundaries and will therefore be cut twice.
@@ -258,15 +258,15 @@ two parcel boundaries and will therefore be cut twice.
    :alt: Example with valid and invalid splits
 
 There are two cuts that will occur when this building is split. One around the mid-point of the structure and one in the bottom
-corner of the polygon. Looking at the underlying imagery (see below) we can see the the split at the mid-point is most likely a
-valid split. The second smaller split is most likely a sliver polygon based off its size and the imagery. It can safely be removed from 
+corner of the polygon. Looking at the underlying imagery (see below) we can see that the split at the mid-point is most likely a
+valid split. The second smaller split is most likely a sliver polygon based on its size and the imagery. It can safely be removed from 
 the dataset and isolated.
 
 .. image:: img/complex_img.png
    :width: 400
    :alt: Example with valid and invalid splits with imagery
 
-Do deal with slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.
+To deal with slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.
    
 .. code-block:: python
    

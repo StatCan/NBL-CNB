@@ -12,7 +12,7 @@ NBL-CNB: Address Matching Process
    Confidence Calculation <address_matching/confidence>
    
 
-The primary goal of this section is the cretion of an automated process that accurately matches as many address points 
+The primary goal of this section is the creation of an automated process that accurately matches as many address points 
 to building polygons as possible. In order to achieve this three key datasets are required:
 
 * Address Points
@@ -20,12 +20,12 @@ to building polygons as possible. In order to achieve this three key datasets ar
 * Parcel Fabric
 
 The Address Points and Building Polygons are layers that are matched to one another. While the Parcel Fabric acts as a scaffolding to guide the 
-matching process. Without the parcel fabric the matching process would be significantly less accurate.
+matching process. Without the parcel fabric, the matching process would be significantly less accurate.
 
-The matching process is organized into several phases each with thier own page listed below. The information contained on each page gives a 
-run through of the process as it currently exists supplimented with code snippets and relelvant images. Also contained below is a page on how 
-to run the matching process on your own data called 'Run Process'. The information contained on this page gives a description on the ways to 
-run the matching process as well as an overview on the environments required in order to be able to run the process.
+The matching process is organized into several phases each with its own page listed below. The information contained on each page gives a 
+run-through of the process as it currently exists supplemented with code snippets and relevant images. Also contained below is a page on how 
+to run the matching process on your own data called 'Run Process'. The information contained on this page gives a description of the ways to 
+run the matching process as well as an overview of the environments required in order to be able to run the process.
 
 .. container:: button
 

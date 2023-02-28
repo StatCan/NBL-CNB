@@ -116,16 +116,9 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="../address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -217,16 +210,9 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="../address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -335,7 +321,7 @@
 <h1>Step 2: Parcel Relationship Calculation<a class="headerlink" href="#step-2-parcel-relationship-calculation" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<p>For reference the descriptions on this page cover the code in <strong>issue_flagging.py</strong></p>
+<p>For reference, the descriptions on this page cover the code in <strong>issue_flagging.py</strong></p>
 <p>Once cleaned the data’s relationship to the parcel data must be calculated. This relationship
 is based on the count of address points and building footprints contained in a given parcel.
 This page describes the different relationship types and then shows how they are calculated
@@ -358,14 +344,14 @@ building polygons from the parcel relationship calculation.</p>
 </section>
 <section id="one-to-many">
 <h3>One to Many<a class="headerlink" href="#one-to-many" title="Permalink to this heading">#</a></h3>
-<p>In this relationship type there is one address point but many building footprints contained in a
+<p>In this relationship, type there is one address point but many building footprints contained in a
 single parcel.</p>
 <a class="reference internal image-reference" href="../_images/one_to_many.png"><img alt="One to Many Example" src="../_images/one_to_many.png" style="width: 400px;" /></a>
 </section>
 <section id="many-to-many">
 <h3>Many to Many<a class="headerlink" href="#many-to-many" title="Permalink to this heading">#</a></h3>
-<p>This is the most complicated relationship type where more than one address point and more than one
-building footprint are contained in a single parcel.</p>
+<p>This is the most complicated relationship type where multiple address points and multiple
+building polygons are contained in a single parcel.</p>
 <a class="reference internal image-reference" href="../_images/many_to_many.png"><img alt="Many to Many Example" src="../_images/many_to_many.png" style="width: 400px;" /></a>
 </section>
 <section id="no-linked-building">
@@ -377,11 +363,11 @@ building footprint are contained in a single parcel.</p>
 <h3>Unlinked<a class="headerlink" href="#unlinked" title="Permalink to this heading">#</a></h3>
 <p>This relationship is assigned to address points and building polygons when no underlying parcel is present. This can be data in a region that
 does not have a parcel fabric available or data within the extent of a parcel fabric that falls into a gap or area with no polygons. This is
-considered to by the least ideal scenario as there is limited information to help inform where is correct linkage is if one exists.</p>
+considered to be the least ideal scenario as there is limited information to help inform where is correct linkage is if one exists.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>While some methods have been looked at to deal with regions without an available parcel fabric to date none has proven to be capable of providing
-sufficiently accurate results to be flagged for implimented.</p>
+sufficiently accurate results to be flagged for implementation.</p>
 </div>
 </section>
 </section>
@@ -391,7 +377,7 @@ sufficiently accurate results to be flagged for implimented.</p>
 <ol class="arabic simple">
 <li><p>The address point and building polygon data were linked during the address cleaning phase. These cleaned datasets are loaded into geodataframes.</p></li>
 <li><p>Using pandas groupby functionality both the address points and building polygons are grouped by the parcel linkage field to get counts of each for every parcel ID. Note that building classified as non-addressable outbuildings are not included in these counts.</p></li>
-<li><p>The parcel relationship is then calculated based off of the counts created in step 2. These values are assigned to the address points</p></li>
+<li><p>The parcel relationship is then calculated based on the counts created in step 2. These values are assigned to the address points</p></li>
 <li><p>The address data is exported to the project geopackage.</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">relationship_setter</span><span class="p">(</span><span class="n">parcel_ident</span><span class="p">,</span> <span class="n">ap_parcel_counts</span><span class="p">,</span> <span class="n">bf_parcel_counts</span><span class="p">):</span>

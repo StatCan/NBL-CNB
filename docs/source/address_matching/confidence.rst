@@ -5,24 +5,24 @@ Step 5: Match Confidence Calculation
     :maxdepth: 2
     :hidden:
 
-For reference the descriptions on this page cover the code in **match_confidence_calc.py**
+For reference, the descriptions on this page cover the code in **match_confidence_calc.py**
 
 The final step of the matching process is the confidence calculation. Confidence is a numeric score
-calculated based off the characteristics of the match. Additionally, secondary sources such as the
+calculated based on the characteristics of the match. Additionally, secondary sources such as the
 National Address Register (NAR) are brought in to add to the calculation wherever possible. It is 
 important to note that the confidence score is an arbitrary number and should not be considered a 
 percentage.
 
-As the number of available sources can vary widely depending on the region of work the below score
-breakdown should be considered an example and the number of sources included in the initial score 
-caculation will vary from region to region. 
+As the number of available sources can vary widely depending on the region of work the below score each
+breakdown should be considered an example and the number of sources included in the initial score. The 
+final score will vary from region to region. 
 
 Base Scores
 -----------
 
 The base score is the initial value assigned to a match based on the relationship
 between the number of address points and the number of building polygons in the 
-linked parcel (if available). This score is based off the complexity of the relationship,
+linked parcel (if available). This score is based on the complexity of the relationship
 or lack of relationship in cases where there is no linked parcel.
 
 .. csv-table:: 
@@ -44,7 +44,7 @@ below.
 Link Distance
 -------------
 
-Link distance is a key indicator on the accuracy of a match. The shorter the distance
+Link distance is a key indicator for the accuracy of a match. The shorter the distance
 between the address point and the building footprint 
 
 .. csv-table:: 
@@ -75,7 +75,7 @@ field in the parcel data used to make the matches.
 Final Classification
 --------------------
 
-Once all available confidence modifiers are added to the score the value is then classified into comfidence types.
+Once all available confidence modifiers are added to the score the value is classified into confidence types.
 These classifications and the scores required to attain them can be seen below:
 
 .. csv-table::
@@ -87,16 +87,16 @@ Method
 
 The information described above is put into use in the following way:
 
-1. In cases are checking the address data against a secondary source (NAR, municipal level civic address sources) a True/False flag system is used to
-   indicate whether or not the address associated with the address point appear in that secondary source. Then during the main confidence calculation the 
+1. Where possible the address data is checked against available secondary sources (NAR, municipal-level civic address sources, etc). A boolean flag system is used to
+   indicate whether or not the address appears in a given secondary source. Then during the main confidence calculation, the 
    score is changed based on whether the value returned was True or False.
-2. In cases where we are classifying a value into a cateogry (link distance, etc) the value in question is compared against the table and the
+2. In cases where we are classifying a value into a category (link distance, etc) the value in question is compared against the table and the
    appropriate value is added or subtracted from the score as needed.
 3. The total score is then classified into a confidence type LOW, MEDIUM, or HIGH based on the result of the score calculation.
-4. The results are then then added to the line link values from the qa/qc step for easier visualization.
+4. The results are then added to the line link values from the qa/qc step for easier visualisation.
 5. All results are exported to the project geopackage.
 
-The code for the above process:
+The code for the above process can be seen below:
 
 .. code-block:: python
     

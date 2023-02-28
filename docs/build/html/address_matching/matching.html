@@ -116,16 +116,9 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="../address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -217,16 +210,9 @@
     </p>
     <ul id="navbar-main-elements" class="navbar-nav">
         
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="../address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -335,7 +321,7 @@
 <h1>Step 3: Matching<a class="headerlink" href="#step-3-matching" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<p>For reference the descriptions on this page cover the code in <strong>matching_master.py</strong></p>
+<p>For reference, the descriptions on this page cover the code in <strong>matching_master.py</strong></p>
 <p>The matching stage of the process is where the matches are made between the address points and the building polygons.
 This process is broken down and organized by its five component steps. Three methods are used to match the buildings
 and are listed below in order of assumed accuracy:</p>
@@ -345,17 +331,17 @@ and are listed below in order of assumed accuracy:</p>
 <li><p>proximity</p></li>
 </ol>
 <p>There are also special matching sub-methods included in this section. The main sub-method is the big parcel (BP) sub-method
-which is used in special cases where many buildings and many addresses overa certain threshold are found in a single parcel.
+which is used in special cases where many buildings and many addresses over a certain threshold are found in a single parcel.
 Other sub-methods will be added to this documentation as they are developed.</p>
-<p>All code contained within this documentation is for illustrative purposes only and should only be considered an example of
+<p>All code contained within this document is for illustrative purposes only and should only be considered an example of
 the process. The code in reality may be altered based on a region to region bases based on data availability and the needs
 of a given area.</p>
 <section id="phase-1-load-data-and-configure-attributes">
 <h2>Phase 1: Load Data and Configure Attributes<a class="headerlink" href="#phase-1-load-data-and-configure-attributes" title="Permalink to this heading">#</a></h2>
 <p>The purpose of this phase is to perform the initial load and checks on the data to be matched.
-All inputs are loaded into geodataframes and are projected into the the same geodataframe.
+All inputs are loaded into geodataframes and are projected into the same geodataframe.
 The fields used to link the building footprints and the address points to the parcel fabric
-is defined.</p>
+are defined.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">addresses</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">project_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">addresses_lyr_nme</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">proj_crs</span><span class="p">)</span>
 <span class="n">footprint</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">project_gpkg</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">footprints_lyr_nme</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">proj_crs</span><span class="p">)</span>
 
@@ -383,7 +369,7 @@ are excluded as they do not fit this assumption.</p></li>
 <li><p>Only buildings that fall under the bp area threshold are kept for matching.</p></li>
 <li><p>Attempt to find matches using a 20m buffer around the address point.</p></li>
 <li><p>If there are any plural linkages (more than one link within 20m) then compare the linkages and take only the closest.</p></li>
-<li><p>All matched made this way are assigned a method value of 20m_bp to signify that they were matched using this process.</p></li>
+<li><p>All matches made this way are assigned a method value of 20m_bp to signify that they were matched using this process.</p></li>
 </ul>
 </div></blockquote>
 <p>The code for the above process:</p>
@@ -466,10 +452,10 @@ are excluded as they do not fit this assumption.</p></li>
 </section>
 <section id="phase-3-check-linkages-using-intersects">
 <h2>Phase 3: Check Linkages using Intersects<a class="headerlink" href="#phase-3-check-linkages-using-intersects" title="Permalink to this heading">#</a></h2>
-<p>This phase checks for and any buildings and addresses that directly intersect with each other and matches them based on that intersection.
+<p>This phase checks for any buildings and addresses that directly intersect with each other and matches them based on that intersection.
 This phase is performed as follows:</p>
 <ol class="arabic simple">
-<li><p>Identify all address points that directly intersect a building polygon. Assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.</p></li>
+<li><p>Identify all address points that directly intersect a building polygon. The assumption is made that an address point will only ever intersect one building polygon so no code has been added to deal with plural linkages.</p></li>
 <li><p>Identified linkages via intersect and are removed from the main addresses geodataframe as they have already been matched.</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">check_for_intersects</span><span class="p">(</span><span class="n">address_pt</span><span class="p">,</span> <span class="n">footprint_indexes</span><span class="p">):</span>

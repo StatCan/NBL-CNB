@@ -116,15 +116,8 @@
     <ul id="navbar-main-elements" class="navbar-nav">
         
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -217,15 +210,8 @@
     <ul id="navbar-main-elements" class="navbar-nav">
         
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="project_overview.html">
-                        Project Overview
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="address_matching_process.html">
-                        Address Matching Process
+                        Address Matching
                       </a>
                     </li>
                 
@@ -304,27 +290,31 @@
 <h1>Polygon Splitting<a class="headerlink" href="#polygon-splitting" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<p>As sources of building data were compiled for the NBL it became appearent that there were significant differnces in the data quality between each source.
+<p>As sources of building data were compiled for the NBL it became apparent that there were significant differences in the data quality between each source.
 Buildings that were close together in some sources were clumped into a single polygon. This had significant implications for the accuracy of
-matching process. As seen in the first image below out area of interest has a row of single family detached homes
+the matching process. As seen in the first image below our area of interest has a row of single-family detached homes
 which while relatively close together should be individual polygons in a building layer.</p>
 <a class="reference internal image-reference" href="_images/clumped_sat_img.png"><img alt="Sat image of clumped area" src="_images/clumped_sat_img.png" style="width: 400px;" /></a>
-<p>However that is not what we see in the data. As seen in the image below this area is clumped into long single polygons
-that are not representative of what exists on the ground.</p>
+<p>However, that is not what we see in the data. As seen in the image below this area is clumped into long single polygons
+which is not representative of what exists on the ground.</p>
 <a class="reference internal image-reference" href="_images/clumped_polys.png"><img alt="Sat image of clumped polygons" src="_images/clumped_polys.png" style="width: 400px;" /></a>
-<p>As things stand performing the matching process on this area would produce highly inaccurate results. In order to improve
-the results of the matching process the method described below was developed.</p>
+<p>Another existing issue is that during the address-matching process buildings that cross a parcel boundary with a valid match on either side of that boundary would
+return wildly different confidence results depending on the where</p>
+<p>As things stand performing the matching process on clumped building polygons and cross-boundary polygons would produce inaccurate results. In order to
+improve these results an additional method had to be developed.</p>
 <section id="method-overview">
 <h2>Method Overview<a class="headerlink" href="#method-overview" title="Permalink to this heading">#</a></h2>
-<p>All code samples in this section are pulled from the scripts/polygon_cutter.py script found in the github repo.</p>
-<p>As we can see below there is a ready made method available for dealing with the clumped buildings. As seen in the image
-below the parcels when overlaid over the building data cuts the buildings at approximately the correct location.</p>
+<p>All code samples in this section are pulled from the scripts/polygon_cutter.py script found in the GitHub repository. All samples are subject to change as this project is in
+active development.</p>
+<p>As seen below there is a ready-made geometry available for dealing with the clumped buildings. A parcel fabric when placed over the building polygons appears to intersect
+the underlying geometry close to where the gap should exist between the buildings. While not perfect using the parcel fabric to split the building polygons offers a
+significant improvement over what exists now.</p>
 <a class="reference internal image-reference" href="_images/clumped_w_parcels.png"><img alt="Sat image of clumped polygons" src="_images/clumped_w_parcels.png" style="width: 400px;" /></a>
-<p>The parcel fabric is used as a guide and cut any buildings that cross the boundary using the following steps.</p>
+<p>The parcel fabric is used as a guide and cut any building polygons that cross its boundary geometry using the following steps:</p>
 <ol class="arabic simple">
 <li><p>Convert parcel fabric from polygons to lines.</p></li>
 <li><p>If a polygon intersects one or more of these lines then split the polygon along those lines.</p></li>
-<li><p>Analyze the results and determine if the split results in two or more valid buildings. Remove any slivers.</p></li>
+<li><p>Analyze the results and determine if the split results in two or more valid buildings. Remove all slivers and invalid polygons.</p></li>
 </ol>
 </section>
 <section id="process-overview">
@@ -345,7 +335,7 @@ This is done using the following process:</p>
 </pre></div>
 </div>
 </li>
-<li><p>To maintain efficiency all non essential geometry are dropped from the cut_geom at this stage. This is done using two filters the first of which
+<li><p>To maintain efficiency all non-essential geometry is dropped from the cut_geom at this stage. This is done using two filters the first of which
 filters out all cut geometry that does not intersect any of the building polygons.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Drop Non-Essential Cut Geometry</span>
   <span class="n">cut_joined</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">cut_geom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[[</span><span class="s1">&#39;bp_index&#39;</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]])</span>
@@ -354,7 +344,7 @@ filters out all cut geometry that does not intersect any of the building polygon
 </pre></div>
 </div>
 <p>The second filter is only run if the optional point_data input is used and removes all cut geometry that does not intersect a point. The intended input here is a layer containing
-civic addresses. Ensure that only data where the location of the point in placed by an authoritiative source (municipality, province) as inaccurate point locations could cause necessary
+civic addresses. Ensure that only data from an authoritative source  (municipality, province) is used as inaccurate point locations could cause necessary
 data to be filtered out at this stage.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">point_data</span><span class="p">)</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
 
@@ -369,8 +359,8 @@ data to be filtered out at this stage.</p>
 <li><p>The geometry is then checked for type and converted into lines if necessary using the following process:</p>
 <ol class="loweralpha simple">
 <li><p>If the input geometry is not a LineString or MultiLineString and is a Polygon or Multipolygon then convert it to lines using .boundary.</p></li>
-<li><p>.boundary return the boundary as a single line. Break this up so that each side is a single record per side.</p></li>
-<li><p>The above steps create significant number of duplicated lines filter the duplicated geometries to prevent duplication</p></li>
+<li><p>.boundary returns the boundary as a single line. Break this up so that each side is a single record per side.</p></li>
+<li><p>The above steps create a significant number of duplicated lines. Filter the duplicated geometries to prevent duplication</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">ToSingleLines</span><span class="p">(</span><span class="n">geom</span><span class="p">:</span> <span class="n">shapely</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MultiLineString</span><span class="p">:</span>
 <span class="w">      </span><span class="sd">&#39;&#39;&#39;Converts polygons into single lines&#39;&#39;&#39;</span>
@@ -418,10 +408,10 @@ data to be filtered out at this stage.</p>
 </div>
 </li>
 <li><p>As each line will be used to split any polygon it intersects it is important to remove any duplicate lines to prevent unnecessary duplication.
-To prevent this the process below is followed in order to check for andremove any duplicates:</p>
+To prevent this the process below is followed in order to check for and remove any duplicates:</p>
 <ol class="loweralpha simple">
 <li><p>Convert all lines to centroids</p></li>
-<li><p>Convert the shapely geometry object to WKB (well known binary)</p></li>
+<li><p>Convert the shapely geometry object to WKB (well-known binary)</p></li>
 <li><p>Drop duplicated records by comparing WKB centroids</p></li>
 <li><p>Drop the WKB centroids as they are no longer needed</p></li>
 </ol>
@@ -439,12 +429,12 @@ To prevent this the process below is followed in order to check for andremove an
 </div>
 </li>
 </ol>
-<p>The above method was necessary as the built in pandas drop_duplicates method does note work well with shapely geometry objects. Other methods such as
-dissolving geometries caused too much complexity or added significantly to the runtime of the tool. If new built in methods are developed in geopandas</p>
+<p>The above method was necessary as the built-in pandas drop_duplicates method does note work well with shapely geometry objects. Other methods such as
+dissolving geometries caused too much complexity or added significantly to the runtime of the tool. If new built-in methods are developed in geopandas</p>
 </section>
 <section id="step-2-polygon-splitting">
 <h3>Step 2: Polygon Splitting<a class="headerlink" href="#step-2-polygon-splitting" title="Permalink to this heading">#</a></h3>
-<p>To split the polygons the following process is followed:</p>
+<p>Once the cutting geometry is prepared the next step is to split all intersecting building polygons. The following process is used to accomplish this:</p>
 <ol class="arabic">
 <li><p>A linkage is created between every line and building polygon where they intersect using a spatial join.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">FindIntersects</span><span class="p">(</span><span class="n">input_geom</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">input_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
@@ -453,26 +443,15 @@ dissolving geometries caused too much complexity or added significantly to the r
    <span class="n">joined_geom</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">input_geom</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">[[</span><span class="n">search_link_field</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]],</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
    <span class="n">input_geom</span><span class="p">[</span><span class="s1">&#39;line_ints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">][</span><span class="n">search_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
    <span class="k">return</span> <span class="n">input_geom</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="n">FindIntersects</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">,</span> <span class="s1">&#39;bp_index&#39;</span><span class="p">,</span> <span class="s1">&#39;seg_index&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
 <li><p>Polygons that intersect a line are then split along the lines that they intersect and a new MultiPolygon object is returned. To accomplish this the following steps
 are required:</p>
 <ol class="loweralpha simple">
-<li><p>Create a spatial join between the building polygons and the cleaned line geometry.</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">FindIntersects</span><span class="p">(</span><span class="n">input_geom</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">input_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_link_field</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
-<span class="w">   </span><span class="sd">&#39;&#39;&#39;finds all intersections between the input geometry and the search geometry&#39;&#39;&#39;</span>
-
-   <span class="n">joined_geom</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">input_geom</span><span class="p">,</span> <span class="n">search_geometry</span><span class="p">[[</span><span class="n">search_link_field</span><span class="p">,</span> <span class="s1">&#39;geometry&#39;</span><span class="p">]],</span> <span class="n">op</span><span class="o">=</span><span class="s1">&#39;intersects&#39;</span><span class="p">)</span>
-   <span class="n">input_geom</span><span class="p">[</span><span class="s1">&#39;line_ints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">swifter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">joined_geom</span><span class="p">[</span><span class="n">input_link_field</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">][</span><span class="n">search_link_field</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
-   <span class="k">return</span>
-
-<span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="n">FindIntersects</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_geom</span><span class="p">,</span> <span class="s1">&#39;bp_index&#39;</span><span class="p">,</span> <span class="s1">&#39;seg_index&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<ol class="loweralpha simple" start="2">
-<li><p>For each building polygon if it intersects any lines do the following:</p>
+<li><p>For a given building polygon if it intersects one or more of the cut geometries do the following:</p>
 <ol class="lowerroman simple">
 <li><p>Convert the polygon into a LineString using its boundary geometry</p></li>
 <li><p>Merge the cut geometry and the polygon line boundary using linemerge</p></li>
@@ -481,7 +460,7 @@ are required:</p>
 </ol>
 </li>
 <li><p>Take the output from the previous step and explode it so that every individual Polygon object
-is in its own record. Delete all non essential fields.</p></li>
+gets its own record. Delete all non-essential fields.</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">CutPolygon</span><span class="p">(</span><span class="n">intersect_indexes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">in_geom</span><span class="p">:</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">line_geom</span><span class="p">:</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">cut_field</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MultiPolygon</span><span class="p">:</span>
 <span class="w">   </span><span class="sd">&#39;&#39;&#39;Cuts the input polygon by the lines linked to it during the FindIntersects Step Run the FindIntersects step before calling this function&#39;&#39;&#39;</span>
@@ -522,27 +501,25 @@ is in its own record. Delete all non essential fields.</p></li>
 </pre></div>
 </div>
 </li>
-<li><p>The returned geometry is then exploded to create a record for each polygon within the multipoloygon.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bp</span> <span class="o">=</span> <span class="n">bp</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">index_parts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
 </ol>
 <p>All valid input polygons have now been split by all unique line geometries in the cutting data that they intersected. The outputs can now be cleaned.</p>
 </section>
 <section id="step-3-output-cleanup">
 <h3>Step 3: Output Cleanup<a class="headerlink" href="#step-3-output-cleanup" title="Permalink to this heading">#</a></h3>
-<p>Now that the polygons are split clean-up on the output is done in order to ensure data quality. The main concern is the removal of any slivers from the output.</p>
-<p><strong>Sliver</strong>: Any polygon that is the result of a split with an area of less an the maximum sliver area (default 20m2).</p>
+<p>Now that the polygons are split clean-up on the output is done in order to improve the quality of the output data. Of particular concern is the removal of all sliver polygons.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Sliver Polygon</strong>: Any polygon that is the result of a split with an area of less than the maximum sliver area (default 20m2).</p>
+</div>
 <p>This step is essential as not every split created during the splitting phase should be considered valid. For example, in the image below the building crosses
 two parcel boundaries and will therefore be cut twice.</p>
 <a class="reference internal image-reference" href="_images/complex_ex.png"><img alt="Example with valid and invalid splits" src="_images/complex_ex.png" style="width: 400px;" /></a>
 <p>There are two cuts that will occur when this building is split. One around the mid-point of the structure and one in the bottom
-corner of the polygon. Looking at the underlying imagery (see below) we can see the the split at the mid-point is most likely a
-valid split. The second smaller split is most likely a sliver based off its size and the imagery. It can safely be removed from
+corner of the polygon. Looking at the underlying imagery (see below) we can see that the split at the mid-point is most likely a
+valid split. The second smaller split is most likely a sliver polygon based on its size and the imagery. It can safely be removed from
 the dataset and isolated.</p>
 <a class="reference internal image-reference" href="_images/complex_img.png"><img alt="Example with valid and invalid splits with imagery" src="_images/complex_img.png" style="width: 400px;" /></a>
-<p>Do deal withg slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.</p>
+<p>To deal with slivers the area of each split is calculated and any polygons under the maximum sliver size (default is 20m2) are removed.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clean up results and remove slivers polygons with an area &lt; 20m2</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[</span><span class="s1">&#39;split_area&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">area</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
@@ -550,6 +527,7 @@ the dataset and isolated.</p>
 <span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">split_area</span> <span class="o">&gt;=</span> <span class="n">sliver_max_area</span><span class="p">]</span>
 </pre></div>
 </div>
+<p><strong>Further cleaning methods will be developed on an as needed basis.</strong></p>
 </section>
 </section>
 </section>

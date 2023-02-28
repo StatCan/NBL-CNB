@@ -5,7 +5,7 @@ Step 2: Parcel Relationship Calculation
    :maxdepth: 2
    :hidden:
 
-For reference the descriptions on this page cover the code in **issue_flagging.py**
+For reference, the descriptions on this page cover the code in **issue_flagging.py**
 
 Once cleaned the data's relationship to the parcel data must be calculated. This relationship
 is based on the count of address points and building footprints contained in a given parcel.
@@ -41,7 +41,7 @@ In this relationship there are many address points and a single building footpri
 One to Many
 ___________
 
-In this relationship type there is one address point but many building footprints contained in a
+In this relationship, type there is one address point but many building footprints contained in a
 single parcel.
 
 .. image:: img/one_to_many.png
@@ -51,8 +51,8 @@ single parcel.
 Many to Many
 ____________
 
-This is the most complicated relationship type where more than one address point and more than one
-building footprint are contained in a single parcel.
+This is the most complicated relationship type where multiple address points and multiple
+building polygons are contained in a single parcel.
 
 .. image:: img/many_to_many.png
    :width: 400
@@ -72,11 +72,11 @@ ________
 
 This relationship is assigned to address points and building polygons when no underlying parcel is present. This can be data in a region that
 does not have a parcel fabric available or data within the extent of a parcel fabric that falls into a gap or area with no polygons. This is 
-considered to by the least ideal scenario as there is limited information to help inform where is correct linkage is if one exists. 
+considered to be the least ideal scenario as there is limited information to help inform where is correct linkage is if one exists. 
 
 .. Note:: 
    While some methods have been looked at to deal with regions without an available parcel fabric to date none has proven to be capable of providing
-   sufficiently accurate results to be flagged for implimented.
+   sufficiently accurate results to be flagged for implementation.
 
 Relationship Calculation Process
 --------------------------------
@@ -85,7 +85,7 @@ The code that calculates the relationship for each address point and building po
 
 1. The address point and building polygon data were linked during the address cleaning phase. These cleaned datasets are loaded into geodataframes.
 2. Using pandas groupby functionality both the address points and building polygons are grouped by the parcel linkage field to get counts of each for every parcel ID. Note that building classified as non-addressable outbuildings are not included in these counts.
-3. The parcel relationship is then calculated based off of the counts created in step 2. These values are assigned to the address points
+3. The parcel relationship is then calculated based on the counts created in step 2. These values are assigned to the address points
 4. The address data is exported to the project geopackage.
 
 .. code-block:: python
