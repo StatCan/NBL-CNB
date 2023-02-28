@@ -8,9 +8,10 @@ The following components are in development here:
 - Address Point to Building Polygon matching
 - Building Polygon Cutting
 
+Detailed documentation for this project can be found at the following location:
 
-***Detailed documentation for this project is in development and will be made available shortly*** 
+https://nbl-cnb.readthedocs.io/ 
 
-
+New components will be developed as required.
 
 
