@@ -8,3 +8,4 @@ python-dotenv
 pyproj
 shapely
 pathlib
+pydata-sphinx-theme
