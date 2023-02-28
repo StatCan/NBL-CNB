@@ -220,6 +220,15 @@ class CleanData:
             input_geometry = input_geometry['geometry'].apply(lambda geom: make_valid(geom) if not geom.is_valid else geom)
         return input_geometry
 
+
+    def export_layers(self, out_gpkg:str):
+        '''exports key layers into a given gpkg. The gpkg is created if it doesn't already exist'''
+        
+        self.adp.to_file(out_gpkg, layer='addresses_cleaned')
+        self.bp.to_file(out_gpkg, layer='footprints_cleaned')
+        self.parcels.to_file(out_gpkg, layer='parcels_cleaned')
+
+
 @ click.command()
 @ click.argument('env_file_path', type=click.STRING)
 def main(env_file_path: str) -> None:
@@ -249,8 +258,15 @@ def main(env_file_path: str) -> None:
     bp = gpd.read_file(footprint_lyr, layer=footprint_lyr_name, mask=aoi_mask)
     parcels = gpd.read_file(linking_data_path, layer=linking_lyr_nme, mask=aoi_mask)
 
+    # Out gpkg path for export
+    out_gpkg = os.getenv('DATA_GPKG')
+    if out_gpkg == None:
+        out_gpkg = os.path.curdir()
+
     cleaned = CleanData(addresses, bp, parcels, proj_crs=proj_crs)
     cleaned()
+    click.echo('Exporting Outputs')
+    cleaned.export_layers(out_gpkg)
 
 if __name__ == '__main__':
     main()

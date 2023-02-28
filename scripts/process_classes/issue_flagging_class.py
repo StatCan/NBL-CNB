@@ -129,12 +129,11 @@ def main(env_path:str, out_name:str):
 
     issues_flagged = IssueFlagging(ap, bf, crs=proj_crs)
     issues_flagged()
-
+    click.echo('Exporting Results')
     issues_flagged.export_results(output_gpkg, out_name)
-
+    click.echo('DONE!')
     
     
 if __name__ == "__main__":
     main()
-    click.echo('DONE!')
 
