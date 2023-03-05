@@ -83,10 +83,11 @@ class IssueFlagging:
 
             if (ap_count > 1) and (bf_count > 1):
                 return 'many_to_many'
-
-            print(ap_count)
-            print(bf_count)
-            sys.exit()
+            else:
+                print('error')
+                print(ap_count)
+                print(bf_count)
+                sys.exit()
 
 
     def export_results(self, out_path:str, out_lyr_name='ap_full'):

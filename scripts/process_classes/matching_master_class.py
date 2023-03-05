@@ -312,8 +312,11 @@ class Matcher:
 
     def _create_centroid_match(self, footprint_index:int, bf_centroids):
         '''Returns the centroid geometry for a given point'''
-        new_geom = bf_centroids.iloc[int(footprint_index)]
-        return new_geom
+        if footprint_index in bf_centroids.index.tolist():
+            new_geom = bf_centroids.iloc[int(footprint_index)]
+            return new_geom
+        else:
+            return np.NaN
 
 
     def export_matches(self, output_gpkg:str, matches_lyr_nme:str='matched_points', sheds_lyr_nme:str='non_add_ob') -> None:

@@ -58,14 +58,15 @@ class AddressMatcher:
         clean()
         click.echo('Step 2: Parcel Relationship Calculation')
         flagged = IssueFlagging(clean.adp, clean.bp, crs= self.proj_crs)
+        flagged()
         click.echo('Step 3: Matching') 
-        matched = Matcher(flagged.addresses, clean.bp, clean.parcels)
+        matched = Matcher(flagged.addresses, clean.bp, int(self.proj_crs))
         matched()
         click.echo('Step 4: QA/QC')
         qa_qc = MatchQaQC(matched.out_gdf,clean.adp, proj_crs=self.proj_crs)
         qa_qc()
         click.echo('Step 5: Confidence Calculation')
-        confident = ConfidenceCalculator(qa_qc.match_adp, clean.parcels, qa_qc.line_links, proj_crs)
+        confident = ConfidenceCalculator(qa_qc.match_adp, clean.parcels, qa_qc.line_links, self.proj_crs)
         confident()
         
     def export_data(export_directory: str) -> None: 
