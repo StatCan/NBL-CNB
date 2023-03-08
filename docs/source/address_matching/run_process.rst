@@ -90,5 +90,18 @@ Initiate Process
 Once setup above is complete the address matching process can be intiated. To do this we
 will run the files from the command line. 
 
-1. Open the command prompt and ensure that you python environment is setup correctly with all of the list packages installed.
-2. Navigate to the directory that contains the data 
+1. Navigate to the scripts folder
+2. Create the environments file at that level. Ensure that all paths are accurate
+3. Before running each script change the following line of code so that the file name matches the name of your environments file:
+
+   .. code-block:: python
+      
+      load_dotenv(os.path.join(os.path.dirname(__file__), 'NB_environments.env'))
+
+4. Run the scripts in the following order from an IDE:
+      a. clean_data.py
+      b. issue_flagging.py
+      c. matching_master.py
+      d. qa_qc.py
+      e. match_confidence_calc.py
+5. Examine results and make changes to the process if needed 
