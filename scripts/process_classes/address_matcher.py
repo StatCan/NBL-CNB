@@ -54,10 +54,13 @@ class AddressMatcher:
         
         # On call run each process class in order
         click.echo('Step 1: Data Cleaning')
+        out_path = r'C:\projects\point_in_polygon\data\nb_out'
         clean = CleanData(self.adp, self.bp, self.pcl, self.proj_crs)
+        clean.export_layers(os.path.join(out_path, 'data.gpkg'))
         clean()
         click.echo('Step 2: Parcel Relationship Calculation')
         flagged = IssueFlagging(clean.adp, clean.bp, crs= self.proj_crs)
+        flagged.export_results(os.path.join(out_path, 'data.gpkg'))
         flagged()
         click.echo('Step 3: Matching') 
         matched = Matcher(flagged.addresses, clean.bp, int(self.proj_crs))

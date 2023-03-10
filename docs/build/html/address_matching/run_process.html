@@ -400,10 +400,25 @@ FLAGGED_ADP_LYR_NME = flagged_adp
 <section id="initiate-process">
 <h2>Initiate Process<a class="headerlink" href="#initiate-process" title="Permalink to this heading">#</a></h2>
 <p>Once setup above is complete the address matching process can be intiated. To do this we
-will run the files from the command line.</p>
-<ol class="arabic simple">
-<li><p>Open the command prompt and ensure that you python environment is setup correctly with all of the list packages installed.</p></li>
-<li><p>Navigate to the directory that contains the data</p></li>
+will run the files from inside of the IDE of your choice.</p>
+<ol class="arabic">
+<li><p>Navigate to the scripts folder</p></li>
+<li><p>Create the environments file at that level. Ensure that all paths are accurate</p></li>
+<li><p>Before running each script change the following line of code so that the file name matches the name of your environments file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">load_dotenv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;NB_environments.env&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</li>
+<li><p>Run the scripts in the following order from an IDE</p>
+<ol class="loweralpha simple">
+<li><p>clean_data.py</p></li>
+<li><p>issue_flagging.py</p></li>
+<li><p>matching_master.py</p></li>
+<li><p>qa_qc.py</p></li>
+<li><p>match_confidence_calc.py</p></li>
+</ol>
+</li>
+<li><p>Examine results and make changes to the process if needed</p></li>
 </ol>
 </section>
 </section>

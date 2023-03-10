@@ -90,9 +90,9 @@ class IssueFlagging:
                 sys.exit()
 
 
-    def export_results(self, out_path:str, out_lyr_name='ap_full'):
+    def export_results(self, out_gpkg:str, out_lyr_name='ap_full'):
         '''outputs results to a given gpkg'''
-        self.addresses.to_file(out_path, layer=out_lyr_name)
+        self.addresses.to_file(out_gpkg, layer=out_lyr_name)
    
 @click.command()
 @click.argument('env_path', type=click.STRING)

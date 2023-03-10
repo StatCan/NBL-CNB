@@ -190,17 +190,17 @@ two match making methods.
 1. All linkages are converted to integer tuples to ensure type consistency across the data.
 2. Explode the addresses field by linkges so that a record is created per linkage in the linkage tuple. Plural linkages will have multiple linkages created for them while singular linkages will remain singular. Assign these records with the method 'data_linking'
 3. Find all records that are yet to be linked to a building and split those into two groups
-    
-    a. Records that intersect a parcel
-    b. Records that do not intersect a parcel
+   
+   a. Records that intersect a parcel
+   b. Records that do not intersect a parcel
 
 This grouping is necessary because both of these cases have slightly different matching rules to follow. 
 
-4. This step changes depending on the group a record got sorted into in the step above.
-    
-    a. For records that intersect a parcel we will attempt to match with all building polygons whether they have been linked to or not at other phases of the 
-       match making phase.
-    b. For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.
+4. This step changes depending on the group a record got sorted into in the step above.   
+   
+   a. For records that intersect a parcel we will attempt to match with all building polygons whether they have been linked to or not at other phases of the 
+      match making phase.
+   b. For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.
 
 The difference between these two methods makes a significant difference in the overall matched quality from this method. Address points with a parcel
 linkage are more likely to be associated with a building that intersects two or more parcels. These buildings are likely to already have been matched by a 

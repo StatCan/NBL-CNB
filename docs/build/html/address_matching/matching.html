@@ -492,28 +492,24 @@ This phase is performed as follows:</p>
 <h2>Phase 4: Check Linkages using Linking Data<a class="headerlink" href="#phase-4-check-linkages-using-linking-data" title="Permalink to this heading">#</a></h2>
 <p>This step checks for linkages using the linking data which in most cases this is the parcel fabric. The majority of matches area made in this section as  it
 two match making methods.</p>
-<ol class="arabic">
+<ol class="arabic simple">
 <li><p>All linkages are converted to integer tuples to ensure type consistency across the data.</p></li>
 <li><p>Explode the addresses field by linkges so that a record is created per linkage in the linkage tuple. Plural linkages will have multiple linkages created for them while singular linkages will remain singular. Assign these records with the method ‘data_linking’</p></li>
 <li><p>Find all records that are yet to be linked to a building and split those into two groups</p>
-<blockquote>
-<div><ol class="loweralpha simple">
+<ol class="loweralpha simple">
 <li><p>Records that intersect a parcel</p></li>
 <li><p>Records that do not intersect a parcel</p></li>
 </ol>
-</div></blockquote>
 </li>
 </ol>
 <p>This grouping is necessary because both of these cases have slightly different matching rules to follow.</p>
-<ol class="arabic" start="4">
+<ol class="arabic simple" start="4">
 <li><p>This step changes depending on the group a record got sorted into in the step above.</p>
-<blockquote>
-<div><ol class="loweralpha simple">
+<ol class="loweralpha simple">
 <li><p>For records that intersect a parcel we will attempt to match with all building polygons whether they have been linked to or not at other phases of the
 match making phase.</p></li>
 <li><p>For records that do not intersect a parcel we will attempt to match only on buildings that have yet to be matched to.</p></li>
 </ol>
-</div></blockquote>
 </li>
 </ol>
 <p>The difference between these two methods makes a significant difference in the overall matched quality from this method. Address points with a parcel

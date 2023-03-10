@@ -501,7 +501,8 @@ To perform this process the following steps are followed:</p>
 </li>
 <li><p>The building is determined to exceed the acceptable threshold of roundness. The roundness of the building is determined using the following formula:</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}  (4 * pi * Area) / (Perimiter * Perimiter)\\Should a building have a roundness of &lt;= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:\end{aligned}\end{align} \]</div>
+\[(4 * pi * Area) / (Perimiter * Perimiter)\]</div>
+<p>Should a building have a roundness of &lt;= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:</p>
 <ul class="simple">
 <li><p>Calculate the area and perimeter of the building polygon in separate variables within the building polygon geodataframe.</p></li>
 <li><p>Create a new field called ‘C’ in the building geodataframe and calculate circularity using the formula above.</p></li>
