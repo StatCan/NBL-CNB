@@ -88,7 +88,7 @@ Initiate Process
 ----------------
 
 Once setup above is complete the address matching process can be intiated. To do this we
-will run the files from the command line. 
+will run the files from inside of the IDE of your choice.
 
-1. Open the command prompt and ensure that you python environment is setup correctly with all of the list packages installed.
-2. Navigate to the directory that contains the data 
+1. Navigate to the scripts folder in the 
+2. Ensure that the following line of code in 
