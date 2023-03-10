@@ -183,7 +183,7 @@ A building is considered to be an unaddressable outbuilding when one or more of 
       
       (4 * pi * Area) / (Perimiter * Perimiter)
 
-    Should a building have a roundness of <= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
+   Should a building have a roundness of <= 0.98 then it is classified as a Non-Addressable Outbuilding. The steps for this process are as follows:
 
    * Calculate the area and perimeter of the building polygon in separate variables within the building polygon geodataframe.
    * Create a new field called 'C' in the building geodataframe and calculate circularity using the formula above.
